@@ -1,16 +1,4 @@
-// ---------------- Smooth Page Transitions ----------------
-document.querySelectorAll('a').forEach(link=>{
-  link.addEventListener('click', e=>{
-    const href = link.getAttribute('href');
-    if(!href.startsWith("#")){
-      e.preventDefault();
-      document.body.classList.add('fade-out');
-      setTimeout(()=>{ window.location.href=href; },500);
-    }
-  });
-});
-
-// ---------------- Animated Particle Background ----------------
+// Canvas for Minecraft-style particles
 const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
 
@@ -21,66 +9,98 @@ function resize() {
 resize();
 window.onresize = resize;
 
+// Create square “block” particles
 const particles = [];
-for(let i=0;i<120;i++){
+for (let i = 0; i < 120; i++) {
   particles.push({
-    x: Math.random()*canvas.width,
-    y: Math.random()*canvas.height,
-    size: 6 + Math.random()*4,    // bigger square blocks
-    speed: 0.2 + Math.random()*0.5,
+    x: Math.random() * canvas.width,
+    y: Math.random() * canvas.height,
+    size: 6 + Math.random() * 4,
+    speed: 0.2 + Math.random() * 0.5,
     color: "#22c55e"
   });
 }
 
 function animate() {
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-  particles.forEach(p=>{
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  particles.forEach(p => {
     ctx.fillStyle = p.color;
-    ctx.fillRect(p.x,p.y,p.size,p.size);  // square particles for block effect
+    ctx.fillRect(p.x, p.y, p.size, p.size); // <-- squares
     p.y -= p.speed;
-    if(p.y < -p.size) p.y = canvas.height;
+    if (p.y < -p.size) p.y = canvas.height;
   });
   requestAnimationFrame(animate);
 }
 animate();
 
-// ---------------- Server IP Copy ----------------
-function copyIP(){
+// Copy server IP
+function copyIP() {
   navigator.clipboard.writeText("rowbot.in:25565");
   alert("Server IP copied!");
 }
 
-// ---------------- Live Player List + Analytics ----------------
-function updatePlayers(){
+// Update player cards + analytics
+function updatePlayers() {
   const container = document.getElementById("players");
-  if(container) container.innerHTML = "";
-  
+  if (!container) return;
+  container.innerHTML = "";
+
   fetch("https://api.mcsrvstat.us/2/rowbot.in:25565")
-  .then(r=>r.json())
-  .then(data=>{
-    if(document.getElementById("playercount"))
-      document.getElementById("playercount").innerText = data.players.online + " / " + data.players.max + " players online";
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("playercount").innerText =
+        data.players.online + " / " + data.players.max + " players online";
 
-    // Player skins
-    if(data.players.list){
-      data.players.list.forEach(name=>{
-        const p = document.createElement("div");
-        p.className = "player";
-        p.innerHTML = `<img src="https://crafatar.com/renders/body/${name}?overlay"><p>${name}</p>`;
-        container.appendChild(p);
-      });
-    }
+      // Create clickable player cards
+      if (data.players.list) {
+        data.players.list.forEach(name => {
+          const card = document.createElement("div");
+          card.className = "player";
 
-    // Analytics
-    if(document.getElementById("serverversion"))
-      document.getElementById("serverversion").innerText = "Version: " + (data.version || "Unknown");
-    if(document.getElementById("motd"))
-      document.getElementById("motd").innerText = "MOTD: " + (data.motd?.clean?.join(" ") || "Unknown");
-    if(document.getElementById("uptime"))
-      document.getElementById("uptime").innerText = "Players Online: " + data.players.online;
-  });
+          // Clickable card opens a modal
+          card.innerHTML = `
+            <img src="https://crafatar.com/renders/body/${name}?overlay">
+            <p>${name}</p>
+          `;
+          card.onclick = () => openPlayerModal(name);
+          container.appendChild(card);
+        });
+      }
+
+      // Analytics
+      document.getElementById("serverversion").innerText =
+        "Version: " + (data.version || "Unknown");
+      document.getElementById("motd").innerText =
+        "MOTD: " + (data.motd?.clean?.join(" ") || "Unknown");
+      document.getElementById("uptime").innerText =
+        "Players Online: " + data.players.online;
+    });
 }
 
-// Initial load
+// Modal for player profiles
+function openPlayerModal(name) {
+  const modal = document.createElement("div");
+  modal.style = `
+    position:fixed;
+    top:0; left:0;
+    width:100%; height:100%;
+    background:rgba(0,0,0,0.8);
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    z-index:1000;
+  `;
+  modal.innerHTML = `
+    <div style="background:#111827;padding:20px;border-radius:10px;text-align:center;">
+      <h2>${name}</h2>
+      <img src="https://crafatar.com/renders/body/${name}?overlay" style="width:150px;">
+      <p>Click anywhere to close</p>
+    </div>
+  `;
+  modal.onclick = () => document.body.removeChild(modal);
+  document.body.appendChild(modal);
+}
+
+// Initial load + auto-update
 updatePlayers();
-setInterval(updatePlayers,15000);
+setInterval(updatePlayers, 15000);
