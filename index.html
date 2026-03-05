@@ -1,210 +1,40 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
+
 <title>Monthly Minecraft SMP</title>
+<link rel="stylesheet" href="styles.css">
 
-<style>
-
-body{
-margin:0;
-font-family:Arial, sans-serif;
-color:white;
-text-align:center;
-overflow-x:hidden;
-background:#0b1120;
-}
-
-/* animated cube background */
-
-.background{
-position:fixed;
-width:100%;
-height:100%;
-z-index:-1;
-overflow:hidden;
-}
-
-.cube{
-position:absolute;
-width:40px;
-height:40px;
-background:#22c55e;
-opacity:0.15;
-animation:float 20s linear infinite;
-}
-
-@keyframes float{
-0%{transform:translateY(100vh) rotate(0deg)}
-100%{transform:translateY(-100vh) rotate(360deg)}
-}
-
-/* hero section */
-
-.hero{
-padding-top:120px;
-padding-bottom:120px;
-}
-
-h1{
-font-size:70px;
-margin-bottom:10px;
-}
-
-.subtitle{
-font-size:24px;
-opacity:.8;
-}
-
-/* buttons */
-
-.button{
-background:#22c55e;
-border:none;
-padding:16px 28px;
-font-size:18px;
-border-radius:10px;
-cursor:pointer;
-color:white;
-margin:10px;
-}
-
-.button:hover{
-background:#16a34a;
-}
-
-/* sections */
-
-.section{
-padding:80px 20px;
-max-width:1000px;
-margin:auto;
-}
-
-.events{
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-gap:20px;
-}
-
-.event{
-background:#111827;
-padding:20px;
-border-radius:12px;
-}
-
-.video{
-margin:20px 0;
-}
-
-iframe{
-width:100%;
-max-width:800px;
-height:450px;
-border:none;
-border-radius:12px;
-}
-
-.playercount{
-font-size:26px;
-margin-top:10px;
-}
-
-</style>
 </head>
 
 <body>
 
-<div class="background" id="bg"></div>
-
 <div class="hero">
 
-<h1>Monthly Minecraft SMP</h1>
+<h1>MONTHLY MINECRAFT SMP</h1>
 
-<div class="subtitle">
-New Twist. New Chaos. Every Month.
-</div>
+<p>New World. New Twist. Every Month.</p>
 
-<button class="button" onclick="copyIP()">Copy Server IP</button>
+<div class="buttons">
 
-<div class="playercount" id="players">
-Loading player count...
-</div>
+<a href="leaderboard.html">Leaderboard</a>
+<a href="player.html">Players</a>
 
 </div>
 
-<div class="section">
+<button onclick="copyIP()">Copy Server IP</button>
 
-<h2>Upcoming Events</h2>
-
-<div class="events">
-
-<div class="event">
-<h3>Battle Royale</h3>
-<p>Last player alive wins exclusive loot.</p>
-</div>
-
-<div class="event">
-<h3>Gem Hunt</h3>
-<p>Find rare gems hidden around the world.</p>
-</div>
-
-<div class="event">
-<h3>Boss Raid</h3>
-<p>Team up to defeat the custom raid boss.</p>
-</div>
+<p id="playercount">Loading player count...</p>
 
 </div>
 
-</div>
+<h2>Players Online</h2>
 
-<div class="section">
+<div id="players" class="playergrid"></div>
 
-<h2>Watch the Chaos</h2>
+<canvas id="bg"></canvas>
 
-<div class="video">
-<iframe src="https://www.youtube.com/embed/VIDEOID"></iframe>
-</div>
-
-<div class="video">
-<iframe src="https://www.youtube.com/embed/VIDEOID"></iframe>
-</div>
-
-</div>
-
-<script>
-
-/* copy IP */
-
-function copyIP(){
-navigator.clipboard.writeText("play.monthlyminecraft.net");
-alert("Server IP copied!");
-}
-
-/* animated cubes */
-
-for(let i=0;i<40;i++){
-let cube=document.createElement("div")
-cube.className="cube"
-cube.style.left=Math.random()*100+"%"
-cube.style.animationDuration=(10+Math.random()*20)+"s"
-cube.style.width=(20+Math.random()*50)+"px"
-cube.style.height=cube.style.width
-document.getElementById("bg").appendChild(cube)
-}
-
-/* player count */
-
-fetch("https://api.mcsrvstat.us/2/rowbot.in:25565")
-.then(res=>res.json())
-.then(data=>{
-if(data.players){
-document.getElementById("players").innerText =
-data.players.online + " / " + data.players.max + " players online"
-}
-})
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
