@@ -1,9 +1,11 @@
+/* Basic reset */
 body {
   margin:0;
-  background:#0b1120;
   font-family:Arial, sans-serif;
   color:white;
   text-align:center;
+  overflow-x:hidden;
+  background:#0b1120;
 }
 
 .hero {
@@ -14,6 +16,10 @@ h1 {
   font-size:60px;
 }
 
+h2 {
+  margin-top:40px;
+}
+
 .buttons a {
   display:inline-block;
   margin:10px;
@@ -22,6 +28,11 @@ h1 {
   color:white;
   text-decoration:none;
   border-radius:8px;
+  transition: transform 0.2s;
+}
+
+.buttons a:hover {
+  transform: scale(1.1);
 }
 
 button {
@@ -33,6 +44,11 @@ button {
   color:white;
   margin-top:20px;
   cursor:pointer;
+  transition: transform 0.2s;
+}
+
+button:hover {
+  transform: scale(1.05);
 }
 
 .playergrid {
@@ -59,4 +75,12 @@ button {
 .player img {
   width:80px;
   border-radius:10px;
+}
+
+/* Animated background canvas */
+canvas {
+  position:fixed;
+  top:0;
+  left:0;
+  z-index:-1;
 }
