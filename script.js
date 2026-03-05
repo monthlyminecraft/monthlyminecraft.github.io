@@ -37,19 +37,13 @@ if(canvas){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(p=>{
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.size, p.size);
+      ctx.fillRect(p.x, p.y, p.size, p.size); // squares
       p.y -= p.speed;
       if (p.y < -p.size) p.y = canvas.height;
     });
     requestAnimationFrame(animate);
   }
   animate();
-}
-
-// ---------------- Server IP Copy ----------------
-function copyIP() {
-  navigator.clipboard.writeText("rowbot.in:25565");
-  alert("Server IP copied!");
 }
 
 // ---------------- Live Player List + Analytics ----------------
@@ -70,13 +64,22 @@ function updatePlayers() {
           const card = document.createElement("div");
           card.className = "player";
           card.innerHTML = `
-            <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
+            <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" 
+                 onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
             <p>${name}</p>
           `;
           card.onclick = ()=>openPlayerModal(name);
           container.appendChild(card);
         });
       }
+
+      // Server analytics (only if present, e.g., on index.html)
+      const sv = document.getElementById("serverversion");
+      const motd = document.getElementById("motd");
+      const up = document.getElementById("uptime");
+      if(sv) sv.innerText = "Version: " + (data.version || "Unknown");
+      if(motd) motd.innerText = "MOTD: " + (data.motd?.clean?.join(" ") || "Unknown");
+      if(up) up.innerText = "Players Online: " + data.players.online;
     });
 }
 
@@ -96,7 +99,9 @@ function openPlayerModal(name) {
   modal.innerHTML = `
     <div style="background:#111827;padding:25px;border-radius:12px;text-align:center;max-width:300px;">
       <h2>${name}</h2>
-      <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" style="width:150px;border-radius:10px;" onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
+      <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" 
+           style="width:150px;border-radius:10px;" 
+           onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
       <p style="margin-top:10px;color:#aaa;">Click anywhere to close</p>
     </div>
   `;
@@ -104,6 +109,6 @@ function openPlayerModal(name) {
   document.body.appendChild(modal);
 }
 
-// Initial load + auto-update
+// Initial load + auto-update every 15s
 updatePlayers();
 setInterval(updatePlayers, 15000);
