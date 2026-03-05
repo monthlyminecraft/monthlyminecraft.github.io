@@ -37,7 +37,7 @@ if(canvas){
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     particles.forEach(p=>{
       ctx.fillStyle = p.color;
-      ctx.fillRect(p.x, p.y, p.size, p.size); // squares
+      ctx.fillRect(p.x, p.y, p.size, p.size);
       p.y -= p.speed;
       if (p.y < -p.size) p.y = canvas.height;
     });
@@ -47,40 +47,54 @@ if(canvas){
 }
 
 // ---------------- Live Player List + Analytics ----------------
-function updatePlayers() {
+async function updatePlayers() {
   const container = document.getElementById("players");
-  if(!container) return;
-  container.innerHTML = "";
+  const countEl = document.getElementById("playercount");
+  const sv = document.getElementById("serverversion");
+  const motd = document.getElementById("motd");
+  const up = document.getElementById("uptime");
 
-  fetch("https://api.mcsrvstat.us/2/rowbot.in:25565")
-    .then(r => r.json())
-    .then(data => {
-      const countEl = document.getElementById("playercount");
-      if(countEl)
-        countEl.innerText = data.players.online + " / " + data.players.max + " players online";
+  if(container) container.innerHTML = "";
+  if(countEl) countEl.innerText = "Loading...";
 
-      if(data.players.list){
-        data.players.list.forEach(name=>{
-          const card = document.createElement("div");
-          card.className = "player";
-          card.innerHTML = `
-            <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" 
-                 onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
-            <p>${name}</p>
-          `;
-          card.onclick = ()=>openPlayerModal(name);
-          container.appendChild(card);
-        });
-      }
+  try {
+    const res = await fetch("https://api.mcsrvstat.us/2/rowbot.in:25565");
+    const data = await res.json();
 
-      // Server analytics (only if present, e.g., on index.html)
-      const sv = document.getElementById("serverversion");
-      const motd = document.getElementById("motd");
-      const up = document.getElementById("uptime");
-      if(sv) sv.innerText = "Version: " + (data.version || "Unknown");
-      if(motd) motd.innerText = "MOTD: " + (data.motd?.clean?.join(" ") || "Unknown");
-      if(up) up.innerText = "Players Online: " + data.players.online;
-    });
+    const playersOnline = data?.players?.online || 0;
+    const maxPlayers = data?.players?.max || 0;
+    const playerList = data?.players?.list || [];
+
+    if(countEl) countEl.innerText = `${playersOnline} / ${maxPlayers} players online`;
+
+    if(container && playerList.length){
+      playerList.forEach(name=>{
+        const card = document.createElement("div");
+        card.className = "player";
+        card.innerHTML = `
+          <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" 
+               onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
+          <p>${name}</p>
+        `;
+        card.onclick = ()=>openPlayerModal(name);
+        container.appendChild(card);
+      });
+    } else if(container){
+      container.innerHTML = "<p>No players online.</p>";
+    }
+
+    if(sv) sv.innerText = "Version: " + (data?.version || "Unknown");
+    if(motd) motd.innerText = "MOTD: " + ((data?.motd?.clean?.join(" ")) || "Unknown");
+    if(up) up.innerText = "Players Online: " + playersOnline;
+
+  } catch(err){
+    console.error("Error fetching server data:", err);
+    if(countEl) countEl.innerText = "Server offline";
+    if(container) container.innerHTML = "<p>Cannot load players.</p>";
+    if(sv) sv.innerText = "Version: Unknown";
+    if(motd) motd.innerText = "MOTD: Unknown";
+    if(up) up.innerText = "Players Online: 0";
+  }
 }
 
 // ---------------- Modal for Player Profiles ----------------
