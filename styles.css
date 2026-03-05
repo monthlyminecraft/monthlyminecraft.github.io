@@ -6,6 +6,11 @@ body {
   text-align:center;
   overflow-x:hidden;
   background:#0b1120;
+  transition: opacity 0.5s ease; /* page fade */
+}
+
+body.fade-out {
+  opacity:0;
 }
 
 .hero {
@@ -28,11 +33,12 @@ h2 {
   color:white;
   text-decoration:none;
   border-radius:8px;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.3s;
 }
 
 .buttons a:hover {
   transform: scale(1.1);
+  box-shadow: 0 0 20px #22c55e;
 }
 
 button {
@@ -44,11 +50,12 @@ button {
   color:white;
   margin-top:20px;
   cursor:pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.3s;
 }
 
 button:hover {
   transform: scale(1.05);
+  box-shadow: 0 0 20px #16a34a;
 }
 
 .playergrid {
@@ -65,11 +72,12 @@ button:hover {
   border-radius:10px;
   width:140px;
   cursor:pointer;
-  transition: transform 0.2s;
+  transition: transform 0.2s, box-shadow 0.3s;
 }
 
 .player:hover {
   transform: scale(1.1);
+  box-shadow: 0 0 15px #22c55e;
 }
 
 .player img {
@@ -77,7 +85,7 @@ button:hover {
   border-radius:10px;
 }
 
-/* Animated background canvas */
+/* Animated particle background */
 canvas {
   position:fixed;
   top:0;
