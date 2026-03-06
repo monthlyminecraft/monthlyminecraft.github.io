@@ -97,7 +97,7 @@ window.addEventListener('load', () => {
 // ===== Fetch live server stats using MCPing =====
 async function fetchServerStats() {
     try {
-        const response = await fetch('https://api.mcsrvstat.us/2/YOUR_SERVER_IP');
+        const response = await fetch('https://api.mcsrvstat.us/2/rowbot.in:25565');
         const data = await response.json();
 
         const online = data.players?.online || 0;
