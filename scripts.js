@@ -46,6 +46,13 @@ for (let i = 0; i < 100; i++) {
 }
 
 function animate() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+    animateBlocks();
+    animateParticles();
+    requestAnimationFrame(animate);
+}
+animate();
+function animateParticles() {
     particles.forEach(p => {
         // Normal movement
         p.y -= p.speed;
@@ -69,8 +76,6 @@ function animate() {
         ctx.fill();
     });
 }
-animate();
-
 // ===== Smooth section transitions =====
 window.addEventListener('load', () => {
     document.querySelectorAll('section').forEach(sec => {
