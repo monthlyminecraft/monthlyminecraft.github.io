@@ -1,107 +1,97 @@
-/* =========================
-   CANVAS SETUP
-========================= */
+// =========================
+// CONFIG
+// =========================
+const serverIP = "rowbot.in";
+const serverPort = 25565;
+
+// Canvas setup
 const canvas = document.getElementById("bg");
 const ctx = canvas.getContext("2d");
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
 
-function resizeCanvas() {
-  canvas.width = window.innerWidth;
-  canvas.height = window.innerHeight;
-}
-resizeCanvas();
-window.addEventListener("resize", resizeCanvas);
-
-/* =========================
-   MOUSE PARTICLES
-========================= */
-let mouse = { x: 0, y: 0 };
-window.addEventListener("mousemove", e => {
-  mouse.x = e.clientX;
-  mouse.y = e.clientY;
-});
-
-const particles = [];
-function drawParticles() {
-  for (let i = particles.length - 1; i >= 0; i--) {
-    const p = particles[i];
-    ctx.beginPath();
-    ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
-    ctx.fillStyle = "rgba(255,255,255,0.7)";
-    ctx.fill();
-    p.life--;
-    p.y -= 0.3;
-    if (p.life <= 0) particles.splice(i, 1);
-  }
-  requestAnimationFrame(drawParticles);
-}
-window.addEventListener("mousemove", e => {
-  particles.push({
-    x: e.clientX,
-    y: e.clientY,
-    life: 30,
-    size: 4 + Math.random() * 4
-  });
-});
-drawParticles();
-
-/* =========================
-   FALLING BLOCKS
-========================= */
-const textures = [
-  "assets/blocks/block1.png",
-  "assets/blocks/block2.png",
-  "assets/blocks/block3.png",
-  "assets/blocks/block4.png"
-];
-const images = textures.map(src => { const img = new Image(); img.src = src; return img; });
-
-const blocks = [];
-for (let i = 0; i < 30; i++) {
-  blocks.push({
-    x: Math.random() * canvas.width,
-    y: Math.random() * canvas.height,
-    size: 40 + Math.random() * 30,
-    speed: 0.3 + Math.random(),
-    img: images[Math.floor(Math.random() * images.length)]
-  });
-}
-
-function drawBlocks() {
-  // Fill canvas with black every frame
-  ctx.fillStyle = "black";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-  blocks.forEach(b => {
-    b.y += b.speed;
-    if (b.y > canvas.height) {
-      b.y = -50;
-      b.x = Math.random() * canvas.width;
-    }
-    ctx.drawImage(b.img, b.x, b.y, b.size, b.size);
-  });
-
-  requestAnimationFrame(drawBlocks);
-}
-drawBlocks();
-
-/* =========================
-   SERVER STATUS
-========================= */
-const serverIP = "rowbot.in"; // Your server IP
-const serverPort = "25565";
-
-const statusEl = document.getElementById("server-status");
-const playersEl = document.getElementById("player-count");
+// UI elements
+const statusEl = document.getElementById("status");
+const playersEl = document.getElementById("players");
 const playerListEl = document.getElementById("player-list");
 
-async function updateServer() {
-  try {
+// =========================
+// BLOCKS
+// =========================
+const blocks = [];
+const blockCount = 20;
+
+// Load block images
+for (let i = 1; i <= blockCount; i++) {
+  const img = new Image();
+  img.src = `assets/blocks/block${i}.png`;
+  blocks.push({img, x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: 50, speed: Math.random()*1.5+0.5});
+}
+
+// =========================
+// PARTICLES
+// =========================
+const particles = [];
+const particleCount = 50;
+
+for(let i=0;i<particleCount;i++){
+  particles.push({
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    size: Math.random()*4+2,
+    speedX: (Math.random()-0.5)*1,
+    speedY: (Math.random()-0.5)*1,
+  });
+}
+
+// Mouse tracking
+let mouse = {x: canvas.width/2, y: canvas.height/2};
+window.addEventListener("mousemove", e => { mouse.x=e.clientX; mouse.y=e.clientY; });
+
+// =========================
+// DRAW LOOP
+// =========================
+function draw() {
+  // Black background
+  ctx.fillStyle = "black";
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+
+  // Draw blocks
+  blocks.forEach(b => {
+    b.y += b.speed;
+    if(b.y>canvas.height) b.y=-50;
+    ctx.drawImage(b.img,b.x,b.y,b.size,b.size);
+  });
+
+  // Draw particles
+  particles.forEach(p=>{
+    p.x += p.speedX + (mouse.x-p.x)*0.002;
+    p.y += p.speedY + (mouse.y-p.y)*0.002;
+    if(p.x<0) p.x=canvas.width;
+    if(p.x>canvas.width) p.x=0;
+    if(p.y<0) p.y=canvas.height;
+    if(p.y>canvas.height) p.y=0;
+
+    ctx.fillStyle = "rgba(255,255,255,0.7)";
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  requestAnimationFrame(draw);
+}
+draw();
+
+// =========================
+// SERVER STATUS
+// =========================
+async function updateServer(){
+  try{
     const res = await fetch(`https://api.mcstatus.io/v2/status/java/${serverIP}:${serverPort}`);
     const data = await res.json();
 
-    if (data.online) {
+    if(data.online){
       statusEl.innerText = "🟢 Server Online";
-
       const online = data.players?.online ?? 0;
       const max = data.players?.max ?? 0;
       playersEl.innerText = `${online} / ${max} players`;
@@ -109,24 +99,12 @@ async function updateServer() {
       // Clear previous list
       playerListEl.innerHTML = "";
 
-      if (data.players.list && data.players.list.length > 0) {
-        // For each UUID, fetch the player name from Mojang
-        for (const player of data.players.list) {
-          let playerName = players.list; // fallback if no UUID
-          if (players.uuid) {
-            try {
-              const nameRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}`);
-              const profile = await nameRes.json();
-              playerName = profile.name;
-            } catch(e) {
-              // fallback
-            }
-          }
-
+      if(data.players.list && data.players.list.length>0){
+        data.players.list.forEach(name=>{
           const li = document.createElement("li");
-          li.innerText = playerName;
+          li.innerText = name; // we already have the name from JSON
           playerListEl.appendChild(li);
-        }
+        });
       }
 
     } else {
@@ -134,13 +112,23 @@ async function updateServer() {
       playersEl.innerText = "0 / 0 players";
       playerListEl.innerHTML = "";
     }
-  } catch (err) {
+
+  }catch(err){
     statusEl.innerText = "⚠ Error";
     playersEl.innerText = "-";
     playerListEl.innerHTML = "";
+    console.error(err);
   }
 }
 
-// Update every 2 seconds
+// Initial call + repeat every 2s
 updateServer();
-setInterval(updateServer, 2000);
+setInterval(updateServer,2000);
+
+// =========================
+// RESIZE HANDLING
+// =========================
+window.addEventListener("resize",()=>{
+  canvas.width = window.innerWidth;
+  canvas.height = window.innerHeight;
+});
