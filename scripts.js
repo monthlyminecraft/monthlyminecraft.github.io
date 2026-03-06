@@ -19,13 +19,18 @@ const playerListEl = document.getElementById("player-list");
 // BLOCKS
 // =========================
 const blocks = [];
-const blockCount = 20;
+const blockCount = 5; // only 5 pngs
 
-// Load block images
 for (let i = 1; i <= blockCount; i++) {
   const img = new Image();
   img.src = `assets/blocks/block${i}.png`;
-  blocks.push({img, x: Math.random()*canvas.width, y: Math.random()*canvas.height, size: 50, speed: Math.random()*1.5+0.5});
+  blocks.push({
+    img,
+    x: Math.random()*canvas.width,
+    y: Math.random()*canvas.height,
+    size: 50,
+    speed: Math.random()*1.5+0.5
+  });
 }
 
 // =========================
@@ -52,18 +57,17 @@ window.addEventListener("mousemove", e => { mouse.x=e.clientX; mouse.y=e.clientY
 // DRAW LOOP
 // =========================
 function draw() {
-  // Black background
   ctx.fillStyle = "black";
   ctx.fillRect(0,0,canvas.width,canvas.height);
 
-  // Draw blocks
+  // Blocks
   blocks.forEach(b => {
     b.y += b.speed;
     if(b.y>canvas.height) b.y=-50;
     ctx.drawImage(b.img,b.x,b.y,b.size,b.size);
   });
 
-  // Draw particles
+  // Particles
   particles.forEach(p=>{
     p.x += p.speedX + (mouse.x-p.x)*0.002;
     p.y += p.speedY + (mouse.y-p.y)*0.002;
@@ -83,7 +87,7 @@ function draw() {
 draw();
 
 // =========================
-// SERVER STATUS
+// SERVER STATUS (UUIDs)
 // =========================
 async function updateServer(){
   try{
@@ -96,22 +100,16 @@ async function updateServer(){
       const max = data.players?.max ?? 0;
       playersEl.innerText = `${online} / ${max} players`;
 
-    // Clear previous list
-playerListEl.innerHTML = "";
+      playerListEl.innerHTML = "";
+      if(data.players.list && data.players.list.length > 0){
+        data.players.list.forEach(name=>{
+          const uuid = data.players.uuid ? data.players.uuid[name] : "unknown";
+          const li = document.createElement("li");
+          li.innerText = uuid;
+          playerListEl.appendChild(li);
+        });
+      }
 
-// Only populate if there are players online
-if (data.players.list && data.players.list.length > 0) {
-  data.players.list.forEach(name => {
-    const li = document.createElement("li");
-    
-    // Get UUID from the separate object
-    const uuid = data.players.uuid ? data.players.uuid[name] : null;
-
-    // If UUID exists, you could fetch Mojang API, but here we just show the name
-    li.innerText = name + (uuid ? ` (${uuid})` : "");
-    playerListEl.appendChild(li);
-  });
-}
     } else {
       statusEl.innerText = "🔴 Server Offline";
       playersEl.innerText = "0 / 0 players";
@@ -126,7 +124,7 @@ if (data.players.list && data.players.list.length > 0) {
   }
 }
 
-// Initial call + repeat every 2s
+// Initial + repeat every 2s
 updateServer();
 setInterval(updateServer,2000);
 
