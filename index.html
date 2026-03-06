@@ -2,10 +2,18 @@
 <html>
 <head>
 <title>Monthly Minecraft</title>
+
 <link rel="stylesheet" href="style.css">
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
+
 </head>
 
 <body>
+
+<canvas id="bg3d"></canvas>
+<canvas id="particles"></canvas>
 
 <nav class="nav">
 <a href="index.html">Home</a>
@@ -19,21 +27,23 @@
 <div class="stats">
 
 <div class="stat">
-<p>Server Status</p>
-<h2 id="status">Loading...</h2>
+<p>Status</p>
+<h2 id="status">Loading</h2>
 </div>
 
 <div class="stat">
-<p>Players Online</p>
-<h2 id="players">Loading...</h2>
+<p>Players</p>
+<h2 id="players">0</h2>
 </div>
 
 <div class="stat">
-<p>Max Players</p>
-<h2 id="max">Loading...</h2>
+<p>Max</p>
+<h2 id="max">0</h2>
 </div>
 
 </div>
+
+<canvas id="playerChart"></canvas>
 
 </section>
 
