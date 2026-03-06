@@ -1,53 +1,36 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-<title>Monthly Minecraft</title>
-
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Minecraft Server</title>
 <link rel="stylesheet" href="style.css">
-
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r134/three.min.js"></script>
-
 </head>
-
 <body>
+<header>
+  <h1>Welcome to My MC Server</h1>
+  <p>Play, build, and have fun!</p>
+</header>
 
-<canvas id="bg3d"></canvas>
-<canvas id="particles"></canvas>
-
-<nav class="nav">
-<a href="index.html">Home</a>
-<a href="leaderboard.html">Leaderboard</a>
-</nav>
-
-<section class="hero">
-
-<h1 class="title">MONTHLY MINECRAFT</h1>
-
-<div class="stats">
-
-<div class="stat">
-<p>Status</p>
-<h2 id="status">Loading</h2>
-</div>
-
-<div class="stat">
-<p>Players</p>
-<h2 id="players">0</h2>
-</div>
-
-<div class="stat">
-<p>Max</p>
-<h2 id="max">0</h2>
-</div>
-
-</div>
-
-<canvas id="playerChart"></canvas>
-
+<section id="server-info">
+  <h2>Server Stats</h2>
+  <p>IP: play.myserver.com</p>
+  <p>Players Online: <span id="players">Loading...</span></p>
 </section>
 
-<script src="script.js"></script>
+<section id="leaderboard">
+  <h2>Top Players</h2>
+  <ol id="top-players">
+    <li>Player1 - 100 Points</li>
+    <li>Player2 - 95 Points</li>
+    <li>Player3 - 80 Points</li>
+  </ol>
+</section>
 
+<footer>
+  <p>&copy; 2026 My MC Server</p>
+</footer>
+
+<script src="scripts.js"></script>
 </body>
 </html>
