@@ -1,51 +1,132 @@
-const SERVER_IP = "rowbot.in:25565"; // put your server IP here
+```javascript
+const SERVER_IP = "rowbot.in:25565";
 
-async function loadServerData() {
-    try {
+/* SERVER STATUS */
 
-        const res = await fetch(`https://mcapi.us/server/status?ip=${SERVER_IP}`);
-        const data = await res.json();
+async function loadServer(){
 
-        const playerCount = document.getElementById("playerCount");
-        const playerList = document.getElementById("playerList");
+try{
 
-        if (!data || !data.online) {
-            playerCount.innerText = "Offline";
-            return;
-        }
+const res = await fetch(`https://api.mcsrvstat.us/3/${SERVER_IP}`);
+const data = await res.json();
 
-        const online = data.players?.now ?? 0;
-        playerCount.innerText = online;
+if(document.getElementById("serverStatus")){
 
-        playerList.innerHTML = "";
+if(data.online){
 
-        if (data.players && data.players.sample) {
+document.getElementById("serverStatus").innerText =
+`${data.players.online}/${data.players.max} players online`;
 
-            const players = data.players.sample;
+}else{
 
-            players.forEach((p, i) => {
+document.getElementById("serverStatus").innerText =
+"Server Offline";
 
-                const card = document.createElement("div");
-                card.className = "player-card";
-
-                card.innerHTML = `
-                    <div class="rank">#${i + 1}</div>
-                    <img src="https://mc-heads.net/avatar/${p.name}" class="avatar">
-                    <div class="name">${p.name}</div>
-                `;
-
-                playerList.appendChild(card);
-            });
-
-        } else {
-            playerList.innerHTML = "<p>No players online</p>";
-        }
-
-    } catch (err) {
-        console.error(err);
-        document.getElementById("playerCount").innerText = "Error";
-    }
 }
 
-loadServerData();
-setInterval(loadServerData, 30000);
+}
+
+/* PLAYERS PAGE */
+
+if(document.getElementById("playerCount")){
+
+document.getElementById("playerCount").innerText =
+data.players ? data.players.online : 0;
+
+const list = document.getElementById("playerList");
+
+if(list && data.players && data.players.list){
+
+list.innerHTML="";
+
+data.players.list.forEach(p=>{
+
+const card=document.createElement("div");
+card.className="player-card";
+
+card.innerHTML=
+`<img src="https://mc-heads.net/avatar/${p}/100">
+<p>${p}</p>`;
+
+list.appendChild(card);
+
+});
+
+}
+
+}
+
+/* LEADERBOARD */
+
+if(document.getElementById("leaderboard") && data.players && data.players.list){
+
+const board=document.getElementById("leaderboard");
+
+board.innerHTML="";
+
+data.players.list.forEach((p,i)=>{
+
+const row=document.createElement("div");
+
+row.innerHTML=`${i+1}. ${p}`;
+
+board.appendChild(row);
+
+});
+
+}
+
+}catch(e){
+console.log(e);
+}
+
+}
+
+loadServer();
+setInterval(loadServer,30000);
+
+
+/* PARTICLES */
+
+const canvas=document.getElementById("particles");
+if(canvas){
+
+const ctx=canvas.getContext("2d");
+
+canvas.width=window.innerWidth;
+canvas.height=window.innerHeight;
+
+let particles=[];
+
+for(let i=0;i<80;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+size:4,
+speed:0.5+Math.random()
+});
+}
+
+function animate(){
+
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+particles.forEach(p=>{
+
+ctx.fillStyle="cyan";
+ctx.fillRect(p.x,p.y,p.size,p.size);
+
+p.y+=p.speed;
+
+if(p.y>canvas.height)p.y=0;
+
+});
+
+requestAnimationFrame(animate);
+
+}
+
+animate();
+
+}
+```
