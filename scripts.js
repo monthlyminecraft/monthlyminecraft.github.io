@@ -1,9 +1,3 @@
-fetch('https://api.mcsrvstat.us/2/YOUR_SERVER_IP')
-    .then(res => res.json())
-    .then(data => {
-        document.getElementById('players').textContent = data.players.online;
-        // No leaderboard support here; only online count
-    });
 // ===== Canvas setup =====
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
@@ -17,14 +11,8 @@ window.addEventListener('resize', resizeCanvas);
 
 // ===== Mouse tracking =====
 let mouse = { x: null, y: null };
-window.addEventListener('mousemove', (e) => {
-    mouse.x = e.clientX;
-    mouse.y = e.clientY;
-});
-window.addEventListener('mouseout', () => {
-    mouse.x = null;
-    mouse.y = null;
-});
+window.addEventListener('mousemove', (e) => { mouse.x = e.clientX; mouse.y = e.clientY; });
+window.addEventListener('mouseout', () => { mouse.x = null; mouse.y = null; });
 
 // ===== Load block images =====
 const blockImages = [];
@@ -79,8 +67,8 @@ function animateParticles() {
             const dx = mouse.x - p.x;
             const dy = mouse.y - p.y;
             const distance = Math.sqrt(dx*dx + dy*dy);
-            if (distance < 100) { // radius of influence
-                p.x += dx * 0.01;  // pull strength
+            if (distance < 100) {
+                p.x += dx * 0.01;
                 p.y += dy * 0.01;
             }
         }
@@ -108,18 +96,31 @@ window.addEventListener('load', () => {
     });
 });
 
-// ===== Dummy server stats (replace with JSONAPI/WebSocket for live) =====
-function fetchServerStats() {
-    const online = Math.floor(Math.random() * 50) + 1;
-    document.getElementById('players').textContent = online;
-    
-    const leaderboard = document.getElementById('top-players');
-    leaderboard.innerHTML = '';
-    for (let i = 1; i <= 5; i++) {
-        const li = document.createElement('li');
-        li.textContent = `Player${i} - ${Math.floor(Math.random()*100)} Points`;
-        leaderboard.appendChild(li);
+// ===== Fetch live server stats using MCPing API =====
+async function fetchServerStats() {
+    try {
+        const response = await fetch('https://api.mcsrvstat.us/2/YOUR_SERVER_IP');
+        const data = await response.json();
+
+        // Update online players
+        const online = data.players?.online || 0;
+        const max = data.players?.max || 0;
+        document.getElementById('players').textContent = `${online}/${max}`;
+
+        // Update placeholder leaderboard (MCPing cannot fetch real top players)
+        const leaderboard = document.getElementById('top-players');
+        leaderboard.innerHTML = '';
+        for (let i = 1; i <= Math.min(5, online); i++) {
+            const li = document.createElement('li');
+            li.textContent = `Player${i} - Score`; // placeholder
+            leaderboard.appendChild(li);
+        }
+    } catch(err) {
+        console.error('Failed to fetch server stats:', err);
+        document.getElementById('players').textContent = `Offline`;
     }
 }
-setInterval(fetchServerStats, 5000);
+
+// Refresh every 10 seconds
+setInterval(fetchServerStats, 10000);
 fetchServerStats();
