@@ -7,11 +7,8 @@
 
 <body>
 
-<canvas id="particles"></canvas>
-
-<nav>
+<nav class="nav">
 <a href="index.html">Home</a>
-<a href="players.html">Players</a>
 <a href="leaderboard.html">Leaderboard</a>
 </nav>
 
@@ -19,11 +16,23 @@
 
 <h1 class="title">MONTHLY MINECRAFT</h1>
 
-<p id="serverStatus">Checking server...</p>
+<div class="stats">
 
-<div class="buttons">
-<a href="players.html" class="btn">View Players</a>
-<a href="leaderboard.html" class="btn">Leaderboard</a>
+<div class="stat">
+<p>Server Status</p>
+<h2 id="status">Loading...</h2>
+</div>
+
+<div class="stat">
+<p>Players Online</p>
+<h2 id="players">Loading...</h2>
+</div>
+
+<div class="stat">
+<p>Max Players</p>
+<h2 id="max">Loading...</h2>
+</div>
+
 </div>
 
 </section>
