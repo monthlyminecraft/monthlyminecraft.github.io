@@ -1,31 +1,36 @@
+```html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Monthly Minecraft SMP</title>
-<link rel="stylesheet" href="styles.css">
+<title>Monthly Minecraft</title>
+<link rel="stylesheet" href="style.css">
 </head>
+
 <body>
 
-<div class="hero">
-  <h1 id="hero-title">MONTHLY MINECRAFT SMP</h1>
-  <p>New World. New Twist. Every Month.</p>
+<canvas id="particles"></canvas>
 
-  <div class="buttons">
-    <a href="leaderboard.html" class="glow-btn">Leaderboard</a>
-    <a href="players.html" class="glow-btn">Players</a>
-  </div>
+<nav>
+<a href="index.html">Home</a>
+<a href="players.html">Players</a>
+<a href="leaderboard.html">Leaderboard</a>
+</nav>
+
+<section class="hero">
+
+<h1 class="title">MONTHLY MINECRAFT</h1>
+
+<p id="serverStatus">Checking server...</p>
+
+<div class="buttons">
+<a href="players.html" class="btn">View Players</a>
+<a href="leaderboard.html" class="btn">Leaderboard</a>
 </div>
 
-<h2>Server Analytics</h2>
-<div id="analytics">
-  <p id="playercount">Loading...</p>
-  <p id="serverversion"></p>
-  <p id="motd"></p>
-  <p id="uptime"></p>
-</div>
+</section>
 
-<canvas id="bg"></canvas>
 <script src="script.js"></script>
+
 </body>
 </html>
+```
