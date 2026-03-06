@@ -1,39 +1,17 @@
-/* Full-screen canvas */
-#bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-}
+/* =========================
+   PAGE AND CANVAS SETUP
+========================= */
 
-/* UI on top of canvas */
-#ui {
-  position: relative;
-  z-index: 10;
-  color: white;
-  text-align: center;
-  font-family: Arial, sans-serif;
-  margin-top: 50px;
-}
-
-/* Player list styling */
-#player-list {
-  list-style: none;
-  padding: 0;
-  margin-top: 10px;
-  font-size: 1.1em;
-}
 /* Make entire page black */
 body {
   margin: 0;
   padding: 0;
   background-color: black; /* page background */
   overflow: hidden;
+  font-family: Arial, sans-serif;
 }
 
-/* Full-screen canvas */
+/* Full-screen canvas for blocks & particles */
 #bg {
   position: fixed;
   top: 0;
@@ -42,4 +20,39 @@ body {
   height: 100vh;
   z-index: -1;
   background-color: black; /* canvas background */
+}
+
+/* =========================
+   UI STYLING
+========================= */
+
+#ui {
+  position: relative;
+  z-index: 10;
+  color: white;
+  text-align: center;
+  margin-top: 50px;
+}
+
+#ui h1 {
+  font-size: 3em;
+  margin-bottom: 10px;
+}
+
+#ui h2 {
+  font-size: 1.8em;
+  margin: 5px 0;
+}
+
+#ui p {
+  font-size: 1.2em;
+  margin: 5px 0;
+}
+
+/* Player list styling */
+#player-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+  font-size: 1.1em;
 }
