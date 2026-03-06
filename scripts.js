@@ -46,10 +46,10 @@ canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
 
 const textures = [
-"block1.png",
-"block2.png",
-"block3.png",
-"block4.png"
+"assets/blocks/block1.png",
+"assets/blocks/block2.png",
+"assets/blocks/block3.png",
+"assets/blocks/block4.png"
 ];
 
 const images = textures.map(src => {
