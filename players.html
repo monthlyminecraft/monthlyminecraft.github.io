@@ -1,136 +1,164 @@
+```html
 <!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>Players - Monthly Minecraft SMP</title>
-<link rel="stylesheet" href="styles.css">
+<title>Players | Monthly Minecraft</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial, Helvetica, sans-serif;
+    background:#0f0f0f;
+    color:white;
+    text-align:center;
+}
+
+/* NAVBAR */
+
+nav{
+    background:#111;
+    padding:15px;
+}
+
+nav a{
+    color:white;
+    margin:0 15px;
+    text-decoration:none;
+    font-weight:bold;
+    transition:0.3s;
+}
+
+nav a:hover{
+    color:#55ffff;
+}
+
+/* PAGE */
+
+.page{
+    padding:60px 20px;
+}
+
+/* PLAYER GRID */
+
+.player-grid{
+    margin-top:40px;
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+    gap:25px;
+    max-width:900px;
+    margin-left:auto;
+    margin-right:auto;
+}
+
+/* PLAYER CARD */
+
+.player-card{
+    background:#1a1a1a;
+    border-radius:12px;
+    padding:20px;
+    transition:0.3s;
+    box-shadow:0 0 0px rgba(0,255,255,0.3);
+}
+
+.player-card:hover{
+    transform:translateY(-5px);
+    box-shadow:0 0 20px rgba(0,255,255,0.6);
+}
+
+.player-card img{
+    width:80px;
+    height:80px;
+    image-rendering:pixelated;
+}
+
+.player-name{
+    margin-top:10px;
+    font-weight:bold;
+}
+</style>
 </head>
+
 <body>
 
-<div class="hero">
-  <h1>Players Online</h1>
-  <a href="index.html" class="glow-btn">← Back to Home</a>
-</div>
+<nav>
+<a href="index.html">Home</a>
+<a href="players.html">Players</a>
+<a href="leaderboard.html">Leaderboard</a>
+</nav>
 
-<p id="playercount">Loading...</p>
-<div id="players" class="playergrid"></div>
+<section class="page">
 
-<canvas id="bg"></canvas>
+<h1>Online Players</h1>
+
+<h2>Players Online: <span id="playerCount">Loading...</span></h2>
+
+<div id="playerList" class="player-grid"></div>
+
+</section>
 
 <script>
-// ---------------- Layered Minecraft-Style Particles ----------------
-const canvas=document.getElementById("bg");
-if(canvas){
-  const ctx=canvas.getContext("2d");
-  function resize(){canvas.width=window.innerWidth;canvas.height=window.innerHeight;}
-  resize(); window.onresize=resize;
 
-  const layers=[[],[],[]]; // near, mid, far
-  const colors=["#22c55e","#16a34a","#bbf7d0"];
-  for(let l=0;l<3;l++){
-    for(let i=0;i<60;i++){
-      layers[l].push({x:Math.random()*canvas.width,y:Math.random()*canvas.height,size:2+Math.random()*4,speed:0.1+0.2*l,color:colors[l]});
+/* CHANGE THIS TO YOUR SERVER */
+const SERVER_IP = "rowbot.in:25565";
+
+/* Fetch server data */
+
+async function loadPlayers(){
+
+    try{
+
+        const response = await fetch(`https://api.mcsrvstat.us/3/${SERVER_IP}`);
+        const data = await response.json();
+
+        const playerCount = document.getElementById("playerCount");
+        const playerList = document.getElementById("playerList");
+
+        playerList.innerHTML = "";
+
+        if(!data.players){
+            playerCount.textContent = "0";
+            return;
+        }
+
+        playerCount.textContent = data.players.online;
+
+        if(!data.players.list) return;
+
+        data.players.list.forEach(player => {
+
+            const card = document.createElement("div");
+            card.className = "player-card";
+
+            const skin = document.createElement("img");
+            skin.src = `https://mc-heads.net/avatar/${player}/100`;
+
+            const name = document.createElement("div");
+            name.className = "player-name";
+            name.textContent = player;
+
+            card.appendChild(skin);
+            card.appendChild(name);
+
+            playerList.appendChild(card);
+
+        });
+
     }
-  }
-
-  function animate(){
-    ctx.clearRect(0,0,canvas.width,canvas.height);
-    layers.forEach(layer=>{
-      layer.forEach(p=>{
-        ctx.fillStyle=p.color; ctx.fillRect(p.x,p.y,p.size,p.size);
-        p.y-=p.speed; if(p.y<-p.size)p.y=canvas.height;
-      });
-    });
-    requestAnimationFrame(animate);
-  }
-  animate();
-}
-
-// ---------------- Fetch Server Data (CORS-Friendly) ----------------
-async function fetchServerData(){
-  try{
-    const res = await fetch("https://api.mcstatus.io/v2/status/java/rowbot.in");
-    const data = await res.json();
-    // Fallbacks
-    data.players = data.players || {};
-    data.players.online = data.players.online || 0;
-    data.players.max = data.players.max || 0;
-    data.players.list = Array.isArray(data.players.list) ? data.players.list : [];
-    return data;
-  } catch(err){
-    console.error("Error fetching server data:", err);
-    return {players:{online:0,max:0,list:[]}};
-  }
-}
-
-// ---------------- Update Player List ----------------
-async function updatePlayers(){
-  const container = document.getElementById("players");
-  const countEl = document.getElementById("playercount");
-  if(!container||!countEl) return;
-  container.innerHTML = "";
-
-  const data = await fetchServerData();
-  const online = data.players.online;
-  const maxPlayers = data.players.max;
-  const list = data.players.list;
-
-  countEl.innerText = `${online} / ${maxPlayers} players online`;
-
-  if(list.length===0){
-    // Server does not expose player list, show placeholders
-    for(let i=0;i<Math.min(online,12);i++){
-      const card = document.createElement("div");
-      card.className="player";
-      card.innerHTML = `
-        <img src="https://crafatar.com/renders/body/MHF_Steve?overlay" alt="Player">
-        <p>Unknown</p>
-      `;
-      container.appendChild(card);
+    catch(err){
+        console.log(err);
+        document.getElementById("playerCount").textContent = "Server Offline";
     }
-    if(online===0) container.innerHTML="<p>No players online.</p>";
-    return;
-  }
 
-  list.forEach(player=>{
-    const card = document.createElement("div");
-    card.className="player";
-    card.innerHTML = `
-      <img src="https://crafatar.com/renders/body/${player.username}?overlay&default=MHF_Steve" 
-           onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';" 
-           alt="${player.username}">
-      <p>${player.username}</p>
-    `;
-    card.onclick = ()=>openPlayerModal(player.username);
-    container.appendChild(card);
-  });
 }
 
-// ---------------- Player Modal ----------------
-function openPlayerModal(name){
-  const modal = document.createElement("div");
-  modal.style = `
-    position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;
-    z-index:1000;
-  `;
-  modal.innerHTML = `
-    <div style="background:#111827;padding:25px;border-radius:12px;text-align:center;max-width:320px;">
-      <h2>${name}</h2>
-      <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve" 
-           style="width:150px;border-radius:10px;" 
-           onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
-      <p style="margin-top:10px;color:#aaa;">Click anywhere to close</p>
-    </div>
-  `;
-  modal.onclick = ()=>document.body.removeChild(modal);
-  document.body.appendChild(modal);
-}
+/* Update every 30 seconds */
 
-// ---------------- Auto Refresh ----------------
-updatePlayers();
-setInterval(updatePlayers,15000);
+loadPlayers();
+setInterval(loadPlayers,30000);
+
 </script>
 
 </body>
 </html>
+```
