@@ -1,126 +1,103 @@
 body{
 margin:0;
 font-family:Arial;
-background:#0f0f0f;
+background:#0e0e0e;
 color:white;
 text-align:center;
-overflow-x:hidden;
 }
 
 /* NAV */
 
-.navbar{
+.nav{
 display:flex;
 justify-content:center;
 gap:40px;
-padding:18px;
 background:#111;
-border-bottom:2px solid #00ffff40;
+padding:16px;
+border-bottom:2px solid #00ffff30;
 }
 
-.navbar a{
+.nav a{
 color:white;
 text-decoration:none;
-font-weight:bold;
 font-size:18px;
+font-weight:bold;
 position:relative;
-transition:.3s;
 }
 
-.navbar a::after{
+.nav a::after{
 content:"";
 position:absolute;
+left:0;
+bottom:-5px;
 width:0%;
 height:2px;
-left:0;
-bottom:-6px;
-background:#00ffff;
+background:cyan;
 transition:.3s;
 }
 
-.navbar a:hover::after{
+.nav a:hover::after{
 width:100%;
 }
-
-
 
 /* HERO */
 
 .hero{
-margin-top:120px;
+padding-top:120px;
 }
 
 .title{
-font-size:70px;
+font-size:60px;
 letter-spacing:4px;
-animation:glow 2s infinite alternate;
+text-shadow:0 0 20px cyan;
 }
 
-@keyframes glow{
-from{ text-shadow:0 0 10px cyan;}
-to{ text-shadow:0 0 25px cyan;}
+/* STATS */
+
+.stats{
+margin-top:60px;
+display:flex;
+justify-content:center;
+gap:60px;
+flex-wrap:wrap;
 }
 
-/* BUTTONS */
-
-.buttons{
-margin-top:30px;
-}
-
-.btn{
-display:inline-block;
-margin:10px;
-padding:15px 30px;
-background:#222;
-border-radius:10px;
-color:white;
-text-decoration:none;
-transition:0.3s;
-}
-
-.btn:hover{
-background:#00ffff;
-color:black;
-transform:scale(1.05);
-}
-
-/* PLAYER GRID */
-
-.player-grid{
-margin-top:40px;
-display:grid;
-grid-template-columns:repeat(auto-fit,minmax(150px,1fr));
-gap:25px;
-max-width:900px;
-margin-left:auto;
-margin-right:auto;
-}
-
-.player-card{
-background:#1a1a1a;
-padding:20px;
+.stat{
+background:#181818;
+padding:30px;
 border-radius:12px;
-transition:0.3s;
+width:180px;
+transition:.3s;
 }
 
-.player-card:hover{
+.stat:hover{
 transform:translateY(-6px);
 box-shadow:0 0 20px cyan;
 }
 
-.player-card img{
-width:80px;
-image-rendering:pixelated;
+/* LEADERBOARD */
+
+.page{
+padding:80px 20px;
 }
 
-/* PARTICLES */
+#leaderboard{
+margin-top:40px;
+max-width:500px;
+margin-left:auto;
+margin-right:auto;
+}
 
-#particles{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:-1;
+.row{
+background:#1a1a1a;
+margin:10px 0;
+padding:15px;
+border-radius:8px;
+display:flex;
+justify-content:space-between;
+}
+
+.sub{
+opacity:.7;
 }
 
