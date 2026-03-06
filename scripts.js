@@ -67,7 +67,8 @@ for (let i = 0; i < 30; i++) {
 }
 
 function drawBlocks() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+ ctx.fillStyle = "black";
+ ctx.fillRect(0, 0, canvas.width, canvas.height);
   blocks.forEach(b => {
     b.y += b.speed;
     if (b.y > canvas.height) {
