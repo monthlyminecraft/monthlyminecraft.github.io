@@ -37,14 +37,12 @@ for (let i = 0; i < 100; i++) {
 function animate() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
     
-    // Draw blocks
     blocks.forEach(block => {
         block.y += block.speed;
         if (block.y > canvas.height) block.y = -block.size;
         ctx.drawImage(block.img, block.x, block.y, block.size, block.size);
     });
     
-    // Draw particles
     particles.forEach(p => {
         p.y -= p.speed;
         if (p.y < 0) p.y = canvas.height;
@@ -65,9 +63,8 @@ window.addEventListener('load', () => {
     });
 });
 
-// ===== Dummy server stats (replace with JSONAPI/WebSocket for live) =====
+// ===== Dummy server stats =====
 function fetchServerStats() {
-    // Dummy example
     const online = Math.floor(Math.random() * 50) + 1;
     document.getElementById('players').textContent = online;
     
