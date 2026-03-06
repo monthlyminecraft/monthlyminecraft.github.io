@@ -58,11 +58,9 @@ function animateBlocks() {
 // ===== Animate particles =====
 function animateParticles() {
     particles.forEach(p => {
-        // Normal movement
         p.y -= p.speed;
         if (p.y < 0) p.y = canvas.height;
 
-        // Mouse interaction
         if (mouse.x && mouse.y) {
             const dx = mouse.x - p.x;
             const dy = mouse.y - p.y;
@@ -89,30 +87,29 @@ function animate() {
 }
 animate();
 
-// ===== Smooth section transitions =====
+// ===== Section fade-in =====
 window.addEventListener('load', () => {
     document.querySelectorAll('section').forEach(sec => {
         setTimeout(() => sec.classList.add('visible'), 100);
     });
 });
 
-// ===== Fetch live server stats using MCPing API =====
+// ===== Fetch live server stats using MCPing =====
 async function fetchServerStats() {
     try {
-        const response = await fetch('https://api.mcsrvstat.us/2/rowbot.in:25565');
+        const response = await fetch('https://api.mcsrvstat.us/2/YOUR_SERVER_IP');
         const data = await response.json();
 
-        // Update online players
         const online = data.players?.online || 0;
         const max = data.players?.max || 0;
         document.getElementById('players').textContent = `${online}/${max}`;
 
-        // Update placeholder leaderboard (MCPing cannot fetch real top players)
+        // Placeholder leaderboard
         const leaderboard = document.getElementById('top-players');
         leaderboard.innerHTML = '';
         for (let i = 1; i <= Math.min(5, online); i++) {
             const li = document.createElement('li');
-            li.textContent = `Player${i} - Score`; // placeholder
+            li.textContent = `Player${i} - Score`;
             leaderboard.appendChild(li);
         }
     } catch(err) {
@@ -120,7 +117,5 @@ async function fetchServerStats() {
         document.getElementById('players').textContent = `Offline`;
     }
 }
-
-// Refresh every 10 seconds
 setInterval(fetchServerStats, 10000);
 fetchServerStats();
