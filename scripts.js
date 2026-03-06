@@ -1,3 +1,14 @@
+let mouse = { x: null, y: null };
+
+window.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
+window.addEventListener('mouseout', () => {
+    mouse.x = null;
+    mouse.y = null;
+});
 // ===== Canvas setup =====
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
@@ -35,24 +46,28 @@ for (let i = 0; i < 100; i++) {
 }
 
 function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    
-    blocks.forEach(block => {
-        block.y += block.speed;
-        if (block.y > canvas.height) block.y = -block.size;
-        ctx.drawImage(block.img, block.x, block.y, block.size, block.size);
-    });
-    
     particles.forEach(p => {
+        // Normal movement
         p.y -= p.speed;
         if (p.y < 0) p.y = canvas.height;
+
+        // Mouse interaction: move slightly towards the cursor if nearby
+        if (mouse.x && mouse.y) {
+            const dx = mouse.x - p.x;
+            const dy = mouse.y - p.y;
+            const distance = Math.sqrt(dx*dx + dy*dy);
+
+            if (distance < 100) { // radius of influence
+                p.x += dx * 0.01;  // small pull
+                p.y += dy * 0.01;
+            }
+        }
+
         ctx.fillStyle = `rgba(255,255,255,${p.alpha})`;
         ctx.beginPath();
         ctx.arc(p.x, p.y, p.size, 0, Math.PI*2);
         ctx.fill();
     });
-
-    requestAnimationFrame(animate);
 }
 animate();
 
