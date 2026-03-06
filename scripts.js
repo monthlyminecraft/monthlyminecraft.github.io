@@ -138,31 +138,35 @@ animate();
 /* =========================
    SERVER STATUS
 ========================= */
+const serverIP = "monthlyminecraft.ddns.net";
+const serverPort = "25565";
 
-const serverIP="rowbot.in";
-const serverPort="25565";
+const statusEl = document.getElementById("server-status");
+const playersEl = document.getElementById("player-count");
 
-const statusEl=document.getElementById("server-status");
-const playersEl=document.getElementById("player-count");
+async function updateServer() {
+  try {
+    const res = await fetch(`https://api.mcstatus.io/v2/status/java/${serverIP}:${serverPort}`);
+    const data = await res.json();
 
-async function updateServer(){
-  try{
-    const res=await fetch(`https://api.mcstatus.io/v2/status/java/${serverIP}:${serverPort}`);
-    const data=await res.json();
+    if (data.online) {
+      statusEl.innerText = "🟢 Server Online";
 
-    if(data.online){
-      statusEl.innerText="🟢 Server Online";
-      playersEl.innerText=`${data.players.online} / ${data.players.max} players`;
-    }else{
-      statusEl.innerText="🔴 Server Offline";
-      playersEl.innerText="0 / 0 players";
+      // Use the real player count
+      const online = data.players?.online ?? 0;
+      const max = data.players?.max ?? 0;
+
+      playersEl.innerText = `${online} / ${max} players`;
+    } else {
+      statusEl.innerText = "🔴 Server Offline";
+      playersEl.innerText = "0 / 0 players";
     }
 
-  }catch(e){
-    statusEl.innerText="⚠️ Error loading server";
-    playersEl.innerText="-";
+  } catch (e) {
+    statusEl.innerText = "⚠️ Error loading server";
+    playersEl.innerText = "-";
   }
 }
 
 updateServer();
-setInterval(updateServer,3000);
+setInterval(updateServer, 3000);
