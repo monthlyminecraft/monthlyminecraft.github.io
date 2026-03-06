@@ -67,8 +67,10 @@ for (let i = 0; i < 30; i++) {
 }
 
 function drawBlocks() {
- ctx.fillStyle = "black";
- ctx.fillRect(0, 0, canvas.width, canvas.height);
+  // Fill canvas with black every frame
+  ctx.fillStyle = "black";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
   blocks.forEach(b => {
     b.y += b.speed;
     if (b.y > canvas.height) {
@@ -77,6 +79,7 @@ function drawBlocks() {
     }
     ctx.drawImage(b.img, b.x, b.y, b.size, b.size);
   });
+
   requestAnimationFrame(drawBlocks);
 }
 drawBlocks();
