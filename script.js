@@ -1,182 +1,264 @@
-// ---------------- Smooth Page Transitions ----------------
-document.querySelectorAll('a').forEach(link => {
-  link.addEventListener('click', e => {
-    const href = link.getAttribute('href');
-    if (!href.startsWith("#")) {
-      e.preventDefault();
-      document.body.classList.add("fade-out");
-      setTimeout(() => { window.location.href = href; }, 300);
-    }
-  });
+const SERVER_IP = "rowbot.in";
+
+// ---------------- PARTICLE BACKGROUND ----------------
+const canvas = document.getElementById("bg");
+
+if (canvas) {
+const ctx = canvas.getContext("2d");
+
+function resize(){
+canvas.width = window.innerWidth;
+canvas.height = window.innerHeight;
+}
+
+resize();
+window.onresize = resize;
+
+const particles = [];
+
+for(let i=0;i<120;i++){
+particles.push({
+x:Math.random()*canvas.width,
+y:Math.random()*canvas.height,
+size:2+Math.random()*4,
+speed:0.2+Math.random()*0.6
+});
+}
+
+function animate(){
+ctx.clearRect(0,0,canvas.width,canvas.height);
+
+particles.forEach(p=>{
+ctx.fillStyle="#22c55e";
+ctx.fillRect(p.x,p.y,p.size,p.size);
+
+p.y-=p.speed;
+
+if(p.y<0){
+p.y=canvas.height;
+p.x=Math.random()*canvas.width;
+}
 });
 
-// ---------------- Layered Minecraft-Style Particles ----------------
-const canvas = document.getElementById("bg");
-if (canvas) {
-  const ctx = canvas.getContext("2d");
-  function resize() { canvas.width = window.innerWidth; canvas.height = window.innerHeight; }
-  resize(); window.onresize = resize;
-
-  const layers = [[], [], []]; // near, mid, far
-  const colors = ["#22c55e", "#16a34a", "#bbf7d0"];
-  for (let l = 0; l < 3; l++) {
-    for (let i = 0; i < 60; i++) {
-      layers[l].push({
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-        size: 2 + Math.random() * 4,
-        speed: 0.1 + 0.2 * l,
-        color: colors[l]
-      });
-    }
-  }
-
-  function animate() {
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    layers.forEach(layer => {
-      layer.forEach(p => {
-        ctx.fillStyle = p.color;
-        ctx.fillRect(p.x, p.y, p.size, p.size);
-        p.y -= p.speed;
-        if (p.y < -p.size) p.y = canvas.height;
-      });
-    });
-    requestAnimationFrame(animate);
-  }
-  animate();
+requestAnimationFrame(animate);
 }
 
-// ---------------- Fetch Server Data ----------------
-async function fetchServerData() {
-  try {
-    const res = await fetch("https://api.mcstatus.io/v2/status/java/rowbot.in");
-    const data = await res.json();
-    data.players = data.players || {};
-    data.players.online = data.players.online || 0;
-    data.players.max = data.players.max || 0;
-    data.players.list = Array.isArray(data.players.list) ? data.players.list : [];
-    data.version = data.version || {};
-    data.version.name_clean = data.version.name_clean || "Unknown";
-    data.motd = data.motd || {};
-    data.motd.clean = data.motd.clean || "Unknown";
-    data.latency = data.latency || "Unknown";
-    return data;
-  } catch (err) {
-    console.error("Error fetching server data:", err);
-    return {
-      players: { online: 0, max: 0, list: [] },
-      version: { name_clean: "Unknown" },
-      motd: { clean: "Unknown" },
-      latency: "Unknown"
-    };
-  }
+animate();
 }
 
-// ---------------- Update Index Analytics ----------------
-async function updateAnalytics() {
-  const data = await fetchServerData();
-  if (!data) return;
+// ---------------- FETCH SERVER DATA ----------------
+async function fetchServer(){
 
-  const countEl = document.getElementById("playercount");
-  const sv = document.getElementById("serverversion");
-  const motd = document.getElementById("motd");
-  const up = document.getElementById("uptime");
+try{
 
-  if (countEl) countEl.innerText = `${data.players.online} / ${data.players.max} players online`;
-  if (sv) sv.innerText = "Version: " + data.version.name_clean;
-  if (motd) motd.innerText = "MOTD: " + (Array.isArray(data.motd.clean) ? data.motd.clean.join(" ") : data.motd.clean);
-  if (up) up.innerText = "Latency: " + data.latency;
+const res = await fetch(`https://api.mcstatus.io/v2/status/java/${SERVER_IP}`);
+const data = await res.json();
+
+return data;
+
+}catch(err){
+
+console.error("Server fetch failed",err);
+
+return {
+players:{online:0,max:0,list:[]}
+};
+
 }
 
-// ---------------- Update Players Page ----------------
-async function updatePlayers() {
-  const container = document.getElementById("players");
-  const countEl = document.getElementById("playercount");
-  if (!container || !countEl) return;
-
-  container.innerHTML = "";
-  const data = await fetchServerData();
-
-  const online = data.players.online;
-  const maxPlayers = data.players.max;
-  const list = data.players.list;
-
-  countEl.innerText = `${online} / ${maxPlayers} players online`;
-
-  if (list.length === 0) {
-    // fallback placeholders if server does not expose player list
-    for (let i = 0; i < Math.min(online, 12); i++) {
-      const card = document.createElement("div");
-      card.className = "player";
-      card.innerHTML = `
-        <img src="https://crafatar.com/renders/body/MHF_Steve?overlay" alt="Player">
-        <p>Unknown</p>
-      `;
-      container.appendChild(card);
-    }
-    if (online === 0) container.innerHTML = "<p>No players online.</p>";
-    return;
-  }
-
-  list.forEach(player => {
-    const card = document.createElement("div");
-    card.className = "player";
-    card.innerHTML = `
-      <img src="https://crafatar.com/renders/body/${player.username}?overlay&default=MHF_Steve"
-           onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';"
-           alt="${player.username}">
-      <p>${player.username}</p>
-    `;
-    card.onclick = () => openPlayerModal(player.username);
-    container.appendChild(card);
-  });
 }
 
-// ---------------- Player Modal ----------------
-function openPlayerModal(name) {
-  const modal = document.createElement("div");
-  modal.style = `
-    position:fixed;top:0;left:0;width:100%;height:100%;
-    background:rgba(0,0,0,0.85);display:flex;justify-content:center;align-items:center;
-    z-index:1000;
-  `;
-  modal.innerHTML = `
-    <div style="background:#111827;padding:25px;border-radius:12px;text-align:center;max-width:320px;">
-      <h2>${name}</h2>
-      <img src="https://crafatar.com/renders/body/${name}?overlay&default=MHF_Steve"
-           style="width:150px;border-radius:10px;"
-           onerror="this.src='https://crafatar.com/renders/body/MHF_Steve?overlay';">
-      <p style="margin-top:10px;color:#aaa;">Click anywhere to close</p>
-    </div>
-  `;
-  modal.onclick = () => document.body.removeChild(modal);
-  document.body.appendChild(modal);
+// ---------------- ANALYTICS ----------------
+async function updateAnalytics(){
+
+const data = await fetchServer();
+
+const count = document.getElementById("playercount");
+const version = document.getElementById("serverversion");
+const motd = document.getElementById("motd");
+const latency = document.getElementById("uptime");
+
+if(count){
+count.innerText = `${data.players.online} / ${data.players.max} players online`;
 }
 
-// ---------------- Leaderboard Example ----------------
-async function updateLeaderboard() {
-  const container = document.getElementById("leaderboard");
-  if (!container) return;
-  container.innerHTML = "";
-
-  // Example static leaderboard (replace with real data if available)
-  const topPlayers = [
-    { name: "Player1", score: 2500 },
-    { name: "Player2", score: 2100 },
-    { name: "Player3", score: 1800 }
-  ];
-
-  topPlayers.forEach(p => {
-    const div = document.createElement("div");
-    div.className = "leaderboard-player";
-    div.innerHTML = `<h3>${p.name}</h3><p>Score: ${p.score}</p>`;
-    container.appendChild(div);
-  });
+if(version && data.version){
+version.innerText = `Version: ${data.version.name_clean}`;
 }
 
-// ---------------- Auto Update ----------------
+if(motd && data.motd){
+motd.innerText = `MOTD: ${data.motd.clean}`;
+}
+
+if(latency){
+latency.innerText = `Latency: ${data.latency}ms`;
+}
+
+}
+
+// ---------------- PLAYER TAB ----------------
+async function updatePlayers(){
+
+const grid = document.getElementById("players");
+const count = document.getElementById("playercount");
+
+if(!grid) return;
+
+grid.innerHTML = "";
+
+const data = await fetchServer();
+
+count.innerText = `${data.players.online} / ${data.players.max} players online`;
+
+let players = [];
+
+if(data.players.list){
+
+players = data.players.list.map(p=>{
+if(typeof p === "string"){
+return p;
+}
+return p.name || p.username;
+});
+
+}
+
+// if server hides player names
+if(players.length === 0){
+
+if(data.players.online === 0){
+
+grid.innerHTML = "<p>No players online</p>";
+return;
+
+}
+
+// show placeholder cards
+for(let i=0;i<data.players.online;i++){
+
+createPlayerCard("Player");
+
+}
+
+return;
+
+}
+
+players.forEach(name=>{
+
+createPlayerCard(name);
+
+});
+
+}
+
+// ---------------- PLAYER CARD ----------------
+function createPlayerCard(name){
+
+const grid = document.getElementById("players");
+
+const card = document.createElement("div");
+card.className="player";
+
+card.innerHTML = `
+<img src="https://mc-heads.net/body/${name}/right">
+<p>${name}</p>
+`;
+
+card.onclick=()=>openPlayer(name);
+
+grid.appendChild(card);
+
+}
+
+// ---------------- PLAYER MODAL ----------------
+function openPlayer(name){
+
+const modal = document.createElement("div");
+
+modal.style=`
+position:fixed;
+top:0;
+left:0;
+width:100%;
+height:100%;
+background:rgba(0,0,0,0.9);
+display:flex;
+justify-content:center;
+align-items:center;
+z-index:999;
+`;
+
+modal.innerHTML=`
+<div style="background:#111827;padding:30px;border-radius:12px;text-align:center">
+<h2>${name}</h2>
+<img src="https://mc-heads.net/body/${name}" style="width:180px">
+<p>Click anywhere to close</p>
+</div>
+`;
+
+modal.onclick=()=>modal.remove();
+
+document.body.appendChild(modal);
+
+}
+
+// ---------------- LEADERBOARD ----------------
+async function updateLeaderboard(){
+
+const board = document.getElementById("leaderboard");
+
+if(!board) return;
+
+board.innerHTML="";
+
+const data = await fetchServer();
+
+let players=[];
+
+if(data.players.list){
+
+players = data.players.list.map(p=>{
+if(typeof p==="string") return p;
+return p.name || p.username;
+});
+
+}
+
+// sort alphabetically (placeholder ranking)
+players.sort();
+
+if(players.length===0){
+
+board.innerHTML="<p>No ranked players online</p>";
+return;
+
+}
+
+players.forEach((name,index)=>{
+
+const row = document.createElement("div");
+
+row.className="leaderboard-player";
+
+row.innerHTML=`
+<h3>#${index+1}</h3>
+<img src="https://mc-heads.net/head/${name}">
+<p>${name}</p>
+`;
+
+board.appendChild(row);
+
+});
+
+}
+
+// ---------------- AUTO UPDATE ----------------
+
 updateAnalytics();
 updatePlayers();
 updateLeaderboard();
-setInterval(updateAnalytics, 15000);
-setInterval(updatePlayers, 15000);
+
+setInterval(updateAnalytics,15000);
+setInterval(updatePlayers,15000);
+setInterval(updateLeaderboard,15000);
