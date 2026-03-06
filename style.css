@@ -1,25 +1,21 @@
-html, body {
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  background-color: black;
-  font-family: sans-serif;
-  color: white;
+body {
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    background: #111;
+    overflow-x: hidden;
+    text-align: center; /* add this */
 }
 
-#bg {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: 0;
+#server-stats {
+    text-align: center; /* ensure stats are centered */
+    margin-top: 2rem;
 }
 
-#ui {
-  position: relative;
-  z-index: 1;
-  padding: 20px;
+#top-players {
+    list-style: none;
+    margin-top: 1rem;
+    padding: 0;
 }
-#player-list {
-  list-style: none;
-  padding-left: 0;
+#top-players li {
+    margin: 0.25rem 0;
 }
