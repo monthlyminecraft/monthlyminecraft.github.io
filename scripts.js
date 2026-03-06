@@ -52,7 +52,7 @@ animate();
 window.addEventListener('load',()=>{ document.querySelectorAll('section').forEach(s=>setTimeout(()=>s.classList.add('visible'),100)); });
 
 // ===== Fetch server stats (MCPing + CORS proxy) =====
-const SERVER_IP='rowbot.in';
+const SERVER_IP='rowbot.in:25565';
 async function fetchServerStats(){
     try{
         const proxyURL='https://api.allorigins.win/get?url='+encodeURIComponent(`https://api.mcsrvstat.us/2/${SERVER_IP}`);
