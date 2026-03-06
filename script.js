@@ -7,63 +7,55 @@ try{
 const res = await fetch(`https://api.mcsrvstat.us/3/${SERVER}`);
 const data = await res.json();
 
-/* PLAYER COUNT */
+/* HOMEPAGE STATS */
 
-const countEl = document.getElementById("playerCount");
+if(document.getElementById("status")){
 
-if(countEl){
+document.getElementById("status").innerText =
+data.online ? "Online" : "Offline";
 
-if(data.online){
+document.getElementById("players").innerText =
+data.players ? data.players.online : 0;
 
-countEl.textContent =
-`${data.players.online} / ${data.players.max} players online`;
-
-}else{
-
-countEl.textContent = "Server Offline";
+document.getElementById("max").innerText =
+data.players ? data.players.max : 0;
 
 }
 
-}
+/* LEADERBOARD */
 
-/* PLAYER LIST */
+if(document.getElementById("leaderboard")){
 
-const list = document.getElementById("playerList");
-
-if(list){
-
-list.innerHTML="";
+const board = document.getElementById("leaderboard");
+board.innerHTML="";
 
 if(data.players && data.players.list){
 
-data.players.list.forEach(name=>{
+data.players.list.forEach((p,i)=>{
 
-const card=document.createElement("div");
-card.className="player-card";
+const row=document.createElement("div");
+row.className="row";
 
-card.innerHTML=
-`
-<img src="https://mc-heads.net/avatar/${name}/100">
-<p>${name}</p>
+row.innerHTML = `
+<span>#${i+1}</span>
+<span>${p}</span>
 `;
 
-list.appendChild(card);
+board.appendChild(row);
 
 });
 
 }else{
 
-list.innerHTML =
-"<p style='opacity:0.7'>Player names are hidden by the server.</p>";
+board.innerHTML =
+"<p>No player leaderboard available.</p>";
 
 }
 
 }
 
-}catch(err){
-
-console.log(err);
-
+}catch(e){
+console.log(e);
 }
 
 }
