@@ -1,82 +1,9 @@
 ```html
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-<meta charset="UTF-8">
-<title>Players | Monthly Minecraft</title>
-
-<style>
-body{
-    margin:0;
-    font-family:Arial, Helvetica, sans-serif;
-    background:#0f0f0f;
-    color:white;
-    text-align:center;
-}
-
-/* NAVBAR */
-
-nav{
-    background:#111;
-    padding:15px;
-}
-
-nav a{
-    color:white;
-    margin:0 15px;
-    text-decoration:none;
-    font-weight:bold;
-    transition:0.3s;
-}
-
-nav a:hover{
-    color:#55ffff;
-}
-
-/* PAGE */
-
-.page{
-    padding:60px 20px;
-}
-
-/* PLAYER GRID */
-
-.player-grid{
-    margin-top:40px;
-    display:grid;
-    grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
-    gap:25px;
-    max-width:900px;
-    margin-left:auto;
-    margin-right:auto;
-}
-
-/* PLAYER CARD */
-
-.player-card{
-    background:#1a1a1a;
-    border-radius:12px;
-    padding:20px;
-    transition:0.3s;
-    box-shadow:0 0 0px rgba(0,255,255,0.3);
-}
-
-.player-card:hover{
-    transform:translateY(-5px);
-    box-shadow:0 0 20px rgba(0,255,255,0.6);
-}
-
-.player-card img{
-    width:80px;
-    height:80px;
-    image-rendering:pixelated;
-}
-
-.player-name{
-    margin-top:10px;
-    font-weight:bold;
-}
-</style>
+<title>Players</title>
+<link rel="stylesheet" href="style.css">
 </head>
 
 <body>
@@ -97,67 +24,7 @@ nav a:hover{
 
 </section>
 
-<script>
-
-/* CHANGE THIS TO YOUR SERVER */
-const SERVER_IP = "rowbot.in:25565";
-
-/* Fetch server data */
-
-async function loadPlayers(){
-
-    try{
-
-        const response = await fetch(`https://api.mcsrvstat.us/3/${SERVER_IP}`);
-        const data = await response.json();
-
-        const playerCount = document.getElementById("playerCount");
-        const playerList = document.getElementById("playerList");
-
-        playerList.innerHTML = "";
-
-        if(!data.players){
-            playerCount.textContent = "0";
-            return;
-        }
-
-        playerCount.textContent = data.players.online;
-
-        if(!data.players.list) return;
-
-        data.players.list.forEach(player => {
-
-            const card = document.createElement("div");
-            card.className = "player-card";
-
-            const skin = document.createElement("img");
-            skin.src = `https://mc-heads.net/avatar/${player}/100`;
-
-            const name = document.createElement("div");
-            name.className = "player-name";
-            name.textContent = player;
-
-            card.appendChild(skin);
-            card.appendChild(name);
-
-            playerList.appendChild(card);
-
-        });
-
-    }
-    catch(err){
-        console.log(err);
-        document.getElementById("playerCount").textContent = "Server Offline";
-    }
-
-}
-
-/* Update every 30 seconds */
-
-loadPlayers();
-setInterval(loadPlayers,30000);
-
-</script>
+<script src="script.js"></script>
 
 </body>
 </html>
