@@ -21,7 +21,7 @@ const playerListEl = document.getElementById("player-list");
 const blocks = [];
 const blockCount = 20;
 
-// Load block images from assets/blocks/
+// Load block images
 for (let i = 1; i <= blockCount; i++) {
   const img = new Image();
   img.src = `assets/blocks/block${i}.png`;
@@ -96,19 +96,22 @@ async function updateServer(){
       const max = data.players?.max ?? 0;
       playersEl.innerText = `${online} / ${max} players`;
 
-      // Clear previous list
-      playerListEl.innerHTML = "";
+    // Clear previous list
+playerListEl.innerHTML = "";
 
-      // Show only UUIDs
-      if(data.players.list && data.players.list.length > 0){
-        data.players.list.forEach(name=>{
-          const uuid = data.players.uuid ? data.players.uuid[name] : "unknown";
-          const li = document.createElement("li");
-          li.innerText = uuid;
-          playerListEl.appendChild(li);
-        });
-      }
+// Only populate if there are players online
+if (data.players.list && data.players.list.length > 0) {
+  data.players.list.forEach(name => {
+    const li = document.createElement("li");
+    
+    // Get UUID from the separate object
+    const uuid = data.players.uuid ? data.players.uuid[name] : null;
 
+    // If UUID exists, you could fetch Mojang API, but here we just show the name
+    li.innerText = name + (uuid ? ` (${uuid})` : "");
+    playerListEl.appendChild(li);
+  });
+}
     } else {
       statusEl.innerText = "🔴 Server Offline";
       playersEl.innerText = "0 / 0 players";
