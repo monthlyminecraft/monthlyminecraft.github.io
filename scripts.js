@@ -1,3 +1,9 @@
+fetch('https://api.mcsrvstat.us/2/YOUR_SERVER_IP')
+    .then(res => res.json())
+    .then(data => {
+        document.getElementById('players').textContent = data.players.online;
+        // No leaderboard support here; only online count
+    });
 // ===== Canvas setup =====
 const canvas = document.getElementById('bgCanvas');
 const ctx = canvas.getContext('2d');
