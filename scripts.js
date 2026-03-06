@@ -84,3 +84,20 @@ window.addEventListener('resize', () => {
     canvas.width = window.innerWidth;
     canvas.height = window.innerHeight;
 });
+// Get the canvas and context
+const canvas = document.getElementById('bgCanvas');
+const ctx = canvas.getContext('2d');
+
+// Function to resize canvas to window size
+function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+}
+
+// Call it once at start
+resizeCanvas();
+
+// Also call it whenever the window resizes
+window.addEventListener('resize', () => {
+    resizeCanvas();
+});
