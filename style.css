@@ -1,5 +1,5 @@
 /* Reset & body */
-* { margin: 0; padding: 0; box-sizing: border-box; }
+* { margin:0; padding:0; box-sizing:border-box; }
 body {
     font-family: 'Arial', sans-serif;
     color: #fff;
@@ -7,7 +7,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Canvas fills screen */
+/* Canvas */
 canvas#bgCanvas {
     position: fixed;
     top: 0;
@@ -18,42 +18,16 @@ canvas#bgCanvas {
 }
 
 /* Header */
-header {
-    text-align: center;
-    padding: 2rem;
-    font-size: 2rem;
-}
+header { text-align:center; padding:2rem; font-size:2rem; }
 
-/* Server stats section */
-#server-stats {
-    text-align: center;
-    margin-top: 2rem;
-}
-
-#top-players {
-    list-style: none;
-    margin-top: 1rem;
-}
-
-#top-players li {
-    margin: 0.25rem 0;
-}
+/* Server stats */
+#server-stats { text-align:center; margin-top:2rem; }
+#top-players { list-style:none; margin-top:1rem; }
+#top-players li { margin:0.25rem 0; }
 
 /* Footer */
-footer {
-    text-align: center;
-    padding: 1rem;
-    margin-top: 3rem;
-    font-size: 0.9rem;
-    color: #aaa;
-}
+footer { text-align:center; padding:1rem; margin-top:3rem; font-size:0.9rem; color:#aaa; }
 
 /* Section fade-in */
-section {
-    opacity: 0;
-    transition: opacity 1.5s ease-in;
-}
-
-section.visible {
-    opacity: 1;
-}
+section { opacity:0; transition:opacity 1.5s ease-in; }
+section.visible { opacity:1; }
