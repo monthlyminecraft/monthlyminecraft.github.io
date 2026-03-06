@@ -112,8 +112,8 @@ async function updateServer() {
       if (data.players.list && data.players.list.length > 0) {
         // For each UUID, fetch the player name from Mojang
         for (const player of data.players.list) {
-          let playerName = player.name; // fallback if no UUID
-          if (player.uuid) {
+          let playerName = players.list; // fallback if no UUID
+          if (players.uuid) {
             try {
               const nameRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}`);
               const profile = await nameRes.json();
