@@ -96,17 +96,22 @@ async function updateServer(){
       const max = data.players?.max ?? 0;
       playersEl.innerText = `${online} / ${max} players`;
 
-      // Clear previous list
-      playerListEl.innerHTML = "";
+    // Clear previous list
+playerListEl.innerHTML = "";
 
-      if(data.players.list && data.players.list.length>0){
-        data.players.list.forEach(name=>{
-          const li = document.createElement("li");
-          li.innerText = name; // we already have the name from JSON
-          playerListEl.appendChild(li);
-        });
-      }
+// Only populate if there are players online
+if (data.players.list && data.players.list.length > 0) {
+  data.players.list.forEach(name => {
+    const li = document.createElement("li");
+    
+    // Get UUID from the separate object
+    const uuid = data.players.uuid ? data.players.uuid[name] : null;
 
+    // If UUID exists, you could fetch Mojang API, but here we just show the name
+    li.innerText = name + (uuid ? ` (${uuid})` : "");
+    playerListEl.appendChild(li);
+  });
+}
     } else {
       statusEl.innerText = "🔴 Server Offline";
       playersEl.innerText = "0 / 0 players";
