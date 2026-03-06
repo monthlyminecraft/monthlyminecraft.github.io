@@ -43,3 +43,36 @@ h2 { text-align:center; margin-top:50px; }
 
 /* Canvas */
 #bg { position:fixed; top:0; left:0; width:100%; height:100%; z-index:1; }
+
+.player-grid{
+display:grid;
+grid-template-columns:repeat(auto-fit,minmax(160px,1fr));
+gap:20px;
+margin-top:30px;
+}
+
+.player-card{
+background:#121212;
+border:1px solid #333;
+border-radius:12px;
+padding:15px;
+text-align:center;
+transition:all .3s;
+}
+
+.player-card:hover{
+transform:translateY(-5px);
+box-shadow:0 0 20px #00ff9d;
+}
+
+.avatar{
+width:60px;
+height:60px;
+image-rendering:pixelated;
+}
+
+.rank{
+font-weight:bold;
+color:#00ff9d;
+margin-bottom:8px;
+}
