@@ -1,40 +1,59 @@
+/* Reset & body */
+* { margin: 0; padding: 0; box-sizing: border-box; }
 body {
-  margin: 0;
-  padding: 0;
-  font-family: 'Minecraft', sans-serif;
-  background: #111;
-  color: #fff;
-  overflow-x: hidden;
+    font-family: 'Arial', sans-serif;
+    color: #fff;
+    background: #111;
+    overflow-x: hidden;
 }
 
-canvas {
-  position: fixed;
-  top: 0;
-  left: 0;
-  z-index: -1;
+/* Canvas fills screen */
+canvas#bgCanvas {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: -1;
 }
 
+/* Header */
 header {
-  background: #4caf50;
-  padding: 2rem;
-  text-align: center;
+    text-align: center;
+    padding: 2rem;
+    font-size: 2rem;
 }
 
+/* Server stats section */
+#server-stats {
+    text-align: center;
+    margin-top: 2rem;
+}
+
+#top-players {
+    list-style: none;
+    margin-top: 1rem;
+}
+
+#top-players li {
+    margin: 0.25rem 0;
+}
+
+/* Footer */
+footer {
+    text-align: center;
+    padding: 1rem;
+    margin-top: 3rem;
+    font-size: 0.9rem;
+    color: #aaa;
+}
+
+/* Section fade-in */
 section {
-  padding: 2rem;
-  border-bottom: 1px solid #555;
-  opacity: 0;
-  transform: translateY(20px);
-  transition: all 0.6s ease;
+    opacity: 0;
+    transition: opacity 1.5s ease-in;
 }
 
 section.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-footer {
-  background: #222;
-  padding: 1rem;
-  text-align: center;
+    opacity: 1;
 }
