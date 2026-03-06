@@ -139,7 +139,7 @@ animate();
    SERVER STATUS
 ========================= */
 
-const serverIP="monthlyminecraft.ddns.net";
+const serverIP="rowbot.in";
 const serverPort="25565";
 
 const statusEl=document.getElementById("server-status");
