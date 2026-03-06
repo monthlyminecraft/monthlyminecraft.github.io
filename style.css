@@ -1,58 +1,25 @@
-/* =========================
-   PAGE AND CANVAS SETUP
-========================= */
-
-/* Make entire page black */
-body {
+html, body {
   margin: 0;
   padding: 0;
-  background-color: black; /* page background */
   overflow: hidden;
-  font-family: Arial, sans-serif;
+  background-color: black;
+  font-family: sans-serif;
+  color: white;
 }
 
-/* Full-screen canvas for blocks & particles */
 #bg {
   position: fixed;
   top: 0;
   left: 0;
-  width: 100vw;
-  height: 100vh;
-  z-index: -1;
-  background-color: black; /* canvas background */
+  z-index: 0;
 }
-
-/* =========================
-   UI STYLING
-========================= */
 
 #ui {
   position: relative;
-  z-index: 10;
-  color: white;
-  text-align: center;
-  margin-top: 50px;
+  z-index: 1;
+  padding: 20px;
 }
-
-#ui h1 {
-  font-size: 3em;
-  margin-bottom: 10px;
-}
-
-#ui h2 {
-  font-size: 1.8em;
-  margin: 5px 0;
-}
-
-#ui p {
-  font-size: 1.2em;
-  margin: 5px 0;
-}
-
-/* Player list styling */
 #player-list {
   list-style: none;
-  padding: 0;
-  margin-top: 10px;
-  font-size: 1.1em;
+  padding-left: 0;
 }
