@@ -1,41 +1,27 @@
-#bg{
-position:fixed;
-top:0;
-left:0;
-width:100vw;
-height:100vh;
-z-index:-1;
-}
-/* Reset & body */
-* { margin:0; padding:0; box-sizing:border-box; }
-body {
-    font-family: 'Arial', sans-serif;
-    color: #fff;
-    background: #111;
-    overflow-x: hidden;
+/* Full-screen canvas */
+#bg {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  z-index: -1;
 }
 
-/* Canvas */
-canvas#bgCanvas {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw;
-    height: 100vh;
-    z-index: -1;
+/* UI on top of canvas */
+#ui {
+  position: relative;
+  z-index: 10;
+  color: white;
+  text-align: center;
+  font-family: Arial, sans-serif;
+  margin-top: 50px;
 }
 
-/* Header */
-header { text-align:center; padding:2rem; font-size:2rem; }
-
-/* Server stats */
-#server-stats { text-align:center; margin-top:2rem; }
-#top-players { list-style:none; margin-top:1rem; }
-#top-players li { margin:0.25rem 0; }
-
-/* Footer */
-footer { text-align:center; padding:1rem; margin-top:3rem; font-size:0.9rem; color:#aaa; }
-
-/* Section fade-in */
-section { opacity:0; transition:opacity 1.5s ease-in; }
-section.visible { opacity:1; }
+/* Player list styling */
+#player-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+  font-size: 1.1em;
+}
