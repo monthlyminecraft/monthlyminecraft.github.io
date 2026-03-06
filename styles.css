@@ -1,138 +1,23 @@
-body{
-margin:0;
-font-family:Arial;
-background:#0c0c0c;
-color:white;
-text-align:center;
-overflow-x:hidden;
+body {
+  font-family: 'Minecraft', sans-serif;
+  background-color: #1a1a1a;
+  color: #fff;
+  text-align: center;
+  margin: 0;
+  padding: 0;
 }
 
-/* NAV */
-
-.nav{
-display:flex;
-justify-content:center;
-gap:40px;
-background:#111;
-padding:16px;
+header {
+  background: #4caf50;
+  padding: 2rem;
 }
 
-.nav a{
-color:white;
-text-decoration:none;
-font-weight:bold;
-position:relative;
+section {
+  padding: 2rem;
+  border-bottom: 1px solid #555;
 }
 
-.nav a::after{
-content:"";
-position:absolute;
-bottom:-4px;
-left:0;
-height:2px;
-width:0%;
-background:cyan;
-transition:.3s;
+footer {
+  background: #333;
+  padding: 1rem;
 }
-
-.nav a:hover::after{
-width:100%;
-}
-
-/* HERO */
-
-.hero{
-padding-top:100px;
-position:relative;
-z-index:2;
-}
-
-.title{
-font-size:70px;
-text-shadow:0 0 20px cyan;
-}
-
-/* STATS */
-
-.stats{
-margin-top:50px;
-display:flex;
-justify-content:center;
-gap:40px;
-flex-wrap:wrap;
-}
-
-.stat{
-background:#171717;
-padding:30px;
-border-radius:10px;
-width:180px;
-transition:.3s;
-}
-
-.stat:hover{
-transform:translateY(-6px);
-box-shadow:0 0 20px cyan;
-}
-
-/* GRAPH */
-
-#playerChart{
-max-width:700px;
-margin:60px auto;
-}
-
-/* LEADERBOARD */
-
-.page{
-padding:80px;
-}
-
-#leaderboard{
-max-width:500px;
-margin:auto;
-}
-
-.row{
-background:#1a1a1a;
-margin:12px 0;
-padding:16px;
-border-radius:8px;
-display:flex;
-justify-content:space-between;
-animation:slide 0.5s ease;
-}
-
-@keyframes slide{
-from{
-transform:translateX(-20px);
-opacity:0;
-}
-to{
-transform:translateX(0);
-opacity:1;
-}
-}
-
-/* PARTICLES */
-
-#particles{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:0;
-}
-
-/* 3D */
-
-#bg3d{
-position:fixed;
-top:0;
-left:0;
-width:100%;
-height:100%;
-z-index:-1;
-}
-
