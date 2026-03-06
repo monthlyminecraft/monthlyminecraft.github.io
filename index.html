@@ -1,36 +1,22 @@
-<canvas id="bg"></canvas>
-
-<h2 id="server-status">Loading...</h2>
-<p id="player-count">0/0 players</p>
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Monthly Minecraft Server</title>
-    <link rel="stylesheet" href="style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Monthly Minecraft</title>
+<link rel="stylesheet" href="style.css">
 </head>
 <body>
 
-    <!-- Animated background canvas -->
-    <canvas id="bgCanvas"></canvas>
+<canvas id="bg"></canvas>
 
-    <!-- Header -->
-    <header>
-        <h1>Monthly Minecraft Server</h1>
-    </header>
+<div id="ui">
+  <h1>Monthly Minecraft</h1>
+  <h2 id="server-status">Loading...</h2>
+  <p id="player-count">0 / 0 players</p>
+  <ul id="player-list"></ul>
+</div>
 
-    <!-- Server stats -->
-    <section id="server-stats">
-        <h2>Players Online: <span id="players">0</span></h2>
-        <ul id="top-players"></ul>
-    </section>
-
-    <!-- Footer -->
-    <footer>
-        <p>&copy; 2026 Monthly Minecraft SMP</p>
-    </footer>
-
-    <script src="scripts.js" defer></script>
+<script src="scripts.js"></script>
 </body>
 </html>
