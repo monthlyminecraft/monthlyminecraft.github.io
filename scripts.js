@@ -106,14 +106,27 @@ async function updateServer() {
       const max = data.players?.max ?? 0;
       playersEl.innerText = `${online} / ${max} players`;
 
-      // Optional: show sample player names if available
+      // Clear previous list
       playerListEl.innerHTML = "";
-      if (data.players.list) {
-        data.players.list.forEach(player => {
+
+      if (data.players.list && data.players.list.length > 0) {
+        // For each UUID, fetch the player name from Mojang
+        for (const player of data.players.list) {
+          let playerName = player.name; // fallback if no UUID
+          if (player.uuid) {
+            try {
+              const nameRes = await fetch(`https://sessionserver.mojang.com/session/minecraft/profile/${player.uuid}`);
+              const profile = await nameRes.json();
+              playerName = profile.name;
+            } catch(e) {
+              // fallback
+            }
+          }
+
           const li = document.createElement("li");
-          li.innerText = player.name;
+          li.innerText = playerName;
           playerListEl.appendChild(li);
-        });
+        }
       }
 
     } else {
