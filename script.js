@@ -1,4 +1,3 @@
-```javascript
 const SERVER = "rowbot.in:25565";
 
 async function loadServer(){
@@ -71,4 +70,3 @@ console.log(err);
 
 loadServer();
 setInterval(loadServer,30000);
-```
