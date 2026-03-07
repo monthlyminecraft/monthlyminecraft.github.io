@@ -176,3 +176,8 @@ setInterval(getServerStatus,10000);
 
 const loading=document.getElementById("loading");
 if(loading) loading.style.display="none";
+const iconEl = document.getElementById("server-icon");
+
+if (data.icon) {
+  iconEl.src = data.icon;
+}
