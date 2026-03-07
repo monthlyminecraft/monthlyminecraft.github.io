@@ -41,28 +41,37 @@ z-index:10;
 }
 .navbar{
 position:fixed;
-top:0;
-left:0;
-width:100%;
+top:20px;
+left:50%;
+transform:translateX(-50%);
 display:flex;
-justify-content:center;
-gap:40px;
-padding:15px;
-background:rgba(0,0,0,0.6);
-backdrop-filter:blur(5px);
-z-index:5;
+gap:35px;
+padding:12px 30px;
+
+background:rgba(20,20,20,0.75);
+border-radius:40px;
+
+backdrop-filter:blur(8px);
+box-shadow:0 0 20px rgba(0,0,0,0.6);
+
+z-index:10;
 }
 
 .navbar a{
 color:white;
 text-decoration:none;
-font-size:18px;
-font-weight:bold;
-transition:0.2s;
+font-size:17px;
+font-weight:600;
+padding:6px 14px;
+border-radius:20px;
+
+transition:all .25s ease;
 }
 
 .navbar a:hover{
+background:rgba(255,255,255,0.12);
 color:#55ffff;
+transform:translateY(-2px);
 }
 .content{
 max-width:900px;
