@@ -2,19 +2,29 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>My Minecraft Server</title>
+<title>Monthly Minecraft SMP</title>
 <link rel="stylesheet" href="style.css">
 </head>
-<body>
-<canvas id="bg"></canvas>
 
-<div id="ui">
-  <h1 id="status">Loading...</h1>
-  <h2 id="players"></h2>
-  <ul id="player-list"></ul>
+<body>
+
+<div id="loading">Loading...</div>
+
+<canvas id="bgCanvas"></canvas>
+
+<div class="content">
+
+<h1>Monthly Minecraft SMP</h1>
+
+<p>The SMP that resets every month with a brand new twist.</p>
+
+<div id="server-stats">
+Players Online: <span id="players">Loading...</span>
+</div>
+
 </div>
 
 <script src="scripts.js"></script>
+
 </body>
 </html>
