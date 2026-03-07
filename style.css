@@ -80,3 +80,33 @@ color:white;
 text-align:center;
 padding:20px;
 }
+.discord-btn{
+
+display:inline-block;
+margin-top:30px;
+
+padding:16px 38px;
+
+background:#5865F2;
+color:white;
+
+font-size:20px;
+font-weight:bold;
+
+text-decoration:none;
+
+border-radius:12px;
+
+box-shadow:0 6px 18px rgba(88,101,242,0.4);
+
+transition:all .25s ease;
+}
+
+.discord-btn:hover{
+
+transform:translateY(-3px) scale(1.03);
+
+box-shadow:0 10px 28px rgba(88,101,242,0.6);
+
+background:#6d78ff;
+}
