@@ -112,3 +112,32 @@ background:#6d78ff;
 }
 #status {
   text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+  html, body {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    background: radial-gradient(circle at center, #101020, #000000);
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
+}
+
+/* Make all content divs centered on any page */
+#ui, .content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+}
+
+/* Titles glow everywhere */
+h1, h2, #status {
+    text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
+}
+
+/* Optional: buttons and links visible on dark background */
+button, a {
+    color: white;
+}
