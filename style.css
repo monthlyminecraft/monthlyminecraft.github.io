@@ -39,3 +39,28 @@ transform:translate(-50%,-50%);
 font-size:32px;
 z-index:10;
 }
+.navbar{
+position:fixed;
+top:0;
+left:0;
+width:100%;
+display:flex;
+justify-content:center;
+gap:40px;
+padding:15px;
+background:rgba(0,0,0,0.6);
+backdrop-filter:blur(5px);
+z-index:5;
+}
+
+.navbar a{
+color:white;
+text-decoration:none;
+font-size:18px;
+font-weight:bold;
+transition:0.2s;
+}
+
+.navbar a:hover{
+color:#55ffff;
+}
