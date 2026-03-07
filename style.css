@@ -112,7 +112,3 @@ background:#6d78ff;
 }
 #status {
   text-shadow: 0 0 10px #00ffcc, 0 0 20px #00ffcc;
-}
-body {
-  background: radial-gradient(circle at center, #101020, #000000);
-}
