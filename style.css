@@ -1,21 +1,41 @@
-body {
-    font-family: 'Arial', sans-serif;
-    color: #fff;
-    background: #111;
-    overflow-x: hidden;
-    text-align: center; /* add this */
+body{
+margin:0;
+overflow:hidden;
+background:#0a0a0a;
+color:white;
+font-family:Arial, Helvetica, sans-serif;
+text-align:center;
 }
 
-#server-stats {
-    text-align: center; /* ensure stats are centered */
-    margin-top: 2rem;
+canvas{
+position:fixed;
+top:0;
+left:0;
+z-index:-1;
 }
 
-#top-players {
-    list-style: none;
-    margin-top: 1rem;
-    padding: 0;
+.content{
+position:absolute;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
 }
-#top-players li {
-    margin: 0.25rem 0;
+
+h1{
+font-size:60px;
+margin-bottom:10px;
+}
+
+#server-stats{
+font-size:22px;
+margin-top:20px;
+}
+
+#loading{
+position:fixed;
+top:50%;
+left:50%;
+transform:translate(-50%,-50%);
+font-size:32px;
+z-index:10;
 }
