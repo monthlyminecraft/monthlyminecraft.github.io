@@ -4,90 +4,74 @@
 <title>Cosmetic Crate</title>
 
 <style>
-
-body{
-background:#0f0f0f;
-color:white;
-font-family:Arial;
-text-align:center;
-overflow-x:hidden;
+body {
+  background: #0f0f0f;
+  color: white;
+  font-family: Arial;
+  text-align: center;
+  overflow-x: hidden;
 }
 
-h1{
-margin-top:40px;
+h1 { margin-top: 40px; }
+
+#crateButton {
+  margin-top: 30px;
+  padding: 16px 40px;
+  font-size: 22px;
+  background: #1e1e1e;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+#crateButton:hover { transform: scale(1.05); }
+
+#inventory {
+  width: 840px;
+  margin: 50px auto;
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 8px;
 }
 
-#crateButton{
-margin-top:30px;
-padding:16px 40px;
-font-size:22px;
-background:#1e1e1e;
-border-radius:10px;
-cursor:pointer;
-transition:0.2s;
+.slot {
+  width: 120px;
+  height: 120px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+  border: 2px solid #111;
+  border-radius: 8px;
+  position: relative;
+  transition: transform 0.3s, box-shadow 0.3s;
 }
 
-#crateButton:hover{
-transform:scale(1.05);
+/* Rarity colors */
+.common { background: #777; }
+.rare { background: #3b82f6; }
+.epic { background: #a855f7; }
+.legendary { background: #f59e0b; }
+
+.rare { box-shadow: 0 0 10px #3b82f6; }
+.epic { box-shadow: 0 0 20px #a855f7; }
+.legendary { box-shadow: 0 0 30px #f59e0b; }
+
+#pointer {
+  width: 0;
+  height: 0;
+  border-left: 15px solid transparent;
+  border-right: 15px solid transparent;
+  border-top: 25px solid white;
+  position: absolute;
+  top: -30px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
 }
 
-#spinner{
-width:720px;
-height:140px;
-margin:60px auto;
-overflow:hidden;
-border:3px solid white;
-border-radius:10px;
-position:relative;
-}
-
-#pointer{
-position:absolute;
-top:-18px;
-left:50%;
-transform:translateX(-50%);
-width:0;
-height:0;
-border-left:16px solid transparent;
-border-right:16px solid transparent;
-border-top:25px solid white;
-z-index:10;
-}
-
-#items{
-display:flex;
-position:absolute;
-left:0;
-}
-
-.item{
-width:140px;
-height:140px;
-display:flex;
-align-items:center;
-justify-content:center;
-font-weight:bold;
-border-right:2px solid #111;
-}
-
-/* rarity colors */
-
-.common{background:#777;}
-.rare{background:#3b82f6;}
-.epic{background:#a855f7;}
-.legendary{background:#f59e0b;}
-
-.rare{box-shadow:0 0 10px #3b82f6;}
-.epic{box-shadow:0 0 20px #a855f7;}
-.legendary{box-shadow:0 0 30px #f59e0b;}
-
-#result{
-font-size:28px;
-margin-top:20px;
-}
+#result { font-size: 28px; margin-top: 20px; }
 
 </style>
-
 </head>
 
 <body>
@@ -96,12 +80,9 @@ margin-top:20px;
 
 <div id="crateButton">OPEN CRATE</div>
 
-<div id="spinner">
-
-<div id="pointer"></div>
-
-<div id="items"></div>
-
+<div id="inventoryWrapper" style="position: relative; width: 840px; margin: auto;">
+  <div id="pointer"></div>
+  <div id="inventory"></div>
 </div>
 
 <div id="result"></div>
@@ -109,7 +90,94 @@ margin-top:20px;
 <audio id="spinSound" src="spin.mp3"></audio>
 <audio id="winSound" src="win.mp3"></audio>
 
-<script src="crate.js"></script>
+<script>
+// REWARD POOL
+const rewards = [
+  {name:"Wave Emote", rarity:"common", perm:"ultracosmetics.emote.wave", chance:30},
+  {name:"Dab Emote", rarity:"common", perm:"ultracosmetics.emote.dab", chance:30},
+  {name:"Top Hat", rarity:"common", perm:"ultracosmetics.hat.tophat", chance:25},
+  {name:"Cowboy Hat", rarity:"common", perm:"ultracosmetics.hat.cowboy", chance:25},
+  {name:"TNT Gadget", rarity:"rare", perm:"ultracosmetics.gadget.tnt", chance:15},
+  {name:"Bat Blaster", rarity:"rare", perm:"ultracosmetics.gadget.batblaster", chance:15},
+  {name:"Creeper Pet", rarity:"rare", perm:"ultracosmetics.pet.creeper", chance:10},
+  {name:"Dragon Mount", rarity:"epic", perm:"ultracosmetics.mount.dragon", chance:3},
+  {name:"Phoenix Mount", rarity:"legendary", perm:"ultracosmetics.mount.phoenix", chance:1},
+];
+
+// DOM elements
+const inventory = document.getElementById("inventory");
+const resultDiv = document.getElementById("result");
+const spinSound = document.getElementById("spinSound");
+const winSound = document.getElementById("winSound");
+
+let spinning = false;
+
+// Weighted reward selection
+function rollReward() {
+  const total = rewards.reduce((sum,r)=>sum+r.chance,0);
+  let roll = Math.random()*total;
+  for (let r of rewards) {
+    if (roll < r.chance) return r;
+    roll -= r.chance;
+  }
+}
+
+// Build the inventory grid
+function buildInventory() {
+  inventory.innerHTML = "";
+  for (let i = 0; i < 30; i++) { // 30 slots
+    const reward = rewards[Math.floor(Math.random()*rewards.length)];
+    const slot = document.createElement("div");
+    slot.className = "slot " + reward.rarity;
+    slot.innerText = reward.name;
+    inventory.appendChild(slot);
+  }
+}
+
+// Spin animation moving only to the right
+function spinInventory(winReward) {
+  const slots = document.querySelectorAll(".slot");
+  const winIndex = Math.floor(Math.random()*10)+10; // stop somewhere in middle
+
+  // Force winning item into correct slot
+  slots[winIndex].innerText = winReward.name;
+  slots[winIndex].className = "slot " + winReward.rarity;
+
+  const totalMove = winIndex*128; // slot width + gap ~128px
+
+  inventory.style.transition = "transform 5s cubic-bezier(.1,.7,.1,1)";
+  inventory.style.transform = `translateX(-${totalMove}px)`;
+
+  setTimeout(()=>{
+    winSound.currentTime = 0;
+    winSound.play();
+
+    // glow effect
+    slots[winIndex].style.boxShadow = "0 0 40px white";
+    slots[winIndex].style.transform = "scale(1.1)";
+    resultDiv.innerText = "YOU WON: " + winReward.name;
+
+    spinning = false;
+  },5000);
+}
+
+function openCrate(){
+  if (spinning) return;
+  spinning = true;
+  resultDiv.innerText = "";
+  spinSound.currentTime = 0;
+  spinSound.play();
+
+  buildInventory();
+
+  const reward = rollReward();
+  spinInventory(reward);
+}
+
+document.getElementById("crateButton").addEventListener("click", openCrate);
+
+buildInventory();
+</script>
 
 </body>
 </html>
