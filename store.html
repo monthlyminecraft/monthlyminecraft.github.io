@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Cosmetic Crate</title>
+
+<style>
+
+body{
+background:#0f0f0f;
+font-family:Arial;
+color:white;
+text-align:center;
+overflow-x:hidden;
+}
+
+#crate{
+margin-top:80px;
+font-size:28px;
+padding:20px 40px;
+background:#1e1e1e;
+border-radius:10px;
+cursor:pointer;
+transition:0.2s;
+}
+
+#crate:hover{
+transform:scale(1.05);
+}
+
+#spinner{
+margin:60px auto;
+width:600px;
+height:120px;
+overflow:hidden;
+border:3px solid white;
+border-radius:10px;
+position:relative;
+}
+
+#items{
+display:flex;
+position:absolute;
+left:0;
+}
+
+.item{
+width:120px;
+height:120px;
+display:flex;
+align-items:center;
+justify-content:center;
+font-weight:bold;
+border-right:2px solid #222;
+}
+
+/* rarity colors */
+
+.common{background:#777;}
+.rare{background:#3b82f6;}
+.epic{background:#a855f7;}
+.legendary{background:#f59e0b;}
+
+/* glow effects */
+
+.rare{box-shadow:0 0 10px #3b82f6;}
+.epic{box-shadow:0 0 15px #a855f7;}
+.legendary{box-shadow:0 0 20px #f59e0b;}
+
+#pointer{
+position:absolute;
+top:-10px;
+left:50%;
+transform:translateX(-50%);
+font-size:30px;
+}
+
+#result{
+margin-top:30px;
+font-size:26px;
+}
+
+</style>
+</head>
+
+<body>
+
+<h1>Cosmetic Crate</h1>
+
+<div id="crate">OPEN CRATE</div>
+
+<div id="spinner">
+<div id="pointer">▼</div>
+<div id="items"></div>
+</div>
+
+<div id="result"></div>
+
+<audio id="spinSound" src="spin.mp3"></audio>
+<audio id="winSound" src="win.mp3"></audio>
+
+<script>
+
+const rewards=[
+{name:"Top Hat",rarity:"common"},
+{name:"Wave Emote",rarity:"rare"},
+{name:"Dragon Mount",rarity:"legendary"},
+{name:"Creeper Pet",rarity:"epic"},
+{name:"Rainbow Gadget",rarity:"rare"}
+];
+
+const itemsDiv=document.getElementById("items");
+
+for(let i=0;i<60;i++){
+
+let reward=rewards[Math.floor(Math.random()*rewards.length)];
+
+let div=document.createElement("div");
+div.className="item "+reward.rarity;
+div.innerText=reward.name;
+
+itemsDiv.appendChild(div);
+
+}
+
+function openCrate(){
+
+document.getElementById("spinSound").play();
+
+let spinDistance=-(Math.random()*4000+2000);
+
+itemsDiv.style.transition="transform 4s cubic-bezier(.1,.7,.1,1)";
+itemsDiv.style.transform="translateX("+spinDistance+"px)";
+
+setTimeout(()=>{
+
+let items=document.querySelectorAll(".item");
+
+let index=Math.floor(Math.abs(spinDistance)/120)+2;
+
+let winItem=items[index];
+
+document.getElementById("winSound").play();
+
+document.getElementById("result").innerHTML=
+"YOU WON: "+winItem.innerText;
+
+},4000)
+
+}
+
+document.getElementById("crate").onclick=openCrate;
+
+</script>
+
+</body>
+</html>
