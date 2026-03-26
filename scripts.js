@@ -128,7 +128,7 @@ p.y+=dy*0.002;
 
 ctx.beginPath();
 ctx.arc(p.x,p.y,p.size,0,Math.PI*2);
-ctx.fillStyle="white";
+ctx.fillStyle="red";
 ctx.fill();
 
 });
