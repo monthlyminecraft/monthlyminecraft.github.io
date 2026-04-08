@@ -1,0 +1,1260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Block Miner</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; image-rendering: pixelated; }
+
+body {
+  background: #1a1a2e;
+  font-family: 'Press Start 2P', monospace;
+  color: #fff;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 16px;
+  background-image: radial-gradient(ellipse at top, #0d2137 0%, #1a1a2e 60%);
+}
+
+h1 {
+  font-size: 18px;
+  color: #5efc82;
+  text-shadow: 3px 3px 0 #1e7e34, 6px 6px 0 #0a3d1a;
+  margin: 12px 0 4px;
+  text-align: center;
+}
+
+.subtitle { font-size: 8px; color: #aaa; margin-bottom: 16px; text-align: center; }
+
+.game-wrap {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  justify-content: center;
+  width: 100%;
+  max-width: 1100px;
+}
+
+/* PANELS */
+.stats-panel, .upgrade-panel {
+  background: #2d2d2d;
+  border: 4px solid #555;
+  border-bottom-color: #222;
+  border-right-color: #222;
+  padding: 12px;
+}
+
+.stats-panel { width: 180px; min-width: 160px; }
+.upgrade-panel { width: 210px; min-width: 190px; }
+
+.panel-title {
+  font-size: 7px;
+  color: #ffcc00;
+  margin-bottom: 10px;
+  padding-bottom: 6px;
+  border-bottom: 2px solid #555;
+}
+
+.stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  font-size: 7px;
+}
+.stat-label { color: #aaa; }
+.stat-val { color: #fff; }
+
+.health-bar-wrap { margin-bottom: 10px; }
+.bar-label { font-size: 6px; color: #aaa; margin-bottom: 4px; }
+.bar-track {
+  background: #111;
+  border: 2px solid #555;
+  height: 14px;
+  width: 100%;
+  position: relative;
+  overflow: hidden;
+}
+.bar-fill { height: 100%; transition: width 0.15s; }
+.health-fill { background: #e74c3c; }
+.xp-fill { background: #8bc34a; }
+.idle-fill { background: #9b59b6; }
+
+/* INVENTORY */
+.inv-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  margin-top: 6px;
+}
+
+.inv-slot {
+  background: #1a1a1a;
+  border: 2px solid #555;
+  border-bottom-color: #222;
+  border-right-color: #222;
+  padding: 4px 2px;
+  text-align: center;
+  font-size: 6px;
+  min-height: 44px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+.inv-count { color: #ffcc00; font-size: 7px; }
+.inv-name { color: #888; font-size: 5px; }
+
+/* MINE GRID */
+.mine-section { flex: 1; min-width: 280px; }
+
+.depth-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+  font-size: 7px;
+  color: #aaa;
+}
+.depth-val { color: #5efc82; }
+
+.mine-grid {
+  display: grid;
+  grid-template-columns: repeat(9, 1fr);
+  gap: 2px;
+  width: 100%;
+  max-width: 540px;
+}
+
+.block {
+  aspect-ratio: 1;
+  border: 2px solid rgba(0,0,0,0.4);
+  border-bottom-color: rgba(255,255,255,0.1);
+  border-right-color: rgba(255,255,255,0.1);
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+  transition: filter 0.05s;
+  min-width: 0;
+}
+.block:hover { filter: brightness(1.3); }
+.block:active { filter: brightness(0.7); transform: scale(0.95); }
+.block.mined { background: #0a0a0a !important; cursor: default; border-color: #111; filter: none; }
+.block.mined:hover { filter: none; }
+.block.mined:active { transform: none; }
+.block.auto-mining { box-shadow: 0 0 6px 2px #9b59b6; }
+
+.crack-overlay {
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(45deg, transparent, transparent 3px, rgba(0,0,0,0.15) 3px, rgba(0,0,0,0.15) 4px);
+  opacity: 0;
+  pointer-events: none;
+}
+.crack-1 { opacity: 0.3; }
+.crack-2 { opacity: 0.6; }
+.crack-3 { opacity: 0.85; }
+
+/* Block colors */
+.ore-dot { position: absolute; border-radius: 0; pointer-events: none; }
+
+/* popup */
+.popup {
+  position: fixed;
+  font-size: 8px;
+  font-family: 'Press Start 2P', monospace;
+  pointer-events: none;
+  z-index: 999;
+  animation: popFloat 0.9s ease-out forwards;
+  text-shadow: 1px 1px 0 #000;
+}
+@keyframes popFloat {
+  0%   { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-40px); }
+}
+
+/* TOOLBAR */
+.toolbar {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+.tool-btn {
+  background: #3d3d3d;
+  border: 3px solid #666;
+  border-bottom-color: #222;
+  border-right-color: #222;
+  color: #fff;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 7px;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: filter 0.1s;
+}
+.tool-btn:hover { filter: brightness(1.3); }
+.tool-btn:active { border-bottom-color: #666; border-right-color: #666; border-top-color: #222; border-left-color: #222; }
+.tool-btn.active { background: #5e8a2e; border-color: #8bc34a; }
+.tool-btn:disabled { opacity: 0.4; cursor: not-allowed; filter: none; }
+
+/* MESSAGES */
+.msg-box {
+  background: #111;
+  border: 2px solid #333;
+  padding: 6px 10px;
+  font-size: 7px;
+  color: #8bc34a;
+  margin-top: 10px;
+  width: 100%;
+  max-width: 540px;
+  min-height: 22px;
+  text-align: center;
+}
+
+/* OVERLAY */
+.overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.85);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+.overlay-box {
+  background: #2d2d2d;
+  border: 4px solid #ffcc00;
+  padding: 24px 32px;
+  text-align: center;
+  max-width: 320px;
+}
+.overlay-box h2 { font-size: 14px; color: #ffcc00; margin-bottom: 12px; }
+.overlay-box p  { font-size: 7px; color: #ccc; margin-bottom: 16px; line-height: 1.8; }
+
+/* UPGRADES */
+.upgrade-item {
+  background: #1e1e1e;
+  border: 2px solid #444;
+  border-bottom-color: #111;
+  border-right-color: #111;
+  padding: 8px;
+  margin-bottom: 6px;
+  cursor: pointer;
+  transition: filter 0.1s, border-color 0.1s;
+}
+.upgrade-item:hover:not(.maxed):not(.cant-afford) { filter: brightness(1.25); border-color: #ffcc00; }
+.upgrade-item.maxed { opacity: 0.5; cursor: default; }
+.upgrade-item.cant-afford { opacity: 0.6; cursor: not-allowed; }
+
+.upg-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 4px;
+}
+.upg-name { font-size: 6px; color: #fff; }
+.upg-lvl { font-size: 5px; color: #ffcc00; }
+.upg-desc { font-size: 5px; color: #888; margin-bottom: 5px; line-height: 1.6; }
+.upg-cost {
+  font-size: 5px;
+  color: #5ddef4;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.cost-item { background: #0a2030; border: 1px solid #1a4060; padding: 1px 4px; }
+
+/* idle miners display */
+.idle-section {
+  margin-top: 10px;
+}
+.idle-miner-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 6px;
+  color: #9b59b6;
+  margin-bottom: 4px;
+}
+.idle-miner-icon { font-size: 10px; }
+
+/* save/load bar */
+.save-bar {
+  display: flex;
+  gap: 8px;
+  margin-top: 10px;
+  justify-content: center;
+}
+
+/* tabs for upgrade panel */
+.tab-row {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 8px;
+}
+.tab-btn {
+  flex: 1;
+  background: #1a1a1a;
+  border: 2px solid #444;
+  color: #888;
+  font-family: 'Press Start 2P', monospace;
+  font-size: 5px;
+  padding: 4px 2px;
+  cursor: pointer;
+  text-align: center;
+}
+.tab-btn.active { background: #2d4a1e; border-color: #8bc34a; color: #8bc34a; }
+
+.tab-content { display: none; }
+.tab-content.active { display: block; }
+
+/* idle pulse anim */
+@keyframes idlePulse {
+  0%,100% { box-shadow: 0 0 4px 1px rgba(155,89,182,0.4); }
+  50% { box-shadow: 0 0 10px 4px rgba(155,89,182,0.8); }
+}
+.block.idle-active { animation: idlePulse 0.8s ease-in-out infinite; }
+
+/* notification badge */
+.notif-badge {
+  display: inline-block;
+  background: #e74c3c;
+  color: #fff;
+  font-size: 5px;
+  border-radius: 0;
+  padding: 1px 3px;
+  margin-left: 4px;
+  vertical-align: middle;
+}
+
+@media (max-width: 600px) {
+  h1 { font-size: 12px; }
+  .mine-grid { grid-template-columns: repeat(7, 1fr); }
+  .stats-panel, .upgrade-panel { width: 100%; }
+  .game-wrap { gap: 10px; }
+}
+</style>
+</head>
+<body>
+
+<h1>&#x26CF; Block Miner</h1>
+<p class="subtitle">monthlyminecraft.github.io &nbsp;|&nbsp; <span id="save-indicator" style="color:#5efc82">&#x1F4BE; Auto-save ON</span></p>
+
+<div class="game-wrap">
+
+  <!-- LEFT PANEL: STATS -->
+  <div class="stats-panel">
+    <div class="panel-title">&#x2764; PLAYER</div>
+
+    <div class="health-bar-wrap">
+      <div class="bar-label">HEALTH</div>
+      <div class="bar-track"><div class="bar-fill health-fill" id="health-bar" style="width:100%"></div></div>
+    </div>
+
+    <div class="health-bar-wrap">
+      <div class="bar-label">XP</div>
+      <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="health-bar-wrap">
+      <div class="bar-label">IDLE PROGRESS</div>
+      <div class="bar-track"><div class="bar-fill idle-fill" id="idle-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-row"><span class="stat-label">LEVEL</span><span class="stat-val" id="stat-level">1</span></div>
+    <div class="stat-row"><span class="stat-label">XP</span><span class="stat-val" id="stat-xp">0/20</span></div>
+    <div class="stat-row"><span class="stat-label">DEPTH</span><span class="stat-val" id="stat-depth">0m</span></div>
+    <div class="stat-row"><span class="stat-label">MINED</span><span class="stat-val" id="stat-mined">0</span></div>
+    <div class="stat-row"><span class="stat-label">POWER</span><span class="stat-val" id="stat-power">1</span></div>
+    <div class="stat-row"><span class="stat-label">MINERS</span><span class="stat-val" id="stat-miners">0</span></div>
+
+    <div class="panel-title" style="margin-top:12px">&#x1F392; INVENTORY</div>
+    <div class="inv-grid" id="inventory"></div>
+
+    <div class="save-bar">
+      <button class="tool-btn" onclick="saveGame()" style="font-size:5px;padding:6px 8px">&#x1F4BE; SAVE</button>
+      <button class="tool-btn" onclick="confirmReset()" style="font-size:5px;padding:6px 8px;background:#3a1a1a;border-color:#883333">&#x1F5D1; RESET</button>
+    </div>
+  </div>
+
+  <!-- MINE -->
+  <div class="mine-section">
+    <div class="depth-bar">
+      <span>DEPTH:</span>
+      <span class="depth-val" id="depth-label">Surface</span>
+      <span style="margin-left:auto;font-size:6px;color:#666">&#x25BC; dig deeper</span>
+    </div>
+
+    <div class="mine-grid" id="mine-grid"></div>
+
+    <div class="msg-box" id="msg-box">Click a block to start mining! ⛏</div>
+
+    <div class="toolbar">
+      <button class="tool-btn active" id="btn-wood"    onclick="selectTool('wood')">&#x1FA93; WOOD</button>
+      <button class="tool-btn"        id="btn-stone"   onclick="selectTool('stone')">&#x26CF; STONE</button>
+      <button class="tool-btn"        id="btn-iron"    onclick="selectTool('iron')">&#x2694;&#xFE0F; IRON</button>
+      <button class="tool-btn"        id="btn-diamond" onclick="selectTool('diamond')">&#x1F48E; DIAMOND</button>
+      <button class="tool-btn" onclick="regenerateLayer()" style="background:#3a2a2a;border-color:#884444">&#x21BA; NEW LAYER</button>
+    </div>
+  </div>
+
+  <!-- RIGHT PANEL: UPGRADES -->
+  <div class="upgrade-panel">
+    <div class="panel-title">&#x2B06; UPGRADES</div>
+
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('mining')" id="tab-mining">⛏ MINE</button>
+      <button class="tab-btn" onclick="switchTab('idle')" id="tab-idle">⚙ IDLE</button>
+      <button class="tab-btn" onclick="switchTab('perks')" id="tab-perks">⭐ PERKS</button>
+    </div>
+
+    <!-- MINING TAB -->
+    <div class="tab-content active" id="tab-content-mining">
+      <div id="upgrades-mining"></div>
+    </div>
+
+    <!-- IDLE TAB -->
+    <div class="tab-content" id="tab-content-idle">
+      <div class="idle-section">
+        <div style="font-size:6px;color:#9b59b6;margin-bottom:8px">&#x26A1; IDLE MINERS</div>
+        <div id="idle-miners-display"></div>
+      </div>
+      <div id="upgrades-idle"></div>
+    </div>
+
+    <!-- PERKS TAB -->
+    <div class="tab-content" id="tab-content-perks">
+      <div id="upgrades-perks"></div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LEVEL UP OVERLAY -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2>LEVEL UP!</h2>
+    <p id="overlay-msg">You reached level 2!</p>
+    <button class="tool-btn" onclick="closeOverlay()">CONTINUE &#x25B6;</button>
+  </div>
+</div>
+
+<!-- RESET CONFIRM OVERLAY -->
+<div class="overlay" id="reset-overlay">
+  <div class="overlay-box">
+    <h2 style="color:#e74c3c">RESET?</h2>
+    <p>This will delete all progress. Are you sure?</p>
+    <div style="display:flex;gap:12px;justify-content:center">
+      <button class="tool-btn" onclick="resetGame()" style="background:#5a1a1a;border-color:#e74c3c">YES, RESET</button>
+      <button class="tool-btn" onclick="document.getElementById('reset-overlay').style.display='none'">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const COLS = 9, ROWS = 8;
+
+const BLOCK_TYPES = {
+  grass:   { color:'#5e8a2e', label:'Grass',    hp:2,  xp:1,  drop:'dirt',    dropAmt:1, ores:[] },
+  dirt:    { color:'#7a5432', label:'Dirt',     hp:2,  xp:1,  drop:'dirt',    dropAmt:1, ores:[] },
+  stone:   { color:'#7a7a7a', label:'Stone',    hp:5,  xp:2,  drop:'stone',   dropAmt:1, ores:[] },
+  coal:    { color:'#4a4a4a', label:'Coal Ore', hp:6,  xp:5,  drop:'coal',    dropAmt:2, ores:[{c:'#1a1a1a',s:3}] },
+  iron:    { color:'#8a8070', label:'Iron Ore', hp:8,  xp:10, drop:'iron',    dropAmt:1, ores:[{c:'#c8845e',s:3}] },
+  gold:    { color:'#7a7a40', label:'Gold Ore', hp:10, xp:20, drop:'gold',    dropAmt:1, ores:[{c:'#f5c518',s:3}] },
+  diamond: { color:'#507a7a', label:'Diamond',  hp:15, xp:50, drop:'diamond', dropAmt:1, ores:[{c:'#5ddef4',s:3},{c:'#1ac0e0',s:2}] },
+  emerald: { color:'#2a7a4a', label:'Emerald',  hp:18, xp:80, drop:'emerald', dropAmt:1, ores:[{c:'#2ecc71',s:3}] },
+  ruby:    { color:'#6a2a2a', label:'Ruby Ore', hp:20, xp:120,drop:'ruby',    dropAmt:1, ores:[{c:'#e74c3c',s:3},{c:'#c0392b',s:2}] },
+  obsidian:{ color:'#1a0a2a', label:'Obsidian', hp:25, xp:30, drop:'obsidian',dropAmt:1, ores:[] },
+  bedrock: { color:'#222',    label:'Bedrock',  hp:999,xp:0,  drop:null,      dropAmt:0, ores:[] },
+  lava:    { color:'#b22222', label:'Lava',     hp:1,  xp:0,  drop:null,      dropAmt:0, ores:[], dmg:15 },
+};
+
+const RESOURCE_ICONS = {
+  dirt:    {emoji:'🟫', color:'#a0712a'},
+  stone:   {emoji:'⬜', color:'#999'},
+  coal:    {emoji:'⬛', color:'#555'},
+  iron:    {emoji:'🟧', color:'#c8845e'},
+  gold:    {emoji:'🟨', color:'#f5c518'},
+  diamond: {emoji:'💎', color:'#5ddef4'},
+  emerald: {emoji:'💚', color:'#2ecc71'},
+  ruby:    {emoji:'🔴', color:'#e74c3c'},
+  obsidian:{emoji:'🟣', color:'#8e44ad'},
+};
+
+const TOOL_BASE_POWER = { wood:1, stone:1.5, iron:2.5, diamond:5 };
+const TOOL_UNLOCK     = { wood:1, stone:3,   iron:5,   diamond:8 };
+
+const LAYER_CONFIGS = [
+  { depth:0,   weights:{ grass:30, dirt:70 } },
+  { depth:5,   weights:{ dirt:20, stone:80 } },
+  { depth:15,  weights:{ stone:70, coal:30 } },
+  { depth:30,  weights:{ stone:50, coal:30, iron:20 } },
+  { depth:60,  weights:{ stone:40, coal:20, iron:25, gold:15 } },
+  { depth:100, weights:{ stone:30, coal:10, iron:20, gold:20, diamond:15, lava:5 } },
+  { depth:150, weights:{ stone:20, iron:10, gold:20, diamond:25, emerald:10, lava:8, obsidian:7 } },
+  { depth:200, weights:{ stone:15, gold:10, diamond:20, emerald:15, ruby:15, obsidian:15, lava:10 } },
+];
+
+// ─── UPGRADE DEFINITIONS ──────────────────────────────────────────────────────
+// cost: array of {res, amt} — scales per level via costMult
+const UPGRADE_DEFS = {
+  // MINING
+  sharp_pick: {
+    tab:'mining', name:'Sharp Pickaxe', icon:'⛏',
+    desc:'Boost your mining power',
+    maxLevel:5,
+    effect(lvl) { return `+${lvl * 0.5} power`; },
+    costBase:[{res:'stone',amt:10},{res:'coal',amt:5}],
+    costMult:2.5,
+    apply(state,lvl) { state.upgrades.sharp_pick = lvl; },
+  },
+  quick_hands: {
+    tab:'mining', name:'Quick Hands', icon:'👐',
+    desc:'Each click hits twice',
+    maxLevel:3,
+    effect(lvl) { return `${lvl} extra hits/click`; },
+    costBase:[{res:'coal',amt:8},{res:'iron',amt:3}],
+    costMult:4,
+    apply(state,lvl) { state.upgrades.quick_hands = lvl; },
+  },
+  iron_lungs: {
+    tab:'mining', name:'Iron Lungs', icon:'💨',
+    desc:'Ignore lava damage',
+    maxLevel:3,
+    effect(lvl) { return `${Math.round((1-Math.pow(0.5,lvl))*100)}% lava resist`; },
+    costBase:[{res:'iron',amt:5},{res:'gold',amt:2}],
+    costMult:5,
+    apply(state,lvl) { state.upgrades.iron_lungs = lvl; },
+  },
+  fortune: {
+    tab:'mining', name:'Fortune', icon:'🍀',
+    desc:'Chance for double drops',
+    maxLevel:5,
+    effect(lvl) { return `${lvl*10}% double drop`; },
+    costBase:[{res:'gold',amt:3},{res:'diamond',amt:1}],
+    costMult:3,
+    apply(state,lvl) { state.upgrades.fortune = lvl; },
+  },
+  xp_boost: {
+    tab:'mining', name:'XP Boost', icon:'⭐',
+    desc:'Gain more XP per block',
+    maxLevel:5,
+    effect(lvl) { return `+${lvl*20}% XP`; },
+    costBase:[{res:'coal',amt:15},{res:'stone',amt:20}],
+    costMult:2,
+    apply(state,lvl) { state.upgrades.xp_boost = lvl; },
+  },
+  deep_scan: {
+    tab:'mining', name:'Deep Scan', icon:'🔭',
+    desc:'Reveal rare ores in grid',
+    maxLevel:1,
+    effect(lvl) { return lvl ? 'Active' : 'Inactive'; },
+    costBase:[{res:'iron',amt:10},{res:'diamond',amt:2}],
+    costMult:1,
+    apply(state,lvl) { state.upgrades.deep_scan = lvl; },
+  },
+  vein_miner: {
+    tab:'mining', name:'Vein Miner', icon:'💥',
+    desc:'Hit 2 adjacent blocks at once',
+    maxLevel:3,
+    effect(lvl) { return `+${lvl} splash`; },
+    costBase:[{res:'iron',amt:8},{res:'gold',amt:4}],
+    costMult:4,
+    apply(state,lvl) { state.upgrades.vein_miner = lvl; },
+  },
+
+  // IDLE
+  auto_miner_basic: {
+    tab:'idle', name:'Basic Auto-Miner', icon:'🤖',
+    desc:'Mines 1 block every 8s automatically',
+    maxLevel:5,
+    effect(lvl) { return `${lvl} miner(s)`; },
+    costBase:[{res:'stone',amt:20},{res:'coal',amt:10}],
+    costMult:3,
+    apply(state,lvl) { state.upgrades.auto_miner_basic = lvl; },
+  },
+  auto_miner_speed: {
+    tab:'idle', name:'Miner Speed', icon:'⚡',
+    desc:'Auto-miners work faster',
+    maxLevel:5,
+    effect(lvl) { return `-${lvl*15}% mine time`; },
+    costBase:[{res:'iron',amt:5},{res:'coal',amt:15}],
+    costMult:3.5,
+    apply(state,lvl) { state.upgrades.auto_miner_speed = lvl; },
+  },
+  auto_miner_pro: {
+    tab:'idle', name:'Pro Auto-Miner', icon:'🦾',
+    desc:'Elite miners; 3x power output',
+    maxLevel:3,
+    effect(lvl) { return `${lvl} elite miner(s)`; },
+    costBase:[{res:'iron',amt:20},{res:'diamond',amt:3}],
+    costMult:5,
+    apply(state,lvl) { state.upgrades.auto_miner_pro = lvl; },
+  },
+  miner_fortune: {
+    tab:'idle', name:'Miner Fortune', icon:'💰',
+    desc:'Auto-miners get double drops',
+    maxLevel:3,
+    effect(lvl) { return `${lvl*25}% auto-double drop`; },
+    costBase:[{res:'gold',amt:5},{res:'diamond',amt:2}],
+    costMult:4,
+    apply(state,lvl) { state.upgrades.miner_fortune = lvl; },
+  },
+
+  // PERKS
+  regen: {
+    tab:'perks', name:'Health Regen', icon:'❤️',
+    desc:'Slowly regenerate health',
+    maxLevel:5,
+    effect(lvl) { return `+${lvl} HP/5s`; },
+    costBase:[{res:'dirt',amt:30},{res:'stone',amt:15}],
+    costMult:2,
+    apply(state,lvl) { state.upgrades.regen = lvl; },
+  },
+  max_health: {
+    tab:'perks', name:'Vitality', icon:'💪',
+    desc:'Increase max health',
+    maxLevel:5,
+    effect(lvl) { return `+${lvl*25} max HP`; },
+    costBase:[{res:'coal',amt:10},{res:'iron',amt:5}],
+    costMult:3,
+    apply(state,lvl) { state.upgrades.max_health = lvl; },
+  },
+  depth_runner: {
+    tab:'perks', name:'Depth Runner', icon:'🏃',
+    desc:'Advance deeper per layer clear',
+    maxLevel:3,
+    effect(lvl) { return `+${lvl*5}m per layer`; },
+    costBase:[{res:'stone',amt:25},{res:'gold',amt:3}],
+    costMult:4,
+    apply(state,lvl) { state.upgrades.depth_runner = lvl; },
+  },
+  gem_sense: {
+    tab:'perks', name:'Gem Sense', icon:'💎',
+    desc:'Diamonds & emeralds give extra XP',
+    maxLevel:3,
+    effect(lvl) { return `+${lvl*30}% gem XP`; },
+    costBase:[{res:'gold',amt:5},{res:'diamond',amt:2}],
+    costMult:4,
+    apply(state,lvl) { state.upgrades.gem_sense = lvl; },
+  },
+  obsidian_skin: {
+    tab:'perks', name:'Obsidian Skin', icon:'🛡',
+    desc:'Reduce all damage taken',
+    maxLevel:3,
+    effect(lvl) { return `-${lvl*20}% damage`; },
+    costBase:[{res:'obsidian',amt:5},{res:'diamond',amt:2}],
+    costMult:3,
+    apply(state,lvl) { state.upgrades.obsidian_skin = lvl; },
+  },
+  lucky_streak: {
+    tab:'perks', name:'Lucky Streak', icon:'🎲',
+    desc:'Chance to find bonus chests',
+    maxLevel:3,
+    effect(lvl) { return `${lvl*5}% bonus chest`; },
+    costBase:[{res:'gold',amt:8},{res:'emerald',amt:2}],
+    costMult:5,
+    apply(state,lvl) { state.upgrades.lucky_streak = lvl; },
+  },
+};
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+function defaultState() {
+  return {
+    tool: 'wood',
+    xp: 0, level: 1, xpNext: 20,
+    health: 100, maxHealth: 100,
+    depth: 0, layerIndex: 0, mined: 0,
+    inventory: {},
+    blocks: [],
+    upgrades: {},
+    idleProgress: 0,   // 0..1 progress toward next idle mine
+    idleTick: 0,       // ms since last idle mine
+  };
+}
+
+let state = defaultState();
+
+// ─── SAVE / LOAD ──────────────────────────────────────────────────────────────
+const SAVE_KEY = 'block_miner_save_v3';
+
+function saveGame(silent) {
+  try {
+    const save = {
+      tool: state.tool,
+      xp: state.xp, level: state.level, xpNext: state.xpNext,
+      health: state.health, maxHealth: state.maxHealth,
+      depth: state.depth, layerIndex: state.layerIndex, mined: state.mined,
+      inventory: state.inventory,
+      upgrades: state.upgrades,
+      blocks: state.blocks,
+      savedAt: Date.now(),
+    };
+    localStorage.setItem(SAVE_KEY, JSON.stringify(save));
+    if (!silent) showMsg('&#x1F4BE; Game saved!', '#5efc82');
+    document.getElementById('save-indicator').textContent = '💾 Saved: ' + new Date().toLocaleTimeString();
+  } catch(e) {
+    showMsg('&#x26A0;&#xFE0F; Could not save (storage full?)', '#e74c3c');
+  }
+}
+
+function loadGame() {
+  try {
+    const raw = localStorage.getItem(SAVE_KEY);
+    if (!raw) return false;
+    const save = JSON.parse(raw);
+    Object.assign(state, save);
+    state.idleProgress = 0;
+    state.idleTick = 0;
+    return true;
+  } catch(e) { return false; }
+}
+
+function confirmReset() {
+  document.getElementById('reset-overlay').style.display = 'flex';
+}
+
+function resetGame() {
+  localStorage.removeItem(SAVE_KEY);
+  state = defaultState();
+  document.getElementById('reset-overlay').style.display = 'none';
+  generateLayer();
+  renderGrid();
+  renderInventory();
+  updateStats();
+  renderUpgrades();
+  showMsg('&#x1F5D1; Game reset. Fresh start!', '#e74c3c');
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function weightedRandom(weights) {
+  const total = Object.values(weights).reduce((a,b)=>a+b, 0);
+  let r = Math.random() * total;
+  for (const [k,v] of Object.entries(weights)) { r -= v; if (r <= 0) return k; }
+  return Object.keys(weights)[0];
+}
+
+function getLayerConfig() {
+  let cfg = LAYER_CONFIGS[0];
+  for (const lc of LAYER_CONFIGS) { if (state.depth >= lc.depth) cfg = lc; }
+  return cfg;
+}
+
+function scaleWeight(w, key, factor) {
+  const out = {...w};
+  if (out[key]) out[key] = Math.round(out[key] * factor);
+  return out;
+}
+
+function getToolPower() {
+  let power = TOOL_BASE_POWER[state.tool];
+  power += (state.upgrades.sharp_pick || 0) * 0.5;
+  return power;
+}
+
+function getIdleInterval() {
+  const baseMs = 8000;
+  const speedLvl = state.upgrades.auto_miner_speed || 0;
+  return Math.max(1500, baseMs * Math.pow(0.85, speedLvl));
+}
+
+function getTotalMiners() {
+  return (state.upgrades.auto_miner_basic || 0) + (state.upgrades.auto_miner_pro || 0) * 3;
+}
+
+// ─── LAYER GEN ────────────────────────────────────────────────────────────────
+function generateLayer() {
+  const cfg = getLayerConfig();
+  state.blocks = [];
+  for (let i = 0; i < COLS * ROWS; i++) {
+    const row = Math.floor(i / COLS);
+    let weights = {...cfg.weights};
+    if (row >= 5 && cfg.weights.diamond) {
+      weights = scaleWeight(weights, 'diamond', 1.5);
+      weights = scaleWeight(weights, 'gold', 1.3);
+      if (cfg.weights.emerald) weights = scaleWeight(weights, 'emerald', 1.4);
+      if (cfg.weights.ruby)    weights = scaleWeight(weights, 'ruby',    1.6);
+    }
+    if (state.depth === 0 && row === 0) weights = { grass: 100 };
+    const type = weightedRandom(weights);
+    const def  = BLOCK_TYPES[type];
+    state.blocks.push({ type, hp: def.hp, maxHp: def.hp, mined: false });
+  }
+}
+
+// ─── RENDER ───────────────────────────────────────────────────────────────────
+function renderGrid() {
+  const grid = document.getElementById('mine-grid');
+  grid.innerHTML = '';
+  state.blocks.forEach((block, i) => {
+    const def = BLOCK_TYPES[block.type];
+    const el  = document.createElement('div');
+    el.className = 'block';
+    el.id = 'block-' + i;
+    el.style.background = def.color;
+    if (block.mined) el.classList.add('mined');
+
+    // deep scan highlight
+    if ((state.upgrades.deep_scan||0) >= 1 && !block.mined) {
+      if (['diamond','emerald','ruby'].includes(block.type)) {
+        el.style.boxShadow = '0 0 6px 2px rgba(255,255,0,0.6)';
+      }
+    }
+
+    if (def.ores.length && !block.mined) {
+      def.ores.forEach((ore, oi) => {
+        const positions = oi === 0
+          ? [{x:20,y:25},{x:55,y:15},{x:35,y:55},{x:70,y:60}]
+          : [{x:45,y:40}];
+        positions.forEach(pos => {
+          const dot = document.createElement('div');
+          dot.className = 'ore-dot';
+          dot.style.cssText = `background:${ore.c};width:${ore.s*2}px;height:${ore.s*2}px;left:${pos.x}%;top:${pos.y}%;`;
+          el.appendChild(dot);
+        });
+      });
+    }
+
+    const crack = document.createElement('div');
+    crack.className = 'crack-overlay';
+    crack.id = 'crack-' + i;
+    el.appendChild(crack);
+
+    if (!block.mined && block.type !== 'bedrock') {
+      el.addEventListener('click', () => clickBlock(i));
+    }
+
+    grid.appendChild(el);
+  });
+}
+
+function renderInventory() {
+  const el = document.getElementById('inventory');
+  el.innerHTML = '';
+  Object.keys(RESOURCE_ICONS).forEach(res => {
+    const slot  = document.createElement('div');
+    slot.className = 'inv-slot';
+    const icon  = RESOURCE_ICONS[res];
+    const count = state.inventory[res] || 0;
+    slot.innerHTML = `<span style="font-size:18px">${icon.emoji}</span><span class="inv-count">${count}</span><span class="inv-name">${res.toUpperCase()}</span>`;
+    el.appendChild(slot);
+  });
+}
+
+function renderUpgrades() {
+  ['mining','idle','perks'].forEach(tab => {
+    const container = document.getElementById('upgrades-' + tab);
+    if (!container) return;
+    container.innerHTML = '';
+
+    Object.entries(UPGRADE_DEFS).forEach(([key, def]) => {
+      if (def.tab !== tab) return;
+      const currentLvl = state.upgrades[key] || 0;
+      const isMaxed = currentLvl >= def.maxLevel;
+      const cost = getUpgradeCost(key, currentLvl);
+      const canAfford = isMaxed || cost.every(c => (state.inventory[c.res]||0) >= c.amt);
+
+      const item = document.createElement('div');
+      item.className = 'upgrade-item' + (isMaxed ? ' maxed' : (!canAfford ? ' cant-afford' : ''));
+
+      const costHTML = isMaxed ? '<span style="color:#5efc82">MAX LEVEL</span>' :
+        cost.map(c => {
+          const have = state.inventory[c.res] || 0;
+          const col  = have >= c.amt ? '#5ddef4' : '#e74c3c';
+          return `<span class="cost-item" style="color:${col}">${RESOURCE_ICONS[c.res]?.emoji||''} ${c.amt} ${c.res}</span>`;
+        }).join('');
+
+      item.innerHTML = `
+        <div class="upg-header">
+          <span class="upg-name">${def.icon} ${def.name}</span>
+          <span class="upg-lvl">LV${currentLvl}/${def.maxLevel}</span>
+        </div>
+        <div class="upg-desc">${def.desc}<br><span style="color:#aaa">${def.effect(Math.max(1,currentLvl))}</span></div>
+        <div class="upg-cost">${costHTML}</div>
+      `;
+
+      if (!isMaxed && canAfford) {
+        item.addEventListener('click', () => buyUpgrade(key));
+      }
+      container.appendChild(item);
+    });
+  });
+
+  // idle miners display
+  const idleDisplay = document.getElementById('idle-miners-display');
+  if (idleDisplay) {
+    const basic = state.upgrades.auto_miner_basic || 0;
+    const pro   = state.upgrades.auto_miner_pro   || 0;
+    idleDisplay.innerHTML = '';
+    if (basic === 0 && pro === 0) {
+      idleDisplay.innerHTML = '<div style="font-size:5px;color:#555;margin-bottom:8px">No miners yet. Buy Auto-Miner below!</div>';
+    } else {
+      if (basic > 0) {
+        const row = document.createElement('div');
+        row.className = 'idle-miner-row';
+        row.innerHTML = `<span class="idle-miner-icon">🤖</span><span>${basic}x Basic Miner</span><span style="color:#555;margin-left:auto">${(getIdleInterval()/1000).toFixed(1)}s/block</span>`;
+        idleDisplay.appendChild(row);
+      }
+      if (pro > 0) {
+        const row = document.createElement('div');
+        row.className = 'idle-miner-row';
+        row.innerHTML = `<span class="idle-miner-icon">🦾</span><span>${pro}x Pro Miner</span><span style="color:#555;margin-left:auto">3x power</span>`;
+        idleDisplay.appendChild(row);
+      }
+    }
+  }
+}
+
+function getUpgradeCost(key, currentLvl) {
+  const def  = UPGRADE_DEFS[key];
+  const mult = Math.pow(def.costMult, currentLvl);
+  return def.costBase.map(c => ({ res: c.res, amt: Math.ceil(c.amt * mult) }));
+}
+
+function buyUpgrade(key) {
+  const def  = UPGRADE_DEFS[key];
+  const lvl  = state.upgrades[key] || 0;
+  if (lvl >= def.maxLevel) return;
+  const cost = getUpgradeCost(key, lvl);
+  if (!cost.every(c => (state.inventory[c.res]||0) >= c.amt)) {
+    showMsg('&#x26A0;&#xFE0F; Not enough resources!', '#e74c3c');
+    return;
+  }
+  cost.forEach(c => { state.inventory[c.res] -= c.amt; });
+  state.upgrades[key] = lvl + 1;
+  def.apply(state, lvl + 1);
+
+  // side effects
+  if (key === 'max_health') {
+    const bonus = (state.upgrades.max_health) * 25;
+    state.maxHealth = 100 + (state.level - 1) * 10 + bonus;
+    state.health = Math.min(state.health + 25, state.maxHealth);
+  }
+
+  showMsg(`&#x2B06; ${def.icon} ${def.name} upgraded to Lv${state.upgrades[key]}!`, '#ffcc00');
+  renderInventory();
+  renderUpgrades();
+  updateStats();
+  renderGrid(); // re-render for deep_scan highlight
+  saveGame(true);
+}
+
+// ─── MINING ───────────────────────────────────────────────────────────────────
+function clickBlock(i) {
+  const block = state.blocks[i];
+  if (block.mined || block.type === 'bedrock') return;
+
+  const def    = BLOCK_TYPES[block.type];
+  const armor  = Math.pow(0.8, state.upgrades.obsidian_skin || 0);
+
+  if (def.dmg) {
+    const lavaDmg = def.dmg * armor;
+    const resist  = Math.pow(0.5, state.upgrades.iron_lungs || 0);
+    takeDamage(Math.round(lavaDmg * resist));
+    showMsg('&#x1F525; Ouch! Lava burned you!', '#e74c3c');
+    block.hp = 0;
+    finishMining(i);
+    return;
+  }
+
+  const power      = getToolPower();
+  const extraHits  = state.upgrades.quick_hands || 0;
+  const totalPower = power * (1 + extraHits);
+
+  block.hp -= totalPower;
+  spawnPopup(i, '-' + totalPower.toFixed(1), '#64b5f6');
+
+  // crack visual
+  const ratio = 1 - (block.hp / block.maxHp);
+  const crack  = document.getElementById('crack-' + i);
+  if (crack) crack.className = 'crack-overlay ' + (ratio > 0.66 ? 'crack-3' : ratio > 0.33 ? 'crack-2' : 'crack-1');
+
+  // vein miner splash
+  const veinLvl = state.upgrades.vein_miner || 0;
+  if (veinLvl > 0) {
+    const neighbors = getNeighbors(i, veinLvl);
+    neighbors.forEach(ni => {
+      const nb = state.blocks[ni];
+      if (!nb || nb.mined || nb.type === 'bedrock') return;
+      nb.hp -= power * 0.5;
+      const rc = document.getElementById('crack-' + ni);
+      const nr = 1 - (nb.hp / nb.maxHp);
+      if (rc) rc.className = 'crack-overlay ' + (nr > 0.66 ? 'crack-3' : nr > 0.33 ? 'crack-2' : 'crack-1');
+      if (nb.hp <= 0) finishMining(ni);
+    });
+  }
+
+  if (block.hp <= 0) finishMining(i);
+}
+
+function getNeighbors(i, radius) {
+  const out = [];
+  const col = i % COLS, row = Math.floor(i / COLS);
+  for (let dr = -radius; dr <= radius; dr++) {
+    for (let dc = -radius; dc <= radius; dc++) {
+      if (dr === 0 && dc === 0) continue;
+      if (Math.abs(dr) + Math.abs(dc) > radius+1) continue;
+      const nr = row+dr, nc = col+dc;
+      if (nr>=0 && nr<ROWS && nc>=0 && nc<COLS) out.push(nr*COLS+nc);
+    }
+  }
+  return out;
+}
+
+function finishMining(i, isIdle) {
+  const block = state.blocks[i];
+  if (block.mined) return;
+  const def = BLOCK_TYPES[block.type];
+
+  block.mined = true;
+  state.mined++;
+
+  const el = document.getElementById('block-' + i);
+  if (el) { el.className = 'block mined'; el.innerHTML = ''; el.onclick = null; }
+
+  if (def.drop) {
+    let amt = def.dropAmt;
+
+    // fortune
+    const fortuneLvl = state.upgrades.fortune || 0;
+    if (Math.random() < fortuneLvl * 0.1) amt *= 2;
+
+    // miner fortune for idle
+    if (isIdle) {
+      const mf = state.upgrades.miner_fortune || 0;
+      if (Math.random() < mf * 0.25) amt *= 2;
+    }
+
+    state.inventory[def.drop] = (state.inventory[def.drop] || 0) + amt;
+    spawnPopup(i, '+' + amt + ' ' + def.drop, RESOURCE_ICONS[def.drop]?.color || '#fff');
+  }
+
+  // lucky streak chest
+  if ((state.upgrades.lucky_streak||0) > 0) {
+    if (Math.random() < (state.upgrades.lucky_streak||0) * 0.05) {
+      const bonusRes = ['coal','iron','gold','diamond'][Math.floor(Math.random()*4)];
+      const bonusAmt = Math.ceil(Math.random() * 3) + 1;
+      state.inventory[bonusRes] = (state.inventory[bonusRes]||0) + bonusAmt;
+      showMsg(`🎲 Lucky! Found a bonus chest: +${bonusAmt} ${bonusRes}!`, '#f5c518');
+    }
+  }
+
+  // xp
+  let xpGain = def.xp;
+  const xpBoostMult = 1 + (state.upgrades.xp_boost || 0) * 0.2;
+  const gemSenseMult = (['diamond','emerald','ruby'].includes(block.type))
+    ? 1 + (state.upgrades.gem_sense || 0) * 0.3 : 1;
+  xpGain = Math.round(xpGain * xpBoostMult * gemSenseMult);
+  gainXP(xpGain);
+
+  updateStats();
+  renderInventory();
+  renderUpgrades();
+
+  const allMined = state.blocks.every(b => b.mined || b.type === 'bedrock');
+  if (allMined) {
+    setTimeout(() => {
+      const depthBonus = (state.upgrades.depth_runner || 0) * 5;
+      state.depth += 10 + state.layerIndex * 5 + depthBonus;
+      state.layerIndex = Math.min(state.layerIndex + 1, LAYER_CONFIGS.length - 1);
+      generateLayer();
+      renderGrid();
+      updateStats();
+      showMsg('&#x25BC; Dug deeper! Now at ' + state.depth + 'm depth.', '#ffcc00');
+    }, 600);
+  }
+}
+
+// ─── XP / LEVEL ───────────────────────────────────────────────────────────────
+function gainXP(amount) {
+  state.xp += amount;
+  while (state.xp >= state.xpNext) {
+    state.xp -= state.xpNext;
+    state.level++;
+    state.xpNext = Math.floor(state.xpNext * 1.5);
+    const hpBonus = (state.upgrades.max_health || 0) * 25;
+    state.maxHealth = 100 + (state.level - 1) * 10 + hpBonus;
+    state.health = Math.min(state.health + 20, state.maxHealth);
+    showLevelUp();
+  }
+}
+
+function takeDamage(amount) {
+  state.health = Math.max(0, state.health - amount);
+  if (state.health === 0) {
+    showMsg('&#x1F480; You died! Regenerating...', '#e74c3c');
+    setTimeout(() => { state.health = state.maxHealth; updateStats(); }, 1500);
+  }
+  updateStats();
+}
+
+// ─── STATS ────────────────────────────────────────────────────────────────────
+function updateStats() {
+  document.getElementById('stat-level').textContent = state.level;
+  document.getElementById('stat-xp').textContent    = state.xp + '/' + state.xpNext;
+  document.getElementById('stat-depth').textContent = state.depth + 'm';
+  document.getElementById('stat-mined').textContent = state.mined;
+  document.getElementById('stat-power').textContent = getToolPower().toFixed(1);
+  document.getElementById('stat-miners').textContent = getTotalMiners();
+  document.getElementById('depth-label').textContent = state.depth + 'm underground';
+
+  document.getElementById('health-bar').style.width = (state.health / state.maxHealth * 100) + '%';
+  document.getElementById('xp-bar').style.width     = (state.xp / state.xpNext * 100) + '%';
+
+  const miners = getTotalMiners();
+  document.getElementById('idle-bar').style.width = miners > 0
+    ? (state.idleProgress * 100) + '%' : '0%';
+
+  for (const [tool, lvl] of Object.entries(TOOL_UNLOCK)) {
+    const btn = document.getElementById('btn-' + tool);
+    if (btn) btn.disabled = state.level < lvl;
+  }
+}
+
+// ─── TOOLS ────────────────────────────────────────────────────────────────────
+function selectTool(tool) {
+  if (state.level < TOOL_UNLOCK[tool]) {
+    showMsg('Need level ' + TOOL_UNLOCK[tool] + ' to use ' + tool + ' pickaxe!', '#e74c3c');
+    return;
+  }
+  state.tool = tool;
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  const btn = document.getElementById('btn-' + tool);
+  if (btn) btn.classList.add('active');
+  showMsg('Equipped ' + tool + ' pickaxe! Power: x' + getToolPower().toFixed(1), '#ffcc00');
+}
+
+function regenerateLayer() {
+  generateLayer();
+  renderGrid();
+  showMsg('Generated a new layer at ' + state.depth + 'm depth.', '#aaa');
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────────────────────────
+function showMsg(text, color) {
+  const el = document.getElementById('msg-box');
+  el.innerHTML = text;
+  el.style.color = color || '#8bc34a';
+}
+
+function spawnPopup(blockIndex, text, color) {
+  const el = document.getElementById('block-' + blockIndex);
+  if (!el) return;
+  const rect  = el.getBoundingClientRect();
+  const popup = document.createElement('div');
+  popup.className = 'popup';
+  popup.textContent = text;
+  popup.style.color = color || '#fff';
+  popup.style.left  = (rect.left + rect.width/2 - 20) + 'px';
+  popup.style.top   = (rect.top  + window.scrollY - 10) + 'px';
+  document.body.appendChild(popup);
+  setTimeout(() => popup.remove(), 900);
+}
+
+function showLevelUp() {
+  const overlay = document.getElementById('overlay');
+  const msg     = document.getElementById('overlay-msg');
+  overlay.style.display = 'flex';
+  let unlocked = '';
+  for (const [tool, lvl] of Object.entries(TOOL_UNLOCK)) {
+    if (lvl === state.level) unlocked = `\nUnlocked: ${tool.toUpperCase()} pickaxe!`;
+  }
+  msg.textContent = `You reached level ${state.level}!${unlocked}\nMax health increased!`;
+}
+
+function closeOverlay() {
+  document.getElementById('overlay').style.display = 'none';
+}
+
+function switchTab(tab) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  document.getElementById('tab-' + tab).classList.add('active');
+  document.getElementById('tab-content-' + tab).classList.add('active');
+}
+
+// ─── IDLE MINING LOOP ─────────────────────────────────────────────────────────
+let lastTick = Date.now();
+
+function idleLoop() {
+  const now     = Date.now();
+  const delta   = now - lastTick;
+  lastTick      = now;
+
+  const miners  = getTotalMiners();
+
+  // health regen
+  const regenLvl = state.upgrades.regen || 0;
+  if (regenLvl > 0) {
+    state._regenAcc = (state._regenAcc || 0) + delta;
+    if (state._regenAcc >= 5000) {
+      state._regenAcc -= 5000;
+      state.health = Math.min(state.maxHealth, state.health + regenLvl);
+      updateStats();
+    }
+  }
+
+  if (miners > 0) {
+    const interval = getIdleInterval() / miners;
+    state.idleTick = (state.idleTick || 0) + delta;
+    state.idleProgress = Math.min(1, state.idleTick / interval);
+
+    if (state.idleTick >= interval) {
+      state.idleTick -= interval;
+      state.idleProgress = 0;
+      // find first unmined non-bedrock block
+      const idx = state.blocks.findIndex(b => !b.mined && b.type !== 'bedrock');
+      if (idx >= 0) {
+        const b   = state.blocks[idx];
+        const el  = document.getElementById('block-' + idx);
+        if (el) { el.classList.add('idle-active'); setTimeout(() => el && el.classList.remove('idle-active'), 500); }
+        // apply damage
+        const power = getToolPower() * 1.5; // idle miners are slightly weaker per "tick"
+        b.hp -= power;
+        const ratio = 1 - (b.hp / b.maxHp);
+        const crack  = document.getElementById('crack-' + idx);
+        if (crack) crack.className = 'crack-overlay ' + (ratio>0.66?'crack-3':ratio>0.33?'crack-2':'crack-1');
+        if (b.hp <= 0) finishMining(idx, true);
+      }
+    }
+
+    updateStats();
+  }
+}
+
+// auto-save every 60s
+setInterval(() => saveGame(true), 60000);
+
+// idle tick every 100ms
+setInterval(idleLoop, 100);
+
+// ─── INIT ─────────────────────────────────────────────────────────────────────
+(function init() {
+  const loaded = loadGame();
+  if (loaded && state.blocks.length > 0) {
+    renderGrid();
+    showMsg('&#x1F4BE; Save loaded! Welcome back, miner.', '#5efc82');
+  } else {
+    generateLayer();
+    renderGrid();
+    showMsg('Welcome to Block Miner! Click any block to start mining. ⛏', '#5efc82');
+  }
+  renderInventory();
+  renderUpgrades();
+  updateStats();
+  // restore active tool button
+  document.querySelectorAll('.tool-btn').forEach(b => b.classList.remove('active'));
+  const tb = document.getElementById('btn-' + state.tool);
+  if (tb) tb.classList.add('active');
+})();
+</script>
+</body>
+</html>
