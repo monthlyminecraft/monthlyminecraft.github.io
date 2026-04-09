@@ -1,0 +1,3627 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Block Miner ULTRA</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;image-rendering:pixelated}
+:root{
+  --bg:#0d0d1a;--panel:#1e1e2e;--panel2:#252535;--border:#444;--border-lo:#222;
+  --green:#5efc82;--yellow:#ffcc00;--red:#e74c3c;--blue:#5ddef4;--purple:#9b59b6;
+  --orange:#e67e22;--teal:#1abc9c;--pink:#e91e8c;
+}
+body{background:var(--bg);font-family:'Press Start 2P',monospace;color:#fff;min-height:100vh;
+  display:flex;flex-direction:column;align-items:center;padding:10px;
+  background-image:radial-gradient(ellipse at top,#0d1525 0%,var(--bg) 60%)}
+h1{font-size:25px;color:var(--green);text-shadow:3px 3px 0 #1e7e34,5px 5px 0 #0a3d1a;
+  margin:8px 0 2px;text-align:center}
+.subtitle{font-size:11px;color:#777;margin-bottom:10px;text-align:center}
+
+/* ── LAYOUT ── */
+.game-wrap{display:flex;gap:10px;align-items:flex-start;flex-wrap:wrap;justify-content:center;width:100%;max-width:1300px}
+.left-col{display:flex;flex-direction:column;gap:8px;width:190px;min-width:170px}
+.mid-col{flex:1;min-width:300px;display:flex;flex-direction:column;align-items:center}
+.right-col{display:flex;flex-direction:column;gap:8px;width:220px;min-width:200px}
+
+/* ── PANELS ── */
+.panel{background:var(--panel);border:3px solid var(--border);border-bottom-color:var(--border-lo);
+  border-right-color:var(--border-lo);padding:10px}
+.panel-title{font-size:11px;color:var(--yellow);margin-bottom:8px;padding-bottom:5px;
+  border-bottom:2px solid #333;display:flex;align-items:center;gap:4px}
+.stat-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;font-size:9px}
+.stat-label{color:#888}.stat-val{color:#fff}
+
+/* ── BARS ── */
+.bar-wrap{margin-bottom:8px}
+.bar-label{font-size:8px;color:#888;margin-bottom:3px;display:flex;justify-content:space-between}
+.bar-track{background:#0a0a0a;border:2px solid #333;height:12px;position:relative;overflow:hidden}
+.bar-fill{height:100%;transition:width .15s}
+.hp-fill{background:linear-gradient(90deg,#c0392b,#e74c3c)}
+.xp-fill{background:linear-gradient(90deg,#27ae60,#5efc82)}
+.idle-fill{background:linear-gradient(90deg,#6c3483,#9b59b6)}
+.combo-fill{background:linear-gradient(90deg,#d35400,#e67e22)}
+.boss-fill{background:linear-gradient(90deg,#922b21,#e74c3c)}
+.sell-fill{background:linear-gradient(90deg,#1a5276,#2980b9)}
+
+/* ── MINE GRID ── */
+.mine-section{width:100%;max-width:600px}
+.depth-bar{display:flex;align-items:center;gap:6px;margin-bottom:6px;font-size:9px;color:#888;flex-wrap:wrap}
+.depth-val{color:var(--green)}
+.biome-badge{font-size:8px;padding:2px 6px;border:1px solid;margin-left:auto}
+
+.mine-grid{display:grid;grid-template-columns:repeat(9,1fr);gap:2px;width:100%}
+.block{aspect-ratio:1;border:2px solid rgba(0,0,0,.5);border-bottom-color:rgba(255,255,255,.1);
+  border-right-color:rgba(255,255,255,.1);cursor:pointer;position:relative;overflow:hidden;
+  transition:filter .05s,transform .05s;min-width:0}
+.block:hover:not(.mined):not(.bedrock-block){filter:brightness(1.35)}
+.block:active:not(.mined){transform:scale(.92)}
+.block.mined{background:#050508!important;cursor:default;border-color:#111;filter:none!important}
+.block.bedrock-block{cursor:not-allowed}
+.block.rare-glow{box-shadow:0 0 8px 3px gold}
+.block.event-tile{animation:eventPulse 1s ease-in-out infinite}
+@keyframes eventPulse{0%,100%{box-shadow:0 0 6px 2px rgba(255,220,0,.5)}50%{box-shadow:0 0 14px 5px rgba(255,220,0,1)}}
+.block.idle-active{animation:idlePulse .6s ease-in-out}
+@keyframes idlePulse{0%,100%{box-shadow:0 0 4px var(--purple)}50%{box-shadow:0 0 12px 4px var(--purple)}}
+.block.combo-block{animation:comboPulse .3s ease-out}
+@keyframes comboPulse{0%{transform:scale(1.1);filter:brightness(2)}100%{transform:scale(1);filter:brightness(1)}}
+.block.boss-block{animation:bossPulse 1.5s ease-in-out infinite}
+@keyframes bossPulse{0%,100%{filter:brightness(1) drop-shadow(0 0 4px #e74c3c)}50%{filter:brightness(1.3) drop-shadow(0 0 12px #ff0000)}}
+
+.crack-overlay{position:absolute;inset:0;background-image:repeating-linear-gradient(45deg,transparent,transparent 3px,rgba(0,0,0,.18) 3px,rgba(0,0,0,.18) 4px);opacity:0;pointer-events:none}
+.crack-1{opacity:.3}.crack-2{opacity:.6}.crack-3{opacity:.88}
+.ore-dot{position:absolute;border-radius:0;pointer-events:none}
+
+/* ── TOOLBAR ── */
+.toolbar{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap;justify-content:center}
+.tool-btn{background:#2a2a3a;border:3px solid #555;border-bottom-color:#111;border-right-color:#111;
+  color:#fff;font-family:'Press Start 2P',monospace;font-size:9px;padding:7px 10px;cursor:pointer;transition:filter .1s}
+.tool-btn:hover{filter:brightness(1.3)}
+.tool-btn:active{border-bottom-color:#555;border-right-color:#555;border-top-color:#111;border-left-color:#111}
+.tool-btn.active{background:#2a4a1a;border-color:var(--green)}
+.tool-btn:disabled{opacity:.35;cursor:not-allowed;filter:none!important}
+.skill-btn{border-color:var(--blue);background:#0a1a2a}
+.skill-btn.ready{background:#0a2a3a;border-color:#00ffff;animation:skillReady .8s ease-in-out infinite}
+@keyframes skillReady{0%,100%{box-shadow:0 0 3px var(--blue)}50%{box-shadow:0 0 10px var(--blue)}}
+.skill-btn.cooldown{opacity:.5}
+
+/* ── MSG ── */
+.msg-box{background:#0a0a12;border:2px solid #2a2a3a;padding:5px 8px;font-size:9px;
+  color:var(--green);margin-top:8px;width:100%;min-height:20px;text-align:center}
+
+/* ── POPUP ── */
+.popup{position:fixed;font-size:11px;font-family:'Press Start 2P',monospace;pointer-events:none;
+  z-index:999;animation:popFloat .9s ease-out forwards;text-shadow:1px 1px 0 #000}
+@keyframes popFloat{0%{opacity:1;transform:translateY(0)}100%{opacity:0;transform:translateY(-45px)}}
+
+/* ── UPGRADES ── */
+.tab-row{display:flex;gap:3px;margin-bottom:6px;flex-wrap:wrap}
+.tab-btn{flex:1;background:#111;border:2px solid #333;color:#666;font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:4px 2px;cursor:pointer;text-align:center;min-width:30px}
+.tab-btn.active{background:#1a2a0a;border-color:var(--green);color:var(--green)}
+.tab-content{display:none}.tab-content.active{display:block}
+
+.upg-item{background:#111;border:2px solid #2a2a2a;border-bottom-color:#080808;border-right-color:#080808;
+  padding:7px;margin-bottom:5px;cursor:pointer;transition:filter .1s,border-color .1s}
+.upg-item:hover:not(.maxed):not(.locked){filter:brightness(1.25);border-color:var(--yellow)}
+.upg-item.maxed{opacity:.45;cursor:default}
+.upg-item.locked{opacity:.4;cursor:not-allowed;border-style:dashed}
+.upg-header{display:flex;justify-content:space-between;margin-bottom:3px}
+.upg-name{font-size:9px;color:#ddd}
+.upg-lvl{font-size:8px;color:var(--yellow)}
+.upg-desc{font-size:8px;color:#777;margin-bottom:4px;line-height:1.7}
+.upg-cost{font-size:8px;color:var(--blue);display:flex;flex-wrap:wrap;gap:3px;align-items:center}
+.cost-chip{background:#0a1520;border:1px solid #1a3a50;padding:1px 4px}
+.cost-chip.red{color:var(--red);border-color:#4a1a1a;background:#1a0a0a}
+
+/* ── SHOP / SELL ── */
+.sell-row{display:flex;align-items:center;gap:4px;margin-bottom:4px;font-size:9px}
+.sell-btn{background:#0a2a1a;border:2px solid #1a6a3a;color:var(--green);font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:3px 6px;cursor:pointer}
+.sell-btn:hover{filter:brightness(1.3)}
+.sell-all-btn{background:#1a2a0a;border:2px solid #5efc82;color:var(--green);font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:4px 8px;cursor:pointer;margin-top:6px;width:100%}
+
+/* ── INVENTORY GRID ── */
+.inv-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;margin-top:4px}
+.inv-slot{background:#0a0a0a;border:2px solid #2a2a2a;padding:3px 2px;text-align:center;
+  min-height:40px;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px}
+.inv-count{color:var(--yellow);font-size:9px}
+.inv-name{color:#666;font-size:8px}
+
+/* ── QUEST ── */
+.quest-item{background:#0d1520;border:2px solid #1a3050;padding:6px;margin-bottom:5px}
+.quest-name{font-size:9px;color:var(--blue);margin-bottom:3px}
+.quest-desc{font-size:8px;color:#777;margin-bottom:4px}
+.quest-prog{height:8px;background:#050a10;border:1px solid #1a3050;overflow:hidden;margin-bottom:3px}
+.quest-prog-fill{height:100%;background:var(--blue);transition:width .3s}
+.quest-reward{font-size:8px;color:var(--yellow)}
+
+/* ── EQUIPMENT ── */
+.equip-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:6px}
+.equip-slot{background:#0a0a12;border:2px solid #2a2a3a;padding:5px;text-align:center;min-height:50px;
+  cursor:pointer;font-size:8px;color:#555;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px}
+.equip-slot.equipped{border-color:var(--yellow);color:#fff}
+.equip-slot-name{font-size:8px;color:var(--yellow)}
+.equip-slot-stat{font-size:8px;color:var(--green)}
+
+/* ── ARTIFACT ── */
+.artifact-item{background:#0d0820;border:2px solid #3a1a5a;padding:6px;margin-bottom:5px;text-align:center}
+.artifact-name{font-size:9px;color:var(--purple);margin-bottom:2px}
+.artifact-desc{font-size:8px;color:#888}
+
+/* ── PRESTIGE ── */
+.prestige-box{background:#1a0a2a;border:3px solid var(--purple);padding:10px;text-align:center;margin-bottom:8px}
+.prestige-title{font-size:12px;color:var(--purple);margin-bottom:6px}
+.prestige-souls{font-size:11px;color:var(--yellow);margin-bottom:6px}
+.prestige-btn{background:#2a0a3a;border:3px solid var(--purple);color:var(--purple);
+  font-family:'Press Start 2P',monospace;font-size:9px;padding:8px 14px;cursor:pointer;width:100%}
+.prestige-btn:hover{filter:brightness(1.3)}
+
+/* ── BOSS OVERLAY ── */
+.overlay{position:fixed;inset:0;background:rgba(0,0,0,.9);display:none;align-items:center;
+  justify-content:center;z-index:100}
+.overlay-box{background:var(--panel);border:4px solid var(--yellow);padding:20px 28px;text-align:center;max-width:340px}
+.overlay-box h2{font-size:20px;color:var(--yellow);margin-bottom:10px}
+.overlay-box p{font-size:9px;color:#ccc;margin-bottom:14px;line-height:1.9}
+.boss-overlay{border-color:var(--red)}
+.boss-overlay h2{color:var(--red)}
+
+/* ── EVENT OVERLAY ── */
+.event-overlay-box{border-color:var(--teal)}
+.event-overlay-box h2{color:var(--teal)}
+
+/* ── COMBO ── */
+.combo-display{position:fixed;top:20px;right:20px;background:rgba(0,0,0,.85);border:2px solid var(--orange);
+  padding:6px 10px;font-size:12px;color:var(--orange);z-index:50;display:none;text-shadow:0 0 8px var(--orange)}
+
+/* ── BIOME BG OVERLAY ── */
+.biome-bg{position:fixed;inset:0;pointer-events:none;z-index:0;transition:background 1s;opacity:.08}
+
+/* ── SAVE BAR ── */
+.save-bar{display:flex;gap:6px;margin-top:8px;justify-content:center;flex-wrap:wrap}
+
+/* ── MINER DISPLAY ── */
+.miner-row{display:flex;align-items:center;gap:5px;font-size:8px;color:var(--purple);margin-bottom:3px}
+
+/* ── OFFLINE ── */
+.offline-box{background:#0a1520;border:3px solid var(--blue);padding:12px;text-align:center;
+  margin-bottom:10px;display:none}
+.offline-box h3{font-size:12px;color:var(--blue);margin-bottom:6px}
+.offline-box p{font-size:9px;color:#aaa;line-height:1.8}
+
+/* ── SKILL TREE ── */
+.skill-tree-node{display:inline-flex;flex-direction:column;align-items:center;gap:2px;
+  padding:5px;border:2px solid #333;background:#0a0a12;cursor:pointer;margin:2px;text-align:center;
+  font-size:8px;min-width:56px;transition:border-color .1s}
+.skill-tree-node.unlocked{border-color:var(--green);background:#0a1a0a}
+.skill-tree-node.available{border-color:var(--yellow)}
+.skill-tree-node.locked{opacity:.4;cursor:not-allowed}
+.skill-tree-row{display:flex;justify-content:center;flex-wrap:wrap;margin-bottom:4px}
+
+/* ── MARKET ── */
+.market-row{display:flex;align-items:center;justify-content:space-between;font-size:8px;
+  margin-bottom:5px;background:#0a0a12;padding:4px 6px;border:1px solid #222}
+.market-price{font-size:9px}
+.market-up{color:var(--green)}.market-down{color:var(--red)}.market-stable{color:#aaa}
+.market-trend{font-size:8px;margin-left:2px}
+
+/* ── TNT ── */
+.tnt-btn{background:#2a0a0a;border:2px solid #aa2222;color:#ff4444;font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:5px 8px;cursor:pointer;margin:2px}
+.tnt-btn:hover{filter:brightness(1.4)}
+.tnt-btn:disabled{opacity:.3;cursor:not-allowed}
+
+/* ── NOTIFICATIONS ── */
+.notif{position:fixed;bottom:20px;right:20px;background:#1a1a2a;border:2px solid var(--yellow);
+  padding:8px 12px;font-size:9px;color:var(--yellow);z-index:200;animation:notifIn .3s ease-out;max-width:240px}
+@keyframes notifIn{from{transform:translateX(100%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+/* ── SCROLLABLE PANELS ── */
+.panel-scroll{max-height:520px;overflow-y:auto;overflow-x:hidden;scrollbar-width:thin;scrollbar-color:#333 #0a0a0a}
+.panel-scroll::-webkit-scrollbar{width:4px}
+.panel-scroll::-webkit-scrollbar-track{background:#0a0a0a}
+.panel-scroll::-webkit-scrollbar-thumb{background:#333}
+
+/* ── BOSS ARENA ── */
+.boss-arena-overlay{position:fixed;inset:0;background:rgba(0,0,0,.97);display:none;align-items:center;
+  justify-content:center;z-index:500;flex-direction:column;gap:10px}
+.boss-arena-wrap{display:flex;flex-direction:column;align-items:center;gap:8px;max-width:720px;width:100%}
+.arena-hdr{display:flex;align-items:center;gap:12px;width:100%;max-width:580px;font-size:11px}
+.arena-boss-name{color:var(--red);font-size:12px;text-shadow:0 0 10px var(--red);flex:1}
+.arena-phase{color:var(--yellow);font-size:9px}
+.arena-canvas-wrap{position:relative;border:3px solid var(--red);box-shadow:0 0 20px var(--red),inset 0 0 20px rgba(200,0,0,.1)}
+#boss-canvas{display:block;background:#05000a;cursor:crosshair}
+.arena-player-hp{width:100%;max-width:580px}
+.arena-ctrl-hint{font-size:8px;color:#444;text-align:center}
+.arena-miners-bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;max-width:580px}
+.arena-miner-dot{width:24px;height:24px;border:2px solid #555;display:flex;align-items:center;justify-content:center;font-size:16px;position:relative}
+.arena-miner-dot.firing{border-color:#9b59b6;box-shadow:0 0 6px var(--purple)}
+.arena-close-btn{background:#1a0a0a;border:2px solid var(--red);color:var(--red);font-family:'Press Start 2P',monospace;
+  font-size:9px;padding:6px 14px;cursor:pointer}
+.arena-close-btn:hover{background:#3a1a1a}
+/* weak-point flash */
+@keyframes weakFlash{0%,100%{opacity:1}50%{opacity:.3}}
+.weak-point-active{animation:weakFlash .5s ease-in-out infinite}
+
+/* ── MINER MANAGEMENT ── */
+.miner-card{background:#0a0a18;border:2px solid #2a2a4a;padding:7px;margin-bottom:5px}
+.miner-card.selected{border-color:var(--purple)}
+.miner-card-hdr{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.miner-icon-big{font-size:25px;line-height:1}
+.miner-name{font-size:9px;color:var(--purple)}
+.miner-type-badge{font-size:6px;padding:1px 4px;background:#1a0a2a;border:1px solid var(--purple);color:var(--purple)}
+.miner-lvl-badge{font-size:6px;color:var(--yellow);margin-left:auto}
+.miner-xp-bar{height:4px;background:#111;border:1px solid #222;overflow:hidden;margin-bottom:4px}
+.miner-xp-fill{height:100%;background:var(--purple);transition:width .3s}
+.miner-stats{font-size:6px;color:#555;margin-bottom:4px;display:flex;gap:8px;flex-wrap:wrap}
+.miner-stat-val{color:#aaa}
+.miner-actions{display:flex;gap:4px;flex-wrap:wrap}
+.miner-action-btn{background:#0a0518;border:1px solid #2a1248;color:#9b59b6;font-family:'Press Start 2P',monospace;
+  font-size:6px;padding:3px 5px;cursor:pointer}
+.miner-action-btn:hover{border-color:var(--purple);filter:brightness(1.3)}
+.miner-action-btn.active{background:#1a0a2a;border-color:var(--purple)}
+.miner-target-row{font-size:8px;color:#555;margin-top:3px}
+.miner-target-val{color:var(--teal)}
+.add-miner-btn{background:#050a18;border:2px solid var(--blue);color:var(--blue);font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:5px;cursor:pointer;width:100%;margin-bottom:6px;text-align:center}
+.add-miner-btn:hover{filter:brightness(1.3)}
+
+/* ── SYNERGY PANEL ── */
+.synergy-item{background:#0a1205;border:2px solid #1a3a0a;padding:6px;margin-bottom:5px}
+.synergy-item.active{border-color:#8bc34a;background:#0d1a08}
+.synergy-name{font-size:9px;color:#8bc34a;margin-bottom:2px}
+.synergy-desc{font-size:8px;color:#555;margin-bottom:3px}
+.synergy-bonus{font-size:8px;color:var(--green)}
+.synergy-req{font-size:8px;color:#333}
+.synergy-req.met{color:#555}
+
+/* ── CRAFTING ── */
+.craft-recipe{background:#0a0a05;border:2px solid #2a2a0a;padding:7px;margin-bottom:5px;cursor:pointer}
+.craft-recipe:hover:not(.cant-craft){border-color:var(--yellow);filter:brightness(1.2)}
+.craft-recipe.cant-craft{opacity:.5;cursor:not-allowed}
+.craft-name{font-size:9px;color:var(--yellow);margin-bottom:3px}
+.craft-desc{font-size:6px;color:#666;margin-bottom:4px}
+.craft-ingredients{display:flex;flex-wrap:wrap;gap:3px;margin-bottom:4px}
+.craft-ing{font-size:8px;padding:1px 4px;border:1px solid #222;background:#111}
+.craft-ing.have{border-color:#27ae60;color:#5efc82}
+.craft-ing.miss{border-color:#7a1a1a;color:var(--red)}
+.craft-result{font-size:8px;color:var(--blue)}
+.craft-qty{display:flex;align-items:center;gap:6px;margin-top:4px}
+.craft-qty input{background:#050505;border:1px solid #333;color:#fff;font-family:'Press Start 2P',monospace;
+  font-size:8px;padding:2px 4px;width:36px}
+
+/* ── CHEAT CONSOLE ── */
+.cheat-wrap{position:fixed;bottom:0;left:0;right:0;z-index:600;padding:8px 10px;
+  background:rgba(0,0,0,.94);border-top:3px solid var(--yellow);box-shadow:0 -4px 20px rgba(0,0,0,.6);
+  display:none;align-items:center;justify-content:center}
+.cheat-inner{max-width:920px;width:100%;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.cheat-hint{font-size:8px;color:var(--yellow);white-space:nowrap}
+.cheat-input{flex:1;min-width:200px;background:#0a0a12;border:3px solid #444;color:#fff;
+  font-family:'Press Start 2P',monospace;font-size:8px;padding:10px 12px;outline:none}
+.cheat-input:focus{border-color:var(--yellow)}
+.cheat-kbd{font-size:6px;color:#555;margin-left:4px}
+
+@media(max-width:700px){
+  .mine-grid{grid-template-columns:repeat(7,1fr)}
+  .left-col,.right-col{width:100%}
+  h1{font-size:17px}
+}
+</style>
+</head>
+<body>
+
+<div class="biome-bg" id="biome-bg"></div>
+<div class="combo-display" id="combo-display">x<span id="combo-val">1</span> COMBO!</div>
+
+<h1>⛏ BLOCK MINER ULTRA</h1>
+<p class="subtitle">v3.0 • <span id="save-indicator" style="color:var(--green)">💾 Auto-save ON</span><span class="cheat-kbd">` cheats</span></p>
+
+<div class="cheat-wrap" id="cheat-wrap" aria-hidden="true">
+  <div class="cheat-inner">
+    <span class="cheat-hint">⌨ CHEAT</span>
+    <input type="text" id="cheat-input" class="cheat-input" placeholder="/help  •  /give gold 9999  •  /level 30  •  /max" autocomplete="off" spellcheck="false" />
+  </div>
+</div>
+
+<!-- OFFLINE PROGRESS BOX -->
+<div class="offline-box" id="offline-box">
+  <h3>⏱ OFFLINE PROGRESS</h3>
+  <p id="offline-msg">You were away for X minutes.<br>Your miners collected resources!</p>
+  <button class="tool-btn" onclick="document.getElementById('offline-box').style.display='none'" style="margin-top:8px">COLLECT ▶</button>
+</div>
+
+<div class="game-wrap">
+
+<!-- ═══ LEFT COL ═══ -->
+<div class="left-col">
+
+  <!-- PLAYER STATS -->
+  <div class="panel">
+    <div class="panel-title">❤ PLAYER</div>
+    <div class="bar-wrap"><div class="bar-label"><span>HP</span><span id="hp-num">100/100</span></div>
+      <div class="bar-track"><div class="bar-fill hp-fill" id="health-bar" style="width:100%"></div></div></div>
+    <div class="bar-wrap"><div class="bar-label"><span>XP</span><span id="xp-num">0/20</span></div>
+      <div class="bar-track"><div class="bar-fill xp-fill" id="xp-bar" style="width:0%"></div></div></div>
+    <div class="bar-wrap"><div class="bar-label"><span>IDLE</span><span id="idle-num">0 miners</span></div>
+      <div class="bar-track"><div class="bar-fill idle-fill" id="idle-bar" style="width:0%"></div></div></div>
+    <div class="bar-wrap"><div class="bar-label"><span>COMBO</span><span id="combo-num">x1</span></div>
+      <div class="bar-track"><div class="bar-fill combo-fill" id="combo-bar" style="width:0%"></div></div></div>
+    <div class="stat-row"><span class="stat-label">LEVEL</span><span class="stat-val" id="stat-level">1</span></div>
+    <div class="stat-row"><span class="stat-label">DEPTH</span><span class="stat-val" id="stat-depth">0m</span></div>
+    <div class="stat-row"><span class="stat-label">MINED</span><span class="stat-val" id="stat-mined">0</span></div>
+    <div class="stat-row"><span class="stat-label">POWER</span><span class="stat-val" id="stat-power">1.0</span></div>
+    <div class="stat-row"><span class="stat-label">💰 GOLD</span><span class="stat-val" style="color:var(--yellow)" id="stat-gold">0</span></div>
+    <div class="stat-row"><span class="stat-label">🍀 LUCK</span><span class="stat-val" style="color:var(--green)" id="stat-luck">1.0</span></div>
+    <div class="stat-row"><span class="stat-label">⭐ SOULS</span><span class="stat-val" style="color:var(--purple)" id="stat-souls">0</span></div>
+  </div>
+
+  <!-- INVENTORY -->
+  <div class="panel">
+    <div class="panel-title">🎒 INVENTORY</div>
+    <div class="inv-grid" id="inventory"></div>
+  </div>
+
+  <!-- SELL / MARKET -->
+  <div class="panel">
+    <div class="panel-title">💰 MARKET</div>
+    <div style="font-size:8px;color:#555;margin-bottom:6px">Prices fluctuate over time</div>
+    <div id="market-prices"></div>
+    <button class="sell-all-btn" onclick="sellAll()">💰 SELL ALL</button>
+    <div class="save-bar">
+      <button class="tool-btn" onclick="saveGame()" style="font-size:8px;padding:5px 7px">💾 SAVE</button>
+      <button class="tool-btn" onclick="confirmReset()" style="font-size:8px;padding:5px 7px;background:#2a0a0a;border-color:#883333">🗑 RESET</button>
+    </div>
+  </div>
+
+</div>
+
+<!-- ═══ MID COL ═══ -->
+<div class="mid-col">
+
+  <div class="mine-section">
+    <div class="depth-bar">
+      <span>DEPTH:</span>
+      <span class="depth-val" id="depth-label">Surface</span>
+      <span id="biome-badge" class="biome-badge" style="color:var(--green);border-color:var(--green)">🌿 SURFACE</span>
+    </div>
+
+    <!-- BOSS HP (hidden normally) -->
+    <div id="boss-hp-wrap" style="display:none;margin-bottom:6px">
+      <div class="bar-label"><span id="boss-name-label">BOSS</span><span id="boss-hp-num">100/100</span></div>
+      <div class="bar-track"><div class="bar-fill boss-fill" id="boss-hp-bar" style="width:100%"></div></div>
+    </div>
+
+    <div class="mine-grid" id="mine-grid"></div>
+    <div class="msg-box" id="msg-box">⛏ Click blocks to mine! Sell resources for Gold.</div>
+
+    <!-- TOOLS -->
+    <div class="toolbar" id="toolbar">
+      <button class="tool-btn active" id="btn-wood"    onclick="selectTool('wood')">🪓 WOOD</button>
+      <button class="tool-btn" id="btn-stone"   onclick="selectTool('stone')">⛏ STONE</button>
+      <button class="tool-btn" id="btn-iron"    onclick="selectTool('iron')">⚔ IRON</button>
+      <button class="tool-btn" id="btn-diamond" onclick="selectTool('diamond')">💎 DIA</button>
+      <button class="tool-btn" id="btn-netherite" onclick="selectTool('netherite')">🌑 NETH</button>
+      <button class="tool-btn" id="btn-void_pick" onclick="selectTool('void_pick')">🌀 VOID</button>
+      <button class="tool-btn" onclick="regenerateLayer()" style="background:#2a1a1a;border-color:#664444;font-size:8px">↺ NEW</button>
+    </div>
+
+    <!-- SKILL ABILITIES -->
+    <div class="toolbar" style="margin-top:6px">
+      <button class="tool-btn skill-btn" id="skill-btn" onclick="useSkill()">⚡ SKILL (CD: <span id="skill-cd">0s</span>)</button>
+      <button class="tnt-btn" id="tnt-btn" onclick="useTNT()">💥 TNT (<span id="tnt-count">0</span>)</button>
+      <button class="tnt-btn" id="nuke-btn" onclick="useNuke()" style="border-color:#ff8800;color:#ff8800">☢ NUKE (<span id="nuke-count">0</span>)</button>
+    </div>
+  </div>
+
+  <!-- QUESTS -->
+  <div class="panel" style="width:100%;max-width:600px;margin-top:10px">
+    <div class="panel-title">📋 QUESTS <span id="quest-complete-badge" style="display:none;background:var(--green);color:#000;font-size:8px;padding:1px 4px">NEW!</span></div>
+    <div id="quest-list"></div>
+  </div>
+
+  <!-- ARTIFACTS -->
+  <div class="panel" style="width:100%;max-width:600px;margin-top:8px">
+    <div class="panel-title">🔮 ARTIFACTS</div>
+    <div style="font-size:8px;color:#555;margin-bottom:6px">Rare drops with unique effects</div>
+    <div id="artifact-list"><span style="font-size:8px;color:#444">No artifacts found yet...</span></div>
+  </div>
+
+</div>
+
+<!-- ═══ RIGHT COL ═══ -->
+<div class="right-col">
+
+  <!-- UPGRADES -->
+  <div class="panel panel-scroll">
+    <div class="panel-title">⬆ UPGRADES</div>
+    <div class="tab-row">
+      <button class="tab-btn active" onclick="switchTab('mine')"    id="tab-mine">⛏</button>
+      <button class="tab-btn" onclick="switchTab('idle')"    id="tab-idle">⚙</button>
+      <button class="tab-btn" onclick="switchTab('perks')"   id="tab-perks">⭐</button>
+      <button class="tab-btn" onclick="switchTab('equip')"   id="tab-equip">🛡</button>
+      <button class="tab-btn" onclick="switchTab('tree')"    id="tab-tree">🌿</button>
+      <button class="tab-btn" onclick="switchTab('prestige')" id="tab-prestige">🔮</button>
+      <button class="tab-btn" onclick="switchTab('synergy')"  id="tab-synergy">⚗</button>
+      <button class="tab-btn" onclick="switchTab('craft')"    id="tab-craft">🔨</button>
+      <button class="tab-btn" onclick="switchTab('miners')"   id="tab-miners">🤖</button>
+    </div>
+    <div class="tab-content active" id="tab-content-mine"><div id="upgrades-mine"></div></div>
+    <div class="tab-content" id="tab-content-idle">
+      <div id="idle-miners-display" style="margin-bottom:8px"></div>
+      <div id="upgrades-idle"></div>
+    </div>
+    <div class="tab-content" id="tab-content-perks"><div id="upgrades-perks"></div></div>
+    <div class="tab-content" id="tab-content-equip">
+      <div style="font-size:9px;color:#888;margin-bottom:8px">Equip gear for bonuses</div>
+      <div class="equip-grid" id="equip-grid"></div>
+      <div style="margin-top:8px" id="equip-shop"></div>
+    </div>
+    <div class="tab-content" id="tab-content-tree">
+      <div style="font-size:8px;color:#888;margin-bottom:6px">Skill Tree — spend Souls</div>
+      <div id="skill-tree"></div>
+    </div>
+    <div class="tab-content" id="tab-content-prestige">
+      <div id="prestige-panel"></div>
+    </div>
+    <div class="tab-content" id="tab-content-synergy"><div id="synergy-panel"></div></div>
+    <div class="tab-content" id="tab-content-craft"><div id="craft-panel"></div></div>
+    <div class="tab-content" id="tab-content-miners">
+      <div style="font-size:8px;color:#888;margin-bottom:6px">Assign miners to targets. Level them up for bonus stats.</div>
+      <div id="miners-panel"></div>
+    </div>
+  </div>
+
+</div>
+</div>
+
+<!-- ══ OVERLAYS ══ -->
+<div class="overlay" id="overlay">
+  <div class="overlay-box">
+    <h2>LEVEL UP!</h2>
+    <p id="overlay-msg">You reached a new level!</p>
+    <button class="tool-btn" onclick="closeOverlay('overlay')">CONTINUE ▶</button>
+  </div>
+</div>
+<div class="overlay" id="boss-overlay">
+  <div class="overlay-box boss-overlay">
+    <h2 id="boss-overlay-title">👹 BOSS INCOMING!</h2>
+    <p id="boss-overlay-msg">A massive stone golem blocks your path!</p>
+    <button class="tool-btn" onclick="startBossArena()" style="border-color:var(--red)">⚔ ENTER ARENA ▶</button>
+    <button class="tool-btn" onclick="closeOverlay('boss-overlay')" style="border-color:#888;margin-top:6px;font-size:8px">Fight on grid instead</button>
+  </div>
+</div>
+<div class="overlay" id="event-overlay">
+  <div class="overlay-box event-overlay-box">
+    <h2 id="event-overlay-title">✨ CAVE EVENT!</h2>
+    <p id="event-overlay-msg">You discovered something rare!</p>
+    <button class="tool-btn" onclick="closeOverlay('event-overlay')" style="border-color:var(--teal)">EXPLORE ▶</button>
+  </div>
+</div>
+<div class="overlay" id="reset-overlay">
+  <div class="overlay-box" style="border-color:var(--red)">
+    <h2 style="color:var(--red)">RESET GAME?</h2>
+    <p>All progress will be lost. Are you sure?</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="tool-btn" onclick="resetGame()" style="background:#3a0a0a;border-color:var(--red)">YES, RESET</button>
+      <button class="tool-btn" onclick="closeOverlay('reset-overlay')">CANCEL</button>
+    </div>
+  </div>
+</div>
+<div class="overlay" id="prestige-overlay">
+  <div class="overlay-box" style="border-color:var(--purple)">
+    <h2 style="color:var(--purple)">✨ REBIRTH!</h2>
+    <p id="prestige-msg">You will reset progress but gain Mining Souls for permanent buffs.</p>
+    <div style="display:flex;gap:10px;justify-content:center">
+      <button class="tool-btn" onclick="doPrestige()" style="background:#2a0a3a;border-color:var(--purple)">REBIRTH ✨</button>
+      <button class="tool-btn" onclick="closeOverlay('prestige-overlay')">CANCEL</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════════════
+//  CONSTANTS
+// ═══════════════════════════════════════════════════════════════════
+const COLS=9,ROWS=8;
+
+// All block types with depth thresholds for spawn
+const BT={
+  grass:   {color:'#4a7a22',label:'Grass',    hp:2,  xp:1,  drop:'dirt',    amt:1, minDepth:0,  maxDepth:10,  ores:[],      sell:0},
+  dirt:    {color:'#7a5432',label:'Dirt',     hp:2,  xp:1,  drop:'dirt',    amt:1, minDepth:0,  maxDepth:40,  ores:[],      sell:0},
+  stone:   {color:'#6a6a6a',label:'Stone',    hp:5,  xp:2,  drop:'stone',   amt:1, minDepth:0,  maxDepth:9999,ores:[],      sell:1},
+  coal:    {color:'#4a4a4a',label:'Coal',     hp:6,  xp:5,  drop:'coal',    amt:2, minDepth:10, maxDepth:9999,ores:[{c:'#111',s:3}],sell:2},
+  iron:    {color:'#847060',label:'Iron',     hp:8,  xp:10, drop:'iron',    amt:1, minDepth:20, maxDepth:9999,ores:[{c:'#c8845e',s:3}],sell:5},
+  gold:    {color:'#7a7a30',label:'Gold',     hp:10, xp:20, drop:'gold',    amt:1, minDepth:50, maxDepth:9999,ores:[{c:'#f5c518',s:3}],sell:15},
+  lapis:   {color:'#1a3a7a',label:'Lapis',    hp:9,  xp:15, drop:'lapis',   amt:2, minDepth:30, maxDepth:9999,ores:[{c:'#2255cc',s:3}],sell:8},
+  redstone:{color:'#5a1a1a',label:'Redstone', hp:7,  xp:12, drop:'redstone',amt:3, minDepth:25, maxDepth:9999,ores:[{c:'#e74c3c',s:2}],sell:4},
+  diamond: {color:'#3a6a6a',label:'Diamond',  hp:15, xp:50, drop:'diamond', amt:1, minDepth:80, maxDepth:9999,ores:[{c:'#5ddef4',s:3},{c:'#1ac0e0',s:2}],sell:40},
+  emerald: {color:'#1a6a3a',label:'Emerald',  hp:18, xp:80, drop:'emerald', amt:1, minDepth:120,maxDepth:9999,ores:[{c:'#2ecc71',s:3}],sell:60},
+  ruby:    {color:'#6a1a1a',label:'Ruby',     hp:20, xp:120,drop:'ruby',    amt:1, minDepth:160,maxDepth:9999,ores:[{c:'#e74c3c',s:3},{c:'#c0392b',s:2}],sell:80},
+  sapphire:{color:'#1a1a6a',label:'Sapphire', hp:22, xp:150,drop:'sapphire',amt:1, minDepth:200,maxDepth:9999,ores:[{c:'#3498db',s:3}],sell:100},
+  amethyst:{color:'#4a1a6a',label:'Amethyst', hp:25, xp:200,drop:'amethyst',amt:1, minDepth:250,maxDepth:9999,ores:[{c:'#9b59b6',s:3},{c:'#8e44ad',s:2}],sell:150},
+  obsidian:{color:'#1a0a2a',label:'Obsidian', hp:30, xp:30, drop:'obsidian',amt:1, minDepth:100,maxDepth:9999,ores:[],      sell:20},
+  ancient: {color:'#3a2a1a',label:'Ancient',  hp:40, xp:500,drop:'ancient', amt:1, minDepth:300,maxDepth:9999,ores:[{c:'#ffd700',s:4}],sell:500},
+  void:    {color:'#050510',label:'Void',     hp:50, xp:1000,drop:'voidcrystal',amt:1,minDepth:400,maxDepth:9999,ores:[{c:'#fff',s:2}],sell:1000},
+  bedrock: {color:'#111',   label:'Bedrock',  hp:999,xp:0,  drop:null,      amt:0, minDepth:0,  maxDepth:9999,ores:[], sell:0},
+  lava:    {color:'#b02020',label:'Lava',     hp:1,  xp:0,  drop:null,      amt:0, minDepth:0,  maxDepth:9999,ores:[], sell:0, dmg:15},
+  ice:     {color:'#a0d0f0',label:'Ice',      hp:3,  xp:3,  drop:'ice',     amt:1, minDepth:0,  maxDepth:9999,ores:[],  sell:3},
+  crystal: {color:'#d0a0f0',label:'Crystal',  hp:12, xp:35, drop:'crystal', amt:1, minDepth:0,  maxDepth:9999,ores:[{c:'#e8c0ff',s:3}],sell:25},
+  netherrack:{color:'#6a1010',label:'Netherrack',hp:8,xp:8, drop:'netherrack',amt:1,minDepth:0, maxDepth:9999,ores:[],  sell:6},
+  soulsand:{color:'#3a3020',label:'Soul Sand',hp:4, xp:6,   drop:'soulsand',amt:1, minDepth:0,  maxDepth:9999,ores:[],  sell:5},
+  // BOSS blocks (special)
+  boss_stone:{color:'#aa2222',label:'Boss Block',hp:100,xp:200,drop:'boss_drop',amt:3,minDepth:0,maxDepth:9999,ores:[{c:'#ff4444',s:4}],sell:0,isBoss:true},
+  treasure: {color:'#daa520',label:'Treasure',hp:5,xp:100,drop:'gold',amt:10,minDepth:0,maxDepth:9999,ores:[{c:'#fff',s:4}],sell:0,isEvent:true},
+  monster_nest:{color:'#2a4a0a',label:'Monster Nest',hp:8,xp:50,drop:'bone',amt:5,minDepth:0,maxDepth:9999,ores:[{c:'#eee',s:3}],sell:0,isEvent:true,dmg:8},
+};
+
+const RESOURCE_ICONS={
+  dirt:{emoji:'🟫',color:'#a0712a'},stone:{emoji:'⬜',color:'#999'},
+  coal:{emoji:'⬛',color:'#555'},iron:{emoji:'🟧',color:'#c8845e'},
+  gold:{emoji:'🟨',color:'#f5c518'},lapis:{emoji:'🔵',color:'#2255cc'},
+  redstone:{emoji:'🔴',color:'#e74c3c'},diamond:{emoji:'💎',color:'#5ddef4'},
+  emerald:{emoji:'💚',color:'#2ecc71'},ruby:{emoji:'🔴',color:'#e74c3c'},
+  sapphire:{emoji:'🔷',color:'#3498db'},amethyst:{emoji:'🟣',color:'#9b59b6'},
+  obsidian:{emoji:'🟣',color:'#8e44ad'},ancient:{emoji:'✨',color:'#ffd700'},
+  voidcrystal:{emoji:'🔮',color:'#fff'},ice:{emoji:'🧊',color:'#a0d0f0'},
+  crystal:{emoji:'💠',color:'#d0a0f0'},netherrack:{emoji:'🔥',color:'#aa2222'},
+  soulsand:{emoji:'💀',color:'#555533'},bone:{emoji:'🦴',color:'#eee'},
+  boss_drop:{emoji:'👹',color:'#ff4444'},
+  boss_token:{emoji:'🏷',color:'#ffd700'},
+};
+
+// BIOMES
+const BIOMES=[
+  {name:'🌿 SURFACE',    minDepth:0,   maxDepth:20,  color:'#5efc82', bg:'#0a1a0a',
+   weights:{grass:20,dirt:60,stone:20}},
+  {name:'🪨 STONE CAVES',minDepth:20,  maxDepth:60,  color:'#aaa',    bg:'#0a0a0a',
+   weights:{stone:60,coal:25,iron:10,redstone:5}},
+  {name:'⚡ REDSTONE MINE',minDepth:60,maxDepth:100, color:'#e74c3c', bg:'#1a0505',
+   weights:{stone:40,coal:20,iron:20,redstone:15,lapis:5}},
+  {name:'🔥 LAVA DEPTHS', minDepth:100,maxDepth:150, color:'#e67e22', bg:'#1a0800',
+   weights:{stone:30,iron:15,gold:15,obsidian:20,lava:10,redstone:10}},
+  {name:'💎 DIAMOND VEINS',minDepth:150,maxDepth:220,color:'#5ddef4',bg:'#001a1a',
+   weights:{stone:30,iron:10,gold:10,diamond:25,emerald:10,obsidian:15}},
+  {name:'❄ ICE CAVERNS',  minDepth:220,maxDepth:290, color:'#a0d0f0', bg:'#050a15',
+   weights:{ice:40,crystal:20,stone:20,sapphire:10,diamond:10}},
+  {name:'💜 CRYSTAL CAVES',minDepth:290,maxDepth:360,color:'#9b59b6',bg:'#0a0015',
+   weights:{crystal:30,amethyst:25,sapphire:15,stone:20,emerald:10}},
+  {name:'🔥 NETHER',      minDepth:360,maxDepth:430, color:'#e74c3c', bg:'#1a0505',
+   weights:{netherrack:40,soulsand:20,ruby:15,gold:10,obsidian:10,lava:5}},
+  {name:'⚰ ANCIENT RUINS',minDepth:430,maxDepth:500,color:'#ffd700', bg:'#0a0800',
+   weights:{stone:20,ancient:30,obsidian:20,diamond:10,void:5,lava:15}},
+  {name:'🌀 THE VOID',    minDepth:500,maxDepth:599, color:'#fff',    bg:'#030305',
+   weights:{void:30,ancient:25,obsidian:20,diamond:10,lava:10,bedrock:5}},
+  {name:'🌑 DEEP VOID',    minDepth:600,maxDepth:749, color:'#bbbbff', bg:'#010106',
+   weights:{void:38,ancient:28,obsidian:15,lava:12,bedrock:7}},
+  {name:'🔴 INFERNO ABYSS',minDepth:750,maxDepth:949, color:'#ff6666', bg:'#060000',
+   weights:{void:40,ancient:32,lava:16,obsidian:9,bedrock:3}},
+  {name:'🌠 STAR CORE',    minDepth:950,maxDepth:9999,color:'#ffffbb', bg:'#020206',
+   weights:{void:42,ancient:35,lava:13,obsidian:8,bedrock:2}},
+];
+
+const TOOL_BASE={wood:1,stone:1.5,iron:2.5,diamond:5,netherite:10,void_pick:22};
+const TOOL_UNLOCK={wood:1,stone:5,iron:10,diamond:18,netherite:28,void_pick:40};
+const TOOL_SKILL={
+  wood:    {name:'Burst',     desc:'Rapid 5-hit burst',  cd:15, icon:'💨'},
+  stone:   {name:'Shockwave', desc:'AoE damage 3x3',     cd:20, icon:'💥'},
+  iron:    {name:'Crusher',   desc:'Triple damage 1 hit',cd:12, icon:'🔨'},
+  diamond: {name:'Laser',     desc:'Mine entire row',    cd:25, icon:'⚡'},
+  netherite:{name:'Obliterate',desc:'Destroy 3x3 fully', cd:40, icon:'☢'},
+  void_pick:{name:'Void Rift',  desc:'Wipe half the grid', cd:70, icon:'🌀'},
+};
+
+// ══════════════════════════
+// UPGRADES (cost in GOLD 💰)
+// ══════════════════════════
+const UPGRADES={
+  // ── MINING
+  sharp:{tab:'mine',name:'Sharp Edge',icon:'⚔',desc:'+0.8 power/level',max:10,goldBase:270,goldMult:2.1,
+    effect:l=>`+${(l*.8).toFixed(1)} power`},
+  quick:{tab:'mine',name:'Quick Swing',icon:'👐',desc:'Extra hits per click',max:5,goldBase:330,goldMult:2.5,
+    effect:l=>`${l} extra hits`},
+  vein:{tab:'mine',name:'Vein Miner',icon:'💥',desc:'Splash damage to neighbors',max:4,goldBase:180,goldMult:2.5,
+    effect:l=>`r=${l} splash`},
+  fortune:{tab:'mine',name:'Fortune',icon:'🍀',desc:'Chance for double drops',max:8,goldBase:150,goldMult:1.8,
+    effect:l=>`${l*10}% double`},
+  xpboost:{tab:'mine',name:'XP Boost',icon:'⭐',desc:'+25% XP per level',max:6,goldBase:90,goldMult:2,
+    effect:l=>`+${l*25}% XP`},
+  chain:{tab:'mine',name:'Chain Mining',icon:'⛓',desc:'Breaking ore may chain to adjacent',max:5,goldBase:225,goldMult:2.5,
+    effect:l=>`${l*15}% chain`},
+  deepscan:{tab:'mine',name:'Deep Scan',icon:'🔭',desc:'Highlight rare ores',max:1,goldBase:300,goldMult:1,
+    effect:l=>l?'Active':'Inactive'},
+  explosive:{tab:'mine',name:'Explosives',icon:'💣',desc:'Craft TNT (costs redstone+coal)',max:5,goldBase:135,goldMult:2,
+    effect:l=>`Unlock TNT Lv${l}`},
+  luck:{tab:'mine',name:'Luck Charm',icon:'🎲',desc:'Raise luck stat for rare events',max:5,goldBase:300,goldMult:2,
+    effect:l=>`+${l*.3} luck`},
+  combo_master:{tab:'mine',name:'Combo Master',icon:'🔥',desc:'Higher combo multiplier',max:5,goldBase:120,goldMult:2,
+    effect:l=>`+${l} max combo`},
+
+  // ── IDLE
+  auto_basic:{tab:'idle',name:'Basic Miner',icon:'🤖',desc:'Auto-mines every 8s',max:6,goldBase:525,goldMult:3.0,
+    effect:l=>`${l} basic miner(s)`},
+  auto_speed:{tab:'idle',name:'Miner Speed',icon:'⚡',desc:'Miners work faster',max:5,goldBase:150,goldMult:2,
+    effect:l=>`-${l*15}% mine time`},
+  auto_pro:{tab:'idle',name:'Pro Miner',icon:'🦾',desc:'3x power auto-miner',max:4,goldBase:525,goldMult:3,
+    effect:l=>`${l} pro miner(s)`},
+  smart_miner:{tab:'idle',name:'Smart Miner',icon:'🧠',desc:'Targets ores over stone',max:3,goldBase:375,goldMult:3,
+    effect:l=>l>=1?'Smart targeting':'Locked'},
+  miner_fortune:{tab:'idle',name:'Miner Luck',icon:'💰',desc:'Auto-miners get double drops',max:3,goldBase:300,goldMult:2.5,
+    effect:l=>`${l*25}% double`},
+  offline_bonus:{tab:'idle',name:'Offline Gains',icon:'💤',desc:'Better offline progress (longer cap)',max:5,goldBase:180,goldMult:1.8,
+    effect:l=>`${2+l}hr offline cap`},
+
+  // ── PERKS
+  regen:{tab:'perks',name:'Regen',icon:'❤',desc:'+HP every 5s',max:5,goldBase:120,goldMult:1.8,
+    effect:l=>`+${l*2}HP/5s`},
+  vitality:{tab:'perks',name:'Vitality',icon:'💪',desc:'+30 max HP per level',max:8,goldBase:90,goldMult:1.8,
+    effect:l=>`+${l*30} max HP`},
+  armor:{tab:'perks',name:'Obsidian Armor',icon:'🛡',desc:'Reduce all damage',max:5,goldBase:180,goldMult:2,
+    effect:l=>`-${l*15}% dmg`},
+  depth_runner:{tab:'perks',name:'Depth Runner',icon:'🏃',desc:'+bonus depth per layer',max:4,goldBase:150,goldMult:2,
+    effect:l=>`+${l*8}m/layer`},
+  gem_sense:{tab:'perks',name:'Gem Sense',icon:'💎',desc:'Gems give bonus XP',max:4,goldBase:225,goldMult:2,
+    effect:l=>`+${l*35}% gem XP`},
+  market_savvy:{tab:'perks',name:'Market Savvy',icon:'📈',desc:'Sell resources for more gold',max:5,goldBase:150,goldMult:2,
+    effect:l=>`+${l*20}% sell price`},
+  lucky_streak:{tab:'perks',name:'Lucky Streak',icon:'🃏',desc:'Bonus treasure chests chance',max:4,goldBase:270,goldMult:2.2,
+    effect:l=>`${l*5}% bonus chest`},
+  hazard_resist:{tab:'perks',name:'Hazard Resist',icon:'☣',desc:'Resist cave hazards',max:3,goldBase:300,goldMult:2.5,
+    effect:l=>`-${l*25}% hazard dmg`},
+};
+
+// EQUIPMENT (purchased with Gold)
+const EQUIP_ITEMS={
+  miner_helm:  {name:'Miner Helm',slot:'head', icon:'⛑',goldCost:300,stat:'xp',val:0.3,  desc:'+30% XP'},
+  iron_boots:  {name:'Iron Boots', slot:'feet', icon:'👢',goldCost:250,stat:'speed',val:1,  desc:'+1 hits/click'},
+  chain_armor: {name:'Chain Mail', slot:'body', icon:'🥋',goldCost:400,stat:'armor',val:20, desc:'-20% damage'},
+  lucky_ring:  {name:'Lucky Ring', slot:'ring', icon:'💍',goldCost:350,stat:'luck',val:0.5,  desc:'+0.5 luck'},
+  diamond_helm:{name:'Gem Helm',   slot:'head', icon:'💎',goldCost:800,stat:'xp',val:0.6,   desc:'+60% XP',req:10},
+  nether_boots:{name:'Nether Boots',slot:'feet',icon:'🔥',goldCost:700,stat:'speed',val:2,  desc:'+2 hits/click',req:12},
+  obsidian_chest:{name:'Obsidian Plate',slot:'body',icon:'🛡',goldCost:1000,stat:'armor',val:40,desc:'-40% damage',req:14},
+  soul_ring:   {name:'Soul Ring',  slot:'ring', icon:'👁',goldCost:1500,stat:'luck',val:1.5, desc:'+1.5 luck',req:16},
+};
+
+// SKILL TREE NODES
+const SKILL_TREE=[
+  {id:'power1',   row:0,name:'Raw Power',   cost:1, icon:'⚔',desc:'+1.5 base power', requires:[]},
+  {id:'health1',  row:0,name:'Tank Up',     cost:1, icon:'❤',desc:'+50 max HP',      requires:[]},
+  {id:'luck1',    row:0,name:'Fortune\'s Eye',cost:1,icon:'🍀',desc:'+0.5 luck',     requires:[]},
+  {id:'power2',   row:1,name:'Edge Mastery',cost:2, icon:'⚔',desc:'+3 base power',  requires:['power1']},
+  {id:'auto1',    row:1,name:'Auto Assist', cost:2, icon:'🤖',desc:'Miners +50% eff',requires:['health1']},
+  {id:'combo1',   row:1,name:'Flow State',  cost:2, icon:'🔥',desc:'Combo lasts 3x longer',requires:['luck1']},
+  {id:'nuke1',    row:2,name:'Nuke Tech',   cost:3, icon:'☢',desc:'Unlock Nuke item',requires:['power2']},
+  {id:'offline1', row:2,name:'Dream Miner', cost:3, icon:'💤',desc:'2x offline gains',requires:['auto1']},
+  {id:'artifact1',row:2,name:'Artifact Sense',cost:3,icon:'🔮',desc:'+50% artifact chance',requires:['combo1']},
+  {id:'god_pick', row:3,name:'Divine Pick', cost:5, icon:'✨',desc:'+5 power, unlock skills early',requires:['nuke1','offline1']},
+  {id:'prestige_boost',row:3,name:'Soul Mastery',  cost:5, icon:'🌟',desc:'Each prestige gives +1 extra soul', requires:['offline1','artifact1']},
+  // Row 4 - endgame
+  {id:'void_unlock',  row:4,name:'Void Path',     cost:6, icon:'🌀',desc:'Unlock Void Pick at level 20 instead of 30',requires:['god_pick']},
+  {id:'omega_miner',  row:4,name:'Omega Miner',   cost:6, icon:'⚡',desc:'All stats x1.5',                             requires:['prestige_boost','god_pick']},
+  {id:'eternal_luck', row:4,name:'Eternal Luck',  cost:5, icon:'🍀',desc:'+2 luck permanently',                       requires:['artifact1','prestige_boost']},
+  {id:'chain_master', row:4,name:'Chain Master',  cost:5, icon:'⛓',desc:'Chain mining always triggers',              requires:['nuke1','offline1']},
+  // Row 5 - legendary
+  {id:'ascension',    row:5,name:'ASCENSION',     cost:10,icon:'🌠',desc:'x2 all gains, unlock Void Pick at lvl 15', requires:['void_unlock','omega_miner']},
+  {id:'infinite_soul',row:5,name:'Infinite Soul', cost:10,icon:'♾', desc:'Gain 1 soul every 100 blocks mined',      requires:['eternal_luck','chain_master']},
+];
+
+// QUESTS
+const QUEST_POOL=[
+  {id:'q_mine50',   name:'Rookie Miner',   desc:'Mine 50 blocks',     type:'mined',  goal:50,   reward:{gold:100}},
+  {id:'q_mine500',  name:'Experienced',    desc:'Mine 500 blocks',    type:'mined',  goal:500,  reward:{gold:500}},
+  {id:'q_mine5000', name:'Veteran Miner',  desc:'Mine 5000 blocks',   type:'mined',  goal:5000, reward:{gold:2000}},
+  {id:'q_depth50',  name:'Going Deeper',   desc:'Reach 50m depth',    type:'depth',  goal:50,   reward:{gold:150}},
+  {id:'q_depth200', name:'Deep Diver',     desc:'Reach 200m depth',   type:'depth',  goal:200,  reward:{gold:800}},
+  {id:'q_depth500', name:'Void Walker',    desc:'Reach 500m depth',   type:'depth',  goal:500,  reward:{gold:5000,souls:2}},
+  {id:'q_coal100',  name:'Coal Baron',     desc:'Collect 100 coal',   type:'inv',  res:'coal', goal:100,reward:{gold:80}},
+  {id:'q_diamond10',name:'Diamond Hoarder',desc:'Collect 10 diamonds',type:'inv',  res:'diamond',goal:10,reward:{gold:600}},
+  {id:'q_gold_earn',name:'Millionaire',    desc:'Earn 1000 gold',     type:'gold',   goal:1000, reward:{xp:500}},
+  {id:'q_boss1',    name:'Boss Slayer',    desc:'Defeat your first boss',type:'bosses',goal:1,  reward:{gold:300,souls:1}},
+  {id:'q_boss5',    name:'Boss Hunter',    desc:'Defeat 5 bosses',    type:'bosses', goal:5,    reward:{gold:1500,souls:3}},
+  {id:'q_level10',  name:'Journeyman',     desc:'Reach level 10',     type:'level',  goal:10,   reward:{gold:300}},
+  {id:'q_level20',  name:'Master Miner',   desc:'Reach level 20',     type:'level',  goal:20,   reward:{gold:1000,souls:2}},
+  {id:'q_artifact1',name:'Relic Hunter',   desc:'Find 1 artifact',    type:'artifacts',goal:1,  reward:{gold:400}},
+  {id:'q_prestige1',name:'Reborn',          desc:'Prestige once',       type:'prestige',goal:1,   reward:{gold:2000,  souls:5}},
+  {id:'q_prestige3',name:'Veteran Rebirth', desc:'Prestige 3 times',    type:'prestige',goal:3,   reward:{gold:10000, souls:12}},
+  {id:'q_depth750', name:'Abyss Diver',     desc:'Reach 750m depth',    type:'depth',   goal:750, reward:{gold:20000, souls:5}},
+  {id:'q_depth1000',name:'The Deepest',     desc:'Reach 1000m depth',   type:'depth',   goal:1000,reward:{gold:80000, souls:10}},
+  {id:'q_mine20k',  name:'Obsessive',       desc:'Mine 20,000 blocks',  type:'mined',   goal:20000,reward:{gold:15000, souls:4}},
+  {id:'q_mine100k', name:'Block God',       desc:'Mine 100,000 blocks', type:'mined',   goal:100000,reward:{gold:100000,souls:15}},
+  {id:'q_boss10',   name:'God Slayer',      desc:'Defeat 10 bosses',    type:'bosses',  goal:10,  reward:{gold:50000, souls:12}},
+  {id:'q_art5',     name:'Archaeologist',   desc:'Find 5 artifacts',    type:'artifacts',goal:5,  reward:{gold:10000, souls:3}},
+  {id:'q_gold100k', name:'Gold Baron',      desc:'Earn 100k total gold',type:'gold',    goal:100000,reward:{souls:5}},
+  {id:'q_level30',  name:'Elite Miner',     desc:'Reach level 30',      type:'level',   goal:30,  reward:{gold:5000,  souls:3}},
+  {id:'q_level50',  name:'Legendary',       desc:'Reach level 50',      type:'level',   goal:50,  reward:{gold:20000, souls:6}},
+  {id:'q_diamond50',name:'Diamond Empire',  desc:'Collect 50 diamonds', type:'inv',res:'diamond',goal:50,reward:{gold:8000}},
+  {id:'q_void10',   name:'Void Hoarder',    desc:'Collect 10 void crystals',type:'inv',res:'voidcrystal',goal:10,reward:{gold:50000,souls:8}},
+];
+
+// ARTIFACTS
+const ARTIFACT_POOL=[
+  {id:'pickaxe_soul',  name:"Miner's Soul",   icon:'⛏', desc:'All mining +25% power',    rarity:'rare'},
+  {id:'lucky_coin',    name:'Lucky Coin',      icon:'🪙', desc:'Luck stat +1',              rarity:'rare'},
+  {id:'ancient_lens',  name:'Ancient Lens',    icon:'🔭', desc:'Always reveal rare ores',   rarity:'epic'},
+  {id:'time_crystal',  name:'Time Crystal',    icon:'⏳', desc:'Skill cooldowns -40%',      rarity:'epic'},
+  {id:'soul_gem',      name:'Soul Gem',         icon:'💜', desc:'+3 Mining Souls',           rarity:'legendary'},
+  {id:'void_shard',    name:'Void Shard',       icon:'🌀', desc:'Void blocks drop 3x',      rarity:'legendary'},
+  {id:'combo_ring',    name:'Combo Ring',       icon:'💫', desc:'Combo bonus x2',            rarity:'epic'},
+  {id:'golden_heart',  name:'Golden Heart',     icon:'💛', desc:'Max HP +200',               rarity:'rare'},
+  {id:'nether_star',   name:'Nether Star',      icon:'⭐', desc:'All XP x2',                 rarity:'legendary'},
+  {id:'depth_charm',    name:'Depth Charm',      icon:'🧲', desc:'+10m per layer clear',          rarity:'rare'},
+  {id:'forge_rune',     name:'Forge Rune',       icon:'🔥', desc:'Critical hits deal 2x damage',   rarity:'epic'},
+  {id:'crystal_eye',    name:'Crystal Eye',      icon:'🔮', desc:'+5% cave event chance',           rarity:'rare'},
+  {id:'ancient_tome',   name:'Ancient Tome',     icon:'📖', desc:'All upgrades -25% cost',          rarity:'legendary'},
+  {id:'void_heart',     name:'Void Heart',       icon:'🫀', desc:'Heal 8% HP per boss defeated',   rarity:'epic'},
+  {id:'midas_touch',    name:'Midas Touch',      icon:'💰', desc:'All sell prices +50%',            rarity:'legendary'},
+  {id:'eternal_flame',  name:'Eternal Flame',    icon:'🕯', desc:'Skill cooldowns -60%',            rarity:'legendary'},
+  {id:'earthbreaker',   name:'Earthbreaker',     icon:'⚒', desc:'+20% damage to all blocks',       rarity:'epic'},
+];
+
+// BOSS configs
+const BOSSES=[
+  {depth:50,  name:'Stone Golem',    icon:'🗿', hp:1500, reward:{gold:600,  souls:1}, msg:'A massive stone giant rises from the earth!'},
+  {depth:100, name:'Lava Titan',     icon:'🔥', hp:4000, reward:{gold:1500, souls:2}, msg:'The lava boils and a titan of fire emerges!'},
+  {depth:150, name:'Diamond Dragon', icon:'🐉', hp:6000, reward:{gold:2500, souls:3}, msg:'Scales of diamond glint in the darkness!'},
+  {depth:200, name:'Ice Witch',      icon:'🧙', hp:15000,reward:{gold:5000, souls:4}, msg:'An ancient ice witch guards the crystal caverns!'},
+  {depth:300, name:'Void Wraith',    icon:'👁', hp:40000,reward:{gold:12000,souls:6}, msg:'Something ancient and terrible stirs in the void...'},
+  {depth:400, name:'Ancient God',    icon:'✨', hp:15000, reward:{gold:15000, souls:10},msg:'The ultimate guardian of the deep awakens!'},
+  {depth:550, name:'Void Emperor',   icon:'👑', hp:600000,reward:{gold:150000,souls:15},msg:'The emperor of the void emerges from the abyss!'},
+  {depth:700, name:'Star Devourer',  icon:'🌌', hp:3000000,reward:{gold:800000,souls:22},msg:'A being that feeds on entire star systems descends!'},
+  {depth:900, name:'THE SINGULARITY',icon:'🌀', hp:20000000,reward:{gold:5000000,souls:35},msg:'The ultimate end — a singularity that devours all!'},
+];
+
+// CAVE EVENTS
+const CAVE_EVENTS=[
+  {id:'treasure',  name:'Treasure Room',  icon:'💰', tiles:'treasure',  msg:'A secret treasure room! Gold veins everywhere!'},
+  {id:'monster',   name:'Monster Nest',   icon:'👾', tiles:'monster_nest',msg:'A monster nest! Danger—but rare drops await!'},
+  {id:'crystal',   name:'Crystal Cave',   icon:'💠', tiles:'crystal',   msg:'A sparkling crystal cavern! Rare minerals abound!'},
+  {id:'gold_rush', name:'Gold Rush!',     icon:'✨', tiles:'gold_rush', msg:'A massive gold vein! Everything glitters!'},
+];
+
+// ═════════════════════
+// STATE
+// ═════════════════════
+function defaultState(){
+  return{
+    saveVersion:2,
+    tool:'wood',xp:0,level:1,xpNext:150,
+    health:100,maxHealth:100,
+    depth:0,layerIndex:0,mined:0,
+    gold:0,totalGold:0,
+    luck:1,
+    souls:0,totalSouls:0,prestigeCount:0,
+    inventory:{},
+    blocks:[],
+    upgrades:{},
+    equip:{head:null,body:null,feet:null,ring:null},
+    skillTree:{},
+    quests:{},
+    questProgress:{},
+    artifacts:[],
+    bossesDefeated:0,
+    artifactsFound:0,
+    combo:0,comboTimer:0,maxCombo:1,
+    idleProgress:0,idleTick:0,
+    regenAcc:0,
+    marketMult:{},
+    marketTimer:0,
+    skillCooldown:0,
+    tnt:0,nuke:0,
+    isBossLayer:false,
+    bossHP:0,bossMaxHP:0,
+    currentBoss:null,
+    savedAt:Date.now(),
+    miners:[],
+    _minerTicks:{},
+    _lastManaged:0,
+    // expansions (v2+)
+    event:null, // {type,stepsRemaining,startedAt,meta:{...}}
+    refinery:{tier:1,fuel:0},
+    enchants:{tool:{power:0,crit:0,lifesteal:0},equip:{}},
+    autosell:{enabled:false,thresholds:{},keepOne:false},
+    achievements:{},
+    run:{active:false,seed:0,hardcore:false,startedAt:0,best:{},dailyStamp:''},
+    reviveToken:0, // boss-craft consumable
+    shieldMaxBonus:0, // increases arena shield stamina cap
+    _dmgAmpTimer:0,   // ms
+    _dmgAmpMult:1,
+    _godMode:false,
+  };
+}
+let G=defaultState();
+
+// ═════════════════════
+// SAVE/LOAD
+// ═════════════════════
+const SAVE_KEY='block_miner_ultra_v7';
+function saveGame(silent){
+  try{
+    G.savedAt=Date.now();
+    if(!G.saveVersion)G.saveVersion=2;
+    localStorage.setItem(SAVE_KEY,JSON.stringify(G));
+    if(!silent) showMsg('💾 Game saved!','var(--green)');
+    document.getElementById('save-indicator').textContent='💾 Saved '+new Date().toLocaleTimeString();
+  }catch(e){showMsg('⚠ Save failed!','var(--red)');}
+}
+function migrateState(s){
+  const d=defaultState();
+  const out=Object.assign(d,s||{});
+  // Normalize nested objects/arrays so old saves don't crash new systems.
+  if(!out.inventory||typeof out.inventory!=='object')out.inventory={};
+  if(!out.upgrades||typeof out.upgrades!=='object')out.upgrades={};
+  if(!out.equip||typeof out.equip!=='object')out.equip={head:null,body:null,feet:null,ring:null};
+  if(!out.skillTree||typeof out.skillTree!=='object')out.skillTree={};
+  if(!out.quests||typeof out.quests!=='object')out.quests={};
+  if(!out.questProgress||typeof out.questProgress!=='object')out.questProgress={};
+  if(!Array.isArray(out.artifacts))out.artifacts=[];
+  if(!Array.isArray(out.blocks))out.blocks=[];
+  if(!Array.isArray(out.miners))out.miners=[];
+  if(!out.marketMult||typeof out.marketMult!=='object')out.marketMult={};
+  if(!out.refinery||typeof out.refinery!=='object')out.refinery={tier:1,fuel:0};
+  if(!out.enchants||typeof out.enchants!=='object')out.enchants={tool:{power:0,crit:0,lifesteal:0},equip:{}};
+  if(!out.enchants.tool||typeof out.enchants.tool!=='object')out.enchants.tool={power:0,crit:0,lifesteal:0};
+  if(!out.autosell||typeof out.autosell!=='object')out.autosell={enabled:false,thresholds:{},keepOne:false};
+  if(!out.autosell.thresholds||typeof out.autosell.thresholds!=='object')out.autosell.thresholds={};
+  if(!out.achievements||typeof out.achievements!=='object')out.achievements={};
+  if(!out.run||typeof out.run!=='object')out.run={active:false,seed:0,hardcore:false,startedAt:0,best:{},dailyStamp:''};
+  if(!out.run.best||typeof out.run.best!=='object')out.run.best={};
+  if(!Number.isFinite(out.reviveToken))out.reviveToken=0;
+  if(!Number.isFinite(out.shieldMaxBonus))out.shieldMaxBonus=0;
+  if(!Number.isFinite(out._dmgAmpTimer))out._dmgAmpTimer=0;
+  if(!Number.isFinite(out._dmgAmpMult))out._dmgAmpMult=1;
+  if(!Number.isFinite(out.saveVersion))out.saveVersion=2;
+  return out;
+}
+function loadGame(){
+  try{
+    const raw=localStorage.getItem(SAVE_KEY);
+    if(!raw)return false;
+    const s=JSON.parse(raw);
+    // Merge + migrate so new fields have defaults
+    G=migrateState(s);
+    return true;
+  }catch(e){return false;}
+}
+function confirmReset(){document.getElementById('reset-overlay').style.display='flex';}
+function resetGame(){
+  localStorage.removeItem(SAVE_KEY);
+  G=defaultState();
+  closeOverlay('reset-overlay');
+  fullRedraw();
+  showMsg('🗑 Game reset. Fresh start!','var(--red)');
+}
+
+// ═════════════════════
+// HELPERS
+// ═════════════════════
+function weightedRandom(w){
+  const t=Object.values(w).reduce((a,b)=>a+b,0);
+  let r=Math.random()*t;
+  for(const[k,v]of Object.entries(w)){r-=v;if(r<=0)return k;}
+  return Object.keys(w)[0];
+}
+function getBiome(){
+  let b=BIOMES[0];
+  for(const bm of BIOMES)if(G.depth>=bm.minDepth)b=bm;
+  return b;
+}
+function getToolPower(){
+  let p=TOOL_BASE[G.tool];
+  p+=(G.upgrades.sharp||0)*0.8;
+  p+=(G.skillTree.power1||0)*1.5+(G.skillTree.power2||0)*3+(G.skillTree.god_pick||0)*5;
+  if(G.artifacts.includes('pickaxe_soul'))p*=1.25;
+  if(G._dmgAmpTimer>0)p*=Math.max(1,G._dmgAmpMult||1);
+  return p;
+}
+
+function getIdleInterval(){
+  const spd=G.upgrades.auto_speed||0;
+  return Math.max(1200,8000*Math.pow(0.85,spd));
+}
+function getSellMult(){
+  if(G.arts&&G.arts.includes('midas_touch'))return(1+(G.upgrades.market_savvy||0)*0.15)*(G.skillTree&&G.skillTree.market1?1.3:1)*1.5+getSynergyBonus_sellPct();
+  let m=1+(G.upgrades.market_savvy||0)*0.2;
+  if(G.equip.ring==='lucky_ring')m*=1.1;
+  return m+getSynergyBonus_sellPct();
+}
+function getLuck(){
+  let l=1+(G.upgrades.luck||0)*0.3;
+  if(G.equip.ring==='lucky_ring')l+=0.5;
+  if(G.equip.ring==='soul_ring')l+=1.5;
+  l+=(G.skillTree.luck1||0)*0.5;
+  if(G.artifacts.includes('lucky_coin'))l+=1;
+  if(G._luckyTimer&&G._luckyTimer>0)l+=2;
+  return l;
+}
+function getArmor(){
+  let a=1-(G.upgrades.armor||0)*0.15;
+  if(G.equip.body==='chain_armor')a-=0.2;
+  if(G.equip.body==='obsidian_chest')a-=0.4;
+  a-=(G.skillTree.health1||0)*0;// health1 gives hp not armor
+  return Math.max(0.05,a);
+}
+function getMaxHP(){
+  let hp=100+(G.level-1)*10+(G.upgrades.vitality||0)*30;
+  if(G.equip.head==='miner_helm'||G.equip.head==='diamond_helm'){}
+  hp+=(G.skillTree.health1||0)*50;
+  if(G.artifacts.includes('golden_heart'))hp+=200;
+  hp+=(G.souls||0)*5;
+  return hp;
+}
+function rand(min,max){return Math.floor(Math.random()*(max-min+1))+min;}
+
+// ═════════════════════
+// LAYER GENERATION
+// ═════════════════════
+function generateLayer(forceBoss){
+  // Check if this should be a boss layer
+  const isBoss=forceBoss||BOSSES.some(b=>G.depth>=b.depth&&G.depth<b.depth+20&&!G['boss_done_'+b.depth]);
+  G.isBossLayer=isBoss;
+
+  if(isBoss){
+    const bossConfig=BOSSES.find(b=>G.depth>=b.depth&&G.depth<b.depth+20&&!G['boss_done_'+b.depth])||BOSSES[0];
+    G.currentBoss=bossConfig;
+    // Scale boss HP with prestige
+    const scale=1+G.prestigeCount*1.2;
+    G.bossMaxHP=Math.round(bossConfig.hp*scale);
+    G.bossHP=G.bossMaxHP;
+    G.blocks=[];
+    for(let i=0;i<COLS*ROWS;i++){
+      const def=BT.boss_stone;
+      G.blocks.push({type:'boss_stone',hp:rand(60,100),maxHp:100,mined:false});
+    }
+    // Show boss overlay
+    document.getElementById('boss-overlay-title').textContent=bossConfig.icon+' '+bossConfig.name+'!';
+    document.getElementById('boss-overlay-msg').textContent=bossConfig.msg+'\n\nBoss HP: '+G.bossMaxHP;
+    document.getElementById('boss-overlay').style.display='flex';
+    document.getElementById('boss-hp-wrap').style.display='block';
+    updateBossHP();
+    return;
+  }
+
+  if(G.arts&&G.arts.includes('void_heart'))G.health=Math.min(getMaxHP(),G.health+Math.round(getMaxHP()*0.08));
+  document.getElementById('boss-hp-wrap').style.display='none';
+
+  // Check for cave event (random chance based on luck)
+  if(Math.random()<0.08*getLuck()&&G.depth>10){
+    triggerCaveEvent();
+    return;
+  }
+
+  const biome=getBiome();
+  G.blocks=[];
+
+  // Build available weights only for blocks that spawn at this depth
+  let weights={};
+  for(const[k,w] of Object.entries(biome.weights)){
+    const def=BT[k];
+    if(def&&G.depth>=def.minDepth&&G.depth<=def.maxDepth){
+      weights[k]=w;
+    }
+  }
+  if(!Object.keys(weights).length)weights={stone:100};
+
+  for(let i=0;i<COLS*ROWS;i++){
+    const row=Math.floor(i/COLS);
+    let w={...weights};
+    // Deep rows are rarer
+    if(row>=5){
+      const rareKeys=['diamond','emerald','ruby','sapphire','amethyst','ancient','void'];
+      rareKeys.forEach(k=>{if(w[k])w[k]=Math.round(w[k]*1.6);});
+    }
+    if(G.depth===0&&row===0)w={grass:100};
+    const type=weightedRandom(w);
+    const def=BT[type];
+    const depthHpScale=1+Math.pow(Math.max(0,G.depth-10)/100,1.3);
+    const scaledHp=Math.max(def.hp,Math.round(def.hp*depthHpScale));
+    G.blocks.push({type,hp:scaledHp,maxHp:scaledHp,mined:false});
+  }
+}
+
+function triggerCaveEvent(){
+  const ev=CAVE_EVENTS[rand(0,CAVE_EVENTS.length-1)];
+  G.blocks=[];
+  for(let i=0;i<COLS*ROWS;i++){
+    let type='stone';
+    if(i%3===0&&ev.tiles==='treasure')type='treasure';
+    else if(i%4===0&&ev.tiles==='monster_nest')type='monster_nest';
+    else if(i%3===0&&ev.tiles==='crystal')type='crystal';
+    else if(i%2===0&&ev.tiles==='gold_rush')type='gold';
+    if(!BT[type])type='stone';
+    const def=BT[type];
+    G.blocks.push({type,hp:def.hp,maxHp:def.hp,mined:false,isEvent:true});
+  }
+  document.getElementById('event-overlay-title').textContent=ev.icon+' '+ev.name+'!';
+  document.getElementById('event-overlay-msg').textContent=ev.msg;
+  document.getElementById('event-overlay').style.display='flex';
+}
+
+// ═════════════════════
+// RENDER
+// ═════════════════════
+function renderGrid(){
+  const grid=document.getElementById('mine-grid');
+  grid.innerHTML='';
+  const biome=getBiome();
+  document.getElementById('biome-badge').textContent=biome.name;
+  document.getElementById('biome-badge').style.color=biome.color;
+  document.getElementById('biome-badge').style.borderColor=biome.color;
+  document.getElementById('biome-bg').style.background=biome.bg;
+
+  G.blocks.forEach((block,i)=>{
+    const def=BT[block.type]||BT.stone;
+    const el=document.createElement('div');
+    el.className='block';
+    el.id='block-'+i;
+    el.style.background=def.color;
+    if(block.mined)el.classList.add('mined');
+    if(block.type==='bedrock')el.classList.add('bedrock-block');
+    if(G.isBossLayer)el.classList.add('boss-block');
+    if(block.isEvent)el.classList.add('event-tile');
+
+    // deep scan glow
+    if((G.upgrades.deepscan||0)>=1||G.artifacts.includes('ancient_lens')){
+      const rareOres=['diamond','emerald','ruby','sapphire','amethyst','ancient','void'];
+      if(rareOres.includes(block.type))el.classList.add('rare-glow');
+    }
+
+    // ore dots
+    if(def.ores.length&&!block.mined){
+      def.ores.forEach((ore,oi)=>{
+        const positions=oi===0?[{x:20,y:25},{x:55,y:15},{x:35,y:55},{x:70,y:60}]:[{x:45,y:40}];
+        positions.forEach(pos=>{
+          const dot=document.createElement('div');
+          dot.className='ore-dot';
+          dot.style.cssText=`background:${ore.c};width:${ore.s*2}px;height:${ore.s*2}px;left:${pos.x}%;top:${pos.y}%;`;
+          el.appendChild(dot);
+        });
+      });
+    }
+
+    const crack=document.createElement('div');
+    crack.className='crack-overlay';
+    crack.id='crack-'+i;
+    el.appendChild(crack);
+
+    if(!block.mined&&block.type!=='bedrock'){
+      el.addEventListener('click',()=>clickBlock(i));
+    }
+    grid.appendChild(el);
+  });
+}
+
+function renderInventory(){
+  const el=document.getElementById('inventory');
+  el.innerHTML='';
+  Object.keys(RESOURCE_ICONS).forEach(res=>{
+    const count=G.inventory[res]||0;
+    if(count===0)return;
+    const slot=document.createElement('div');
+    slot.className='inv-slot';
+    const icon=RESOURCE_ICONS[res];
+    slot.innerHTML=`<span style="font-size:16px">${icon.emoji}</span><span class="inv-count">${count}</span><span class="inv-name">${res.slice(0,6).toUpperCase()}</span>`;
+    el.appendChild(slot);
+  });
+  // If empty
+  if(el.children.length===0){
+    el.innerHTML='<div style="font-size:5px;color:#444;grid-column:1/-1;text-align:center;padding:8px">Empty</div>';
+  }
+}
+
+function renderMarket(){
+  const el=document.getElementById('market-prices');
+  el.innerHTML='';
+  const sellable=Object.keys(RESOURCE_ICONS).filter(r=>BT[r]&&BT[r].sell>0);
+  sellable.forEach(res=>{
+    const baseSell=BT[res]?.sell||1;
+    const mult=G.marketMult[res]||1;
+    const price=Math.round(baseSell*mult*getSellMult());
+    const count=G.inventory[res]||0;
+    const trend=mult>1.2?'▲':mult<0.8?'▼':'–';
+    const trendCls=mult>1.2?'market-up':mult<0.8?'market-down':'market-stable';
+    const row=document.createElement('div');
+    row.className='market-row';
+    row.innerHTML=`
+      <span style="font-size:12px">${RESOURCE_ICONS[res].emoji}</span>
+      <span style="color:#888;font-size:5px">${res.toUpperCase()}</span>
+      <span class="market-price ${trendCls}">${price}g <span class="market-trend">${trend}</span></span>
+      <span style="color:#666;font-size:5px">×${count}</span>
+      <button class="sell-btn" onclick="sellResource('${res}')">SELL</button>
+    `;
+    el.appendChild(row);
+  });
+}
+
+function renderUpgrades(){
+  ['mine','idle','perks'].forEach(tab=>{
+    const c=document.getElementById('upgrades-'+tab);
+    if(!c)return;
+    c.innerHTML='';
+    Object.entries(UPGRADES).forEach(([key,def])=>{
+      if(def.tab!==tab)return;
+      const lvl=G.upgrades[key]||0;
+      const isMax=lvl>=def.max;
+      const cost=getUpgradeCost(key,lvl);
+      const canAfford=isMax||G.gold>=cost;
+
+      const item=document.createElement('div');
+      item.className='upg-item'+(isMax?' maxed':(!canAfford?' locked':''));
+      item.innerHTML=`
+        <div class="upg-header">
+          <span class="upg-name">${def.icon} ${def.name}</span>
+          <span class="upg-lvl">Lv${lvl}/${def.max}</span>
+        </div>
+        <div class="upg-desc">${def.desc}<br><span style="color:#aaa">${def.effect(Math.max(1,lvl))}</span></div>
+        <div class="upg-cost">${isMax?'<span style="color:var(--green)">MAXED</span>':`<span class="cost-chip ${canAfford?'':'red'}">💰 ${cost}g</span>`}</div>
+      `;
+      if(!isMax&&canAfford)item.addEventListener('click',()=>buyUpgrade(key));
+      c.appendChild(item);
+    });
+  });
+
+  // Idle miners display
+  const d=document.getElementById('idle-miners-display');
+  if(d){
+    const basic=G.upgrades.auto_basic||0,pro=G.upgrades.auto_pro||0;
+    d.innerHTML='';
+    if(!basic&&!pro){d.innerHTML='<div style="font-size:5px;color:#444;margin-bottom:6px">No miners. Buy Basic Miner below.</div>';}
+    else{
+      if(basic){const r=document.createElement('div');r.className='miner-row';r.innerHTML=`🤖 ${basic}x Basic <span style="color:#555;margin-left:auto">${(getIdleInterval()/1000).toFixed(1)}s</span>`;d.appendChild(r);}
+      if(pro){const r=document.createElement('div');r.className='miner-row';r.innerHTML=`🦾 ${pro}x Pro Miner <span style="color:#555;margin-left:auto">3x power</span>`;d.appendChild(r);}
+    }
+  }
+
+  // Equipment tab
+  renderEquipTab();
+  // Skill tree
+  renderSkillTree();
+  // Prestige
+  renderPrestige();
+}
+
+function renderEquipTab(){
+  const grid=document.getElementById('equip-grid');
+  const shop=document.getElementById('equip-shop');
+  if(!grid||!shop)return;
+
+  const slots=['head','body','feet','ring'];
+  const slotNames={head:'HEAD',body:'BODY',feet:'FEET',ring:'RING'};
+  grid.innerHTML='';
+  slots.forEach(slot=>{
+    const eq=G.equip[slot];
+    const div=document.createElement('div');
+    div.className='equip-slot'+(eq?' equipped':'');
+    if(eq){
+      const item=EQUIP_ITEMS[eq];
+      div.innerHTML=`<span class="equip-slot-name">${slotNames[slot]}</span><span style="font-size:18px">${item.icon}</span><span class="equip-slot-stat">${item.desc}</span><span style="font-size:5px;color:#555;cursor:pointer" onclick="unequip('${slot}')">REMOVE</span>`;
+    }else{
+      div.innerHTML=`<span style="color:#444;font-size:18px">⬜</span><span style="font-size:5px;color:#555">${slotNames[slot]}</span>`;
+    }
+    grid.appendChild(div);
+  });
+
+  // Shop
+  shop.innerHTML='<div style="font-size:6px;color:var(--yellow);margin-bottom:6px">🛒 GEAR SHOP</div>';
+  Object.entries(EQUIP_ITEMS).forEach(([id,item])=>{
+    const owned=Object.values(G.equip).includes(id);
+    const req=item.req||1;
+    const locked=G.level<req;
+    const canAfford=G.gold>=item.goldCost;
+    const d=document.createElement('div');
+    d.className='upg-item'+(owned?' maxed':locked?' locked':(!canAfford?' locked':''));
+    d.innerHTML=`<div class="upg-header"><span class="upg-name">${item.icon} ${item.name}</span><span class="upg-lvl">${item.slot.toUpperCase()}</span></div>
+      <div class="upg-desc">${item.desc}</div>
+      <div class="upg-cost">${owned?'<span style="color:var(--green)">EQUIPPED</span>':locked?`<span class="cost-chip red">Lv${req} req</span>`:`<span class="cost-chip ${canAfford?'':'red'}">💰 ${item.goldCost}g</span>`}</div>`;
+    if(!owned&&!locked&&canAfford)d.addEventListener('click',()=>buyEquip(id));
+    shop.appendChild(d);
+  });
+}
+
+function renderSkillTree(){
+  const el=document.getElementById('skill-tree');
+  if(!el)return;
+  el.innerHTML='';
+  const rows=Math.max(...SKILL_TREE.map(n=>n.row))+1;
+  for(let r=0;r<rows;r++){
+    const row=document.createElement('div');
+    row.className='skill-tree-row';
+    SKILL_TREE.filter(n=>n.row===r).forEach(node=>{
+      const unlocked=G.skillTree[node.id];
+      const reqMet=node.requires.every(r=>G.skillTree[r]);
+      const canAfford=G.souls>=node.cost;
+      const available=!unlocked&&reqMet&&canAfford;
+      const div=document.createElement('div');
+      div.className='skill-tree-node'+(unlocked?' unlocked':available?' available':' locked');
+      div.innerHTML=`<span style="font-size:14px">${node.icon}</span><span style="font-size:5px;color:${unlocked?'var(--green)':'#aaa'}">${node.name}</span><span style="font-size:4px;color:#555">${node.cost}🌟</span>`;
+      div.title=node.desc;
+      if(available){div.addEventListener('click',()=>buySkillNode(node.id));}
+      row.appendChild(div);
+    });
+    el.appendChild(row);
+  }
+  el.innerHTML+='<div style="font-size:5px;color:#555;margin-top:6px">Click nodes to unlock with Souls</div>';
+}
+
+function renderPrestige(){
+  const el=document.getElementById('prestige-panel');
+  if(!el)return;
+  const nextSouls=Math.floor(G.level*0.5+G.depth/20+G.bossesDefeated*2)+1;
+  el.innerHTML=`
+    <div class="prestige-box">
+      <div class="prestige-title">✨ REBIRTH</div>
+      <div class="prestige-souls">You have ${G.souls} 🌟 Souls</div>
+      <div style="font-size:5px;color:#aaa;margin-bottom:8px;line-height:1.8">Prestige resets level, depth, and inventory.<br>You keep Souls, Skill Tree, and Artifacts.<br><br>Next prestige: <span style="color:var(--yellow)">+${nextSouls} souls</span></div>
+      <button class="prestige-btn" onclick="confirmPrestige(${nextSouls})">PRESTIGE (+${nextSouls} souls)</button>
+      <div style="font-size:5px;color:#555;margin-top:8px">Prestige #${G.prestigeCount}</div>
+    </div>
+    <div style="font-size:6px;color:var(--purple);margin-bottom:6px">Soul Bonuses (auto-applied)</div>
+    <div style="font-size:5px;color:#aaa;line-height:2">
+      • +${(G.souls*5)}HP from souls<br>
+      • +${(G.souls*0.02*100).toFixed(0)}% XP from souls<br>
+      • +${(G.souls*0.01*100).toFixed(0)}% power from souls
+    </div>
+  `;
+}
+
+function renderQuests(){
+  const el=document.getElementById('quest-list');
+  if(!el)return;
+  el.innerHTML='';
+  let activeCount=0;
+  QUEST_POOL.forEach(q=>{
+    const done=G.quests[q.id]==='done';
+    const progress=G.questProgress[q.id]||0;
+    const goal=q.goal;
+    const pct=Math.min(100,Math.round(progress/goal*100));
+    const div=document.createElement('div');
+    div.className='quest-item';
+    div.style.opacity=done?'.4':'1';
+    const rewardStr=Object.entries(q.reward).map(([k,v])=>`+${v} ${k}`).join(', ');
+    div.innerHTML=`
+      <div class="quest-name">${done?'✅ ':''} ${q.name}</div>
+      <div class="quest-desc">${q.desc}</div>
+      <div class="quest-prog"><div class="quest-prog-fill" style="width:${pct}%"></div></div>
+      <div style="display:flex;justify-content:space-between">
+        <span style="font-size:5px;color:#555">${Math.min(progress,goal)}/${goal}</span>
+        <span class="quest-reward">🏆 ${rewardStr}</span>
+      </div>
+    `;
+    el.appendChild(div);
+    if(!done)activeCount++;
+  });
+  // Badge
+  const badge=document.getElementById('quest-complete-badge');
+  const newlyDone=QUEST_POOL.filter(q=>G.quests[q.id]==='new_done').length;
+  badge.style.display=newlyDone>0?'inline':'none';
+}
+
+function renderArtifacts(){
+  const el=document.getElementById('artifact-list');
+  if(!el)return;
+  if(G.artifacts.length===0){el.innerHTML='<span style="font-size:5px;color:#444">No artifacts found yet...</span>';return;}
+  el.innerHTML='';
+  G.artifacts.forEach(id=>{
+    const a=ARTIFACT_POOL.find(x=>x.id===id);
+    if(!a)return;
+    const rarityColor={rare:'#5ddef4',epic:'#9b59b6',legendary:'#ffd700'}[a.rarity]||'#aaa';
+    const div=document.createElement('div');
+    div.className='artifact-item';
+    div.style.borderColor=rarityColor;
+    div.innerHTML=`<div class="artifact-name" style="color:${rarityColor}">${a.icon} ${a.name} <span style="font-size:4px">[${a.rarity.toUpperCase()}]</span></div><div class="artifact-desc">${a.desc}</div>`;
+    el.appendChild(div);
+  });
+}
+
+function updateStats(){
+  G.maxHealth=getMaxHP();
+  G.health=Math.min(G.health,G.maxHealth);
+  G.luck=getLuck();
+
+  document.getElementById('stat-level').textContent=G.level;
+  document.getElementById('stat-depth').textContent=G.depth+'m';
+  document.getElementById('stat-mined').textContent=G.mined;
+  document.getElementById('stat-power').textContent=getToolPower().toFixed(1);
+  document.getElementById('stat-gold').textContent=G.gold;
+  document.getElementById('stat-luck').textContent=getLuck().toFixed(1);
+  document.getElementById('stat-souls').textContent=G.souls;
+  document.getElementById('hp-num').textContent=Math.ceil(G.health)+'/'+G.maxHealth;
+  document.getElementById('xp-num').textContent=G.xp+'/'+G.xpNext;
+  document.getElementById('idle-num').textContent=getTotalMiners()+' miners';
+  document.getElementById('combo-num').textContent='x'+Math.max(1,G.combo);
+  document.getElementById('depth-label').textContent=G.depth+'m underground';
+
+  document.getElementById('health-bar').style.width=(G.health/G.maxHealth*100)+'%';
+  document.getElementById('xp-bar').style.width=(G.xp/G.xpNext*100)+'%';
+  document.getElementById('idle-bar').style.width=(G.idleProgress*100)+'%';
+
+  const comboMax=5+(G.upgrades.combo_master||0)*3;
+  document.getElementById('combo-bar').style.width=(Math.min(G.combo,comboMax)/comboMax*100)+'%';
+
+  // Combo display
+  const comboEl=document.getElementById('combo-display');
+  const comboValEl=document.getElementById('combo-val');
+  if(G.combo>1){comboEl.style.display='block';comboValEl.textContent=G.combo;}
+  else{comboEl.style.display='none';}
+
+  // Tool buttons
+  for(const[t,lvl]of Object.entries(TOOL_UNLOCK)){
+    const btn=document.getElementById('btn-'+t);
+    if(btn)btn.disabled=G.level<lvl;
+  }
+
+  // Skill button
+  updateSkillBtn();
+
+  // TNT
+  document.getElementById('tnt-count').textContent=G.tnt;
+  document.getElementById('nuke-count').textContent=G.nuke;
+}
+
+function updateBossHP(){
+  const pct=G.bossHP/G.bossMaxHP*100;
+  document.getElementById('boss-hp-bar').style.width=pct+'%';
+  const name=G.currentBoss?G.currentBoss.icon+' '+G.currentBoss.name:'BOSS';
+  document.getElementById('boss-name-label').textContent=name;
+  document.getElementById('boss-hp-num').textContent=G.bossHP+'/'+G.bossMaxHP;
+}
+
+function updateSkillBtn(){
+  const btn=document.getElementById('skill-btn');
+  const sk=TOOL_SKILL[G.tool];
+  if(!btn||!sk)return;
+  const cdLeft=Math.max(0,Math.ceil(G.skillCooldown/1000));
+  document.getElementById('skill-cd').textContent=cdLeft+'s';
+  if(cdLeft===0){btn.classList.add('ready');btn.classList.remove('cooldown');}
+  else{btn.classList.remove('ready');btn.classList.add('cooldown');}
+  btn.childNodes[0].textContent=`${sk.icon} ${sk.name} (`;
+}
+
+// ═════════════════════
+// MINING
+// ═════════════════════
+function clickBlock(i){
+  const block=G.blocks[i];
+  if(!block||block.mined||block.type==='bedrock')return;
+  const def=BT[block.type]||BT.stone;
+
+  // Lava damage
+  if(def.dmg){
+    const depthDmgScale=1+G.depth/150;
+    const res=1-Math.pow(0.75,G.upgrades.hazard_resist||0);
+    const dmg=Math.round(def.dmg*(typeof depthDmgScale!=='undefined'?depthDmgScale:1)*getArmor()*(1-res));
+    takeDamage(dmg);
+    showMsg('🔥 Lava burned you for '+dmg+'!','var(--red)');
+    block.hp=0;
+    finishMining(i);
+    return;
+  }
+
+  const power=getToolPower();
+  const extraHits=(G.upgrades.quick||0)+(G.equip.feet==='iron_boots'?1:0)+(G.equip.feet==='nether_boots'?2:0)+(G.skillTree.god_pick?1:0);
+  const comboMult=1+Math.max(0,G.combo-1)*0.1;
+  const totalPower=power*(1+extraHits)*comboMult;
+
+  block.hp-=totalPower;
+  spawnPopup(i,'-'+totalPower.toFixed(1),'#64b5f6');
+
+  // Crack visual
+  const ratio=1-(block.hp/block.maxHp);
+  const crack=document.getElementById('crack-'+i);
+  if(crack)crack.className='crack-overlay '+(ratio>.66?'crack-3':ratio>.33?'crack-2':'crack-1');
+
+  // Combo
+  G.combo=Math.min(20+(G.upgrades.combo_master||0)*5,G.combo+1);
+  const comboDecayTime=G.skillTree.combo1?4500:1500;
+  G.comboTimer=comboDecayTime;
+
+  // Boss damage
+  if(G.isBossLayer){
+    G.bossHP=Math.max(0,G.bossHP-Math.round(totalPower));
+    updateBossHP();
+    if(G.bossHP<=0)defeatBoss();
+    else if(block.type==='boss_stone'&&block.hp>0)bossStrikePlayer(1);
+  }
+
+  // Vein miner
+  const vein=G.upgrades.vein||0;
+  if(vein>0){
+    getNeighbors(i,vein).forEach(ni=>{
+      const nb=G.blocks[ni];
+      if(!nb||nb.mined||nb.type==='bedrock')return;
+      nb.hp-=power*0.4;
+      const r2=1-(nb.hp/nb.maxHp);
+      const c2=document.getElementById('crack-'+ni);
+      if(c2)c2.className='crack-overlay '+(r2>.66?'crack-3':r2>.33?'crack-2':'crack-1');
+      if(nb.hp<=0)finishMining(ni);
+    });
+  }
+
+  if(block.hp<=0)finishMining(i);
+  else{
+    // Chain mining check
+    const chainChance=(G.upgrades.chain||0)*0.15*getLuck();
+    if(Math.random()<chainChance&&def.ores.length){
+      // Auto-finish block and chain to adjacent same type
+      block.hp=0;
+      finishMining(i);
+      const neighbors=getNeighbors(i,1);
+      neighbors.forEach(ni=>{
+        const nb=G.blocks[ni];
+        if(nb&&!nb.mined&&nb.type===block.type){
+          nb.hp=0;
+          setTimeout(()=>finishMining(ni),100);
+        }
+      });
+    }
+  }
+}
+
+function getNeighbors(i,radius){
+  const out=[];
+  const col=i%COLS,row=Math.floor(i/COLS);
+  for(let dr=-radius;dr<=radius;dr++){
+    for(let dc=-radius;dc<=radius;dc++){
+      if(dr===0&&dc===0)continue;
+      if(Math.abs(dr)+Math.abs(dc)>radius+1)continue;
+      const nr=row+dr,nc=col+dc;
+      if(nr>=0&&nr<ROWS&&nc>=0&&nc<COLS)out.push(nr*COLS+nc);
+    }
+  }
+  return out;
+}
+
+function finishMining(i,isIdle){
+  const block=G.blocks[i];
+  if(!block||block.mined)return;
+  const def=BT[block.type]||BT.stone;
+  block.mined=true;
+  G.mined++;
+
+  const el=document.getElementById('block-'+i);
+  if(el){el.className='block mined';el.innerHTML='';el.onclick=null;}
+
+  if(def.drop){
+    let amt=def.amt;
+    // Fortune
+    const fortChance=(G.upgrades.fortune||0)*0.1*getLuck();
+    if(Math.random()<fortChance)amt*=2;
+    // Miner fortune (idle only)
+    if(isIdle&&Math.random()<(G.upgrades.miner_fortune||0)*0.25)amt*=2;
+    // Void shard artifact
+    if(G.artifacts.includes('void_shard')&&block.type==='void')amt*=3;
+
+    G.inventory[def.drop]=(G.inventory[def.drop]||0)+amt;
+    spawnPopup(i,'+'+amt+' '+def.drop,RESOURCE_ICONS[def.drop]?.color||'#fff');
+    if(!isIdle)showMsg('Mined '+def.label+'! Got '+amt+' '+def.drop,'#8bc34a');
+  }
+
+  // Lucky streak bonus chest
+  if(Math.random()<(G.upgrades.lucky_streak||0)*0.05*getLuck()){
+    const bonuses=['coal','iron','gold','diamond'];
+    const res=bonuses[rand(0,bonuses.length-1)];
+    const amt2=rand(2,6);
+    G.inventory[res]=(G.inventory[res]||0)+amt2;
+    showMsg(`🎲 Lucky chest! +${amt2} ${res}!`,'var(--yellow)');
+  }
+
+  // Artifact drop (very rare)
+  const artifactChance=0.005*getLuck()*(G.skillTree.artifact1?1.5:1);
+  if(Math.random()<artifactChance){
+    const avail=ARTIFACT_POOL.filter(a=>!G.artifacts.includes(a.id));
+    if(avail.length){
+      const art=avail[rand(0,avail.length-1)];
+      G.artifacts.push(art.id);
+      G.artifactsFound++;
+      showNotif(`🔮 ARTIFACT FOUND: ${art.icon} ${art.name}!`);
+      if(art.id==='soul_gem')G.souls+=3;
+      renderArtifacts();
+    }
+  }
+
+  // XP
+  let xpGain=def.xp;
+  xpGain*=1+(G.upgrades.xpboost||0)*0.25;
+  xpGain*=1+G.souls*0.02;
+  if(G.equip.head==='miner_helm')xpGain*=1.3;
+  if(G.equip.head==='diamond_helm')xpGain*=1.6;
+  if(G.artifacts.includes('nether_star'))xpGain*=2;
+  const gemKeys=['diamond','emerald','ruby','sapphire','amethyst'];
+  if(gemKeys.includes(block.type))xpGain*=1+(G.upgrades.gem_sense||0)*0.35;
+  gainXP(Math.round(xpGain));
+
+  updateQuestProgress();
+  updateStats();
+  renderInventory();
+  renderMarket();
+  renderUpgrades();
+  renderCraftPanel();
+  checkSynergies();
+
+  // Check layer complete
+  const allDone=G.blocks.every(b=>b.mined||b.type==='bedrock');
+  if(allDone){
+    if(G.isBossLayer&&G.bossHP>0){
+      showMsg('⚠ Destroy all blocks to damage the boss!','var(--red)');
+      return;
+    }
+    setTimeout(()=>{
+      const depthBonus=(G.upgrades.depth_runner||0)*8+(G.skillTree.depth_charm?20:0)*(G.artifacts.includes('depth_charm')?1.2:1);
+      G.depth+=4+Math.floor(G.depth/150)+depthBonus;
+      if(G.isBossLayer){G['boss_done_'+G.currentBoss.depth]=true;G.isBossLayer=false;}
+      generateLayer();
+      renderGrid();
+      updateStats();
+      showMsg('▼ Dug deeper! Now at '+G.depth+'m','var(--yellow)');
+    },500);
+  }
+}
+
+function defeatBoss(){
+  if(!G.currentBoss)return;
+  const boss=G.currentBoss;
+  G.bossesDefeated++;
+  G.gold+=boss.reward.gold;
+  G.totalGold+=boss.reward.gold;
+  G.souls+=boss.reward.souls+(G.skillTree.prestige_boost?1:0);
+  // Boss loot: tokens scale with depth and prestige
+  const tokens=1+Math.floor(boss.depth/250)+Math.floor((G.prestigeCount||0)/2);
+  G.inventory.boss_token=(G.inventory.boss_token||0)+tokens;
+  G['boss_done_'+boss.depth]=true;
+  G.isBossLayer=false;
+  document.getElementById('boss-hp-wrap').style.display='none';
+  showNotif(`🏆 ${boss.icon} ${boss.name} DEFEATED! +${boss.reward.gold}g +${boss.reward.souls} souls +${tokens} boss tokens!`);
+  // Finish layer
+  setTimeout(()=>{
+    G.depth+=15;
+    generateLayer();
+    renderGrid();
+    updateStats();
+    renderUpgrades();
+  },800);
+  updateQuestProgress();
+}
+
+// ═════════════════════
+// XP / LEVELS
+// ═════════════════════
+function gainXP(amount){
+  G.xp+=amount;
+  while(G.xp>=G.xpNext){
+    G.xp-=G.xpNext;
+    G.level++;
+    G.xpNext=Math.floor(G.xpNext*1.85);
+    G.health=Math.min(getMaxHP(),G.health+30);
+    // Craft TNT at certain levels if unlocked
+    if(G.upgrades.explosive>0&&G.level%5===0){G.tnt+=1;}
+    showLevelUp();
+  }
+}
+
+function bossStrikePlayer(mult){
+  if(!G.isBossLayer||!G.currentBoss||BA.active)return;
+  const d=G.currentBoss.depth;
+  // Depth-based boss damage scaling (VERY strong)
+  // 0m => 1.0x, 100m => ~1.60x, 300m => ~3.24x, 900m => ~9.95x
+  const depthMult=1+Math.pow(d/100,1.2)*0.6;
+  const raw=(12+d*0.07)*mult*depthMult*(1+(G.prestigeCount||0)*0.1);
+  takeDamage(Math.max(2,Math.round(raw)));
+}
+function failBossFight(reason){
+  if(BA.active){
+    BA.active=false;
+    if(BA.raf){cancelAnimationFrame(BA.raf);BA.raf=null;}
+    const o=document.getElementById('boss-arena-overlay');
+    if(o)o.style.display='none';
+    document.onkeydown=null;
+  }
+  const bossName=G.currentBoss?G.currentBoss.icon+' '+G.currentBoss.name:'Boss';
+  const retreat=G.currentBoss?Math.max(0,G.currentBoss.depth-1):Math.max(0,G.depth-25);
+  const goldLoss=Math.min(G.gold,Math.floor(G.gold*0.1)+Math.floor((G.currentBoss?.depth||G.depth)*2));
+  G.gold-=goldLoss;
+
+  G.isBossLayer=false;
+  G.bossHP=0;
+  G.bossMaxHP=0;
+  G.currentBoss=null;
+  G.combo=0;
+  G.comboTimer=0;
+
+  const bh=document.getElementById('boss-hp-wrap');
+  if(bh)bh.style.display='none';
+  closeOverlay('boss-overlay');
+
+  G.depth=retreat;
+  generateLayer();
+  G.maxHealth=getMaxHP();
+  G.health=Math.round(G.maxHealth*0.55);
+
+  renderGrid();
+  fullRedraw();
+  const tail=goldLoss>0?' Lost '+goldLoss+'g.':'';
+  showMsg((reason||'☠ '+bossName+' wins!')+' Thrown back to '+G.depth+'m.'+tail,'var(--red)');
+  if(goldLoss>0)showNotif('☠ Boss victory — you lost '+goldLoss+'g. Climb back to rematch!');
+  saveGame(true);
+}
+
+function takeDamage(amount){
+  if(G._godMode){
+    // Admin mode: ignore all damage sources
+    updateStats();
+    return;
+  }
+  const armor=getArmor();
+  const raw=Math.round((Number.isFinite(amount)?amount:0)*armor);
+  const dmg=Math.max(1,Number.isFinite(raw)?raw:1);
+  G.health=Math.max(0,(Number.isFinite(G.health)?G.health:0)-dmg);
+  if(G.health<=0){
+    if(G.isBossLayer&&!BA.active){
+      if((G.reviveToken||0)>0){
+        G.reviveToken--;
+        G.health=Math.max(1,Math.round(getMaxHP()*0.35));
+        showNotif('💠 Revive Token saved you! Remaining: '+G.reviveToken);
+        updateStats();
+        return;
+      }
+      failBossFight('💀 The boss overwhelmed you!');
+      return;
+    }
+    showMsg('💀 You died! Respawning...','var(--red)');
+    setTimeout(()=>{G.health=getMaxHP()*0.3;updateStats();},1500);
+  }
+  updateStats();
+}
+
+// ═════════════════════
+// TOOLS & SKILLS
+// ═════════════════════
+function selectTool(t){
+  if(G.level<TOOL_UNLOCK[t]){showMsg('Need level '+TOOL_UNLOCK[t]+' for '+t+' pickaxe!','var(--red)');return;}
+  G.tool=t;
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.getElementById('btn-'+t);
+  if(btn)btn.classList.add('active');
+  showMsg('Equipped '+t+' pickaxe! Power: '+getToolPower().toFixed(1),'var(--yellow)');
+  updateSkillBtn();
+}
+
+function useSkill(){
+  if(G.skillCooldown>0){showMsg('⏳ Skill on cooldown!','var(--red)');return;}
+  const sk=TOOL_SKILL[G.tool];
+  if(!sk)return;
+
+  let baseCd=sk.cd*1000;
+  if(G.artifacts.includes('time_crystal'))baseCd*=0.6;
+  baseCd*=getSynergyBonus_skillCdMult();
+  G.skillCooldown=baseCd;
+
+  if(G.tool==='wood'){
+    // Burst: 5 rapid hits on hovered/first block
+    let idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+    if(idx>=0){
+      for(let h=0;h<5;h++){
+        setTimeout(()=>{
+          const b=G.blocks[idx];
+          if(b&&!b.mined){b.hp-=getToolPower();if(b.hp<=0)finishMining(idx);}
+        },h*150);
+      }
+      showMsg('💨 Burst! Rapid 5-hit strike!','var(--blue)');
+    }
+  }else if(G.tool==='stone'){
+    // Shockwave: AoE 3x3 center
+    const center=COLS*Math.floor(ROWS/2)+Math.floor(COLS/2);
+    getNeighbors(center,2).concat([center]).forEach(ni=>{
+      const b=G.blocks[ni];
+      if(b&&!b.mined&&b.type!=='bedrock'){
+        b.hp-=getToolPower()*2;
+        if(b.hp<=0)finishMining(ni);
+        else{const r=1-(b.hp/b.maxHp);const c=document.getElementById('crack-'+ni);if(c)c.className='crack-overlay '+(r>.66?'crack-3':r>.33?'crack-2':'crack-1');}
+      }
+    });
+    showMsg('💥 Shockwave! 3x3 AoE blast!','var(--orange)');
+  }else if(G.tool==='iron'){
+    // Triple damage on one block
+    const idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+    if(idx>=0){const b=G.blocks[idx];b.hp-=getToolPower()*4;if(b.hp<=0)finishMining(idx);showMsg('🔨 Crusher! 4x power strike!','var(--red)');}
+  }else if(G.tool==='diamond'){
+    // Mine entire middle row
+    const midRow=Math.floor(ROWS/2);
+    for(let c=0;c<COLS;c++){
+      const idx=midRow*COLS+c;
+      const b=G.blocks[idx];
+      if(b&&!b.mined&&b.type!=='bedrock'){b.hp=0;finishMining(idx);}
+    }
+    showMsg('⚡ Laser! Entire row destroyed!','var(--blue)');
+  }else if(G.tool==='netherite'){
+    // Destroy 3x3 center completely
+    const center=COLS*Math.floor(ROWS/2)+Math.floor(COLS/2);
+    [center,...getNeighbors(center,1)].forEach(ni=>{
+      const b=G.blocks[ni];
+      if(b&&!b.mined&&b.type!=='bedrock'){b.hp=0;finishMining(ni);}
+    });
+    showMsg('☢ OBLITERATE! 3x3 destroyed!','var(--purple)');
+  }
+  updateStats();
+}
+
+// ═════════════════════
+// EXPLOSIVES
+// ═════════════════════
+function craftTNT(){
+  if((G.inventory.redstone||0)>=5&&(G.inventory.coal||0)>=3){
+    G.inventory.redstone-=5;G.inventory.coal-=3;G.tnt++;
+    showMsg('💥 Crafted 1 TNT!','var(--orange)');
+    renderInventory();updateStats();
+  }else{showMsg('Need 5 redstone + 3 coal for TNT','var(--red)');}
+}
+function useTNT(){
+  if(G.tnt<=0){showMsg('No TNT! Craft it with redstone+coal','var(--red)');return;}
+  G.tnt--;
+  // Clear 3x3 area
+  const center=Math.floor(ROWS/2)*COLS+Math.floor(COLS/2);
+  [center,...getNeighbors(center,1)].forEach(ni=>{
+    const b=G.blocks[ni];
+    if(b&&!b.mined&&b.type!=='bedrock'){b.hp=0;finishMining(ni);}
+  });
+  showMsg('💥 BOOM! TNT destroyed 3x3 area!','var(--orange)');
+  updateStats();
+}
+function useNuke(){
+  if(G.nuke<=0){showMsg('No Nukes! Unlock via skill tree','var(--red)');return;}
+  if(!G.skillTree.nuke1){showMsg('Unlock Nuke Tech in skill tree first!','var(--red)');return;}
+  G.nuke--;
+  G.blocks.forEach((b,i)=>{if(!b.mined&&b.type!=='bedrock'){b.hp=0;finishMining(i);}});
+  showMsg('☢ NUCLEAR STRIKE! Layer cleared!','var(--purple)');
+  updateStats();
+}
+
+// ═════════════════════
+// MARKET & SELLING
+// ═════════════════════
+function sellResource(res){
+  const count=G.inventory[res]||0;
+  if(count<=0){showMsg('Nothing to sell!','var(--red)');return;}
+  const basePrice=BT[res]?.sell||1;
+  const mult=G.marketMult[res]||1;
+  const earned=Math.round(basePrice*mult*getSellMult()*count);
+  G.inventory[res]=0;
+  G.gold+=earned;
+  G.totalGold+=earned;
+  showMsg(`💰 Sold ${count} ${res} for ${earned}g!`,'var(--yellow)');
+  updateQuestProgress();
+  renderInventory();renderMarket();updateStats();
+}
+function sellAll(){
+  let total=0;
+  Object.keys(RESOURCE_ICONS).forEach(res=>{
+    const count=G.inventory[res]||0;
+    if(count>0&&BT[res]?.sell>0){
+      const price=Math.round((BT[res].sell)*(G.marketMult[res]||1)*getSellMult()*count);
+      total+=price;
+      G.inventory[res]=0;
+    }
+  });
+  if(total===0){showMsg('Nothing valuable to sell!','var(--red)');return;}
+  G.gold+=total;G.totalGold+=total;
+  showMsg(`💰 Sold everything for ${total}g!`,'var(--yellow)');
+  updateQuestProgress();
+  renderInventory();renderMarket();updateStats();
+}
+function fluctuateMarket(){
+  Object.keys(RESOURCE_ICONS).forEach(res=>{
+    if(!(BT[res]?.sell>0))return;
+    const current=G.marketMult[res]||1;
+    const change=(Math.random()-0.5)*0.2;
+    G.marketMult[res]=Math.max(0.5,Math.min(2.5,current+change));
+  });
+  renderMarket();
+}
+
+// ═════════════════════
+// UPGRADES / EQUIPMENT
+// ═════════════════════
+function getUpgradeCost(key,lvl){
+  const def=UPGRADES[key];
+  return Math.round(def.goldBase*Math.pow(def.goldMult,lvl));
+}
+function buyUpgrade(key){
+  const def=UPGRADES[key];
+  const lvl=G.upgrades[key]||0;
+  if(lvl>=def.max)return;
+  const cost=getUpgradeCost(key,lvl);
+  if(G.gold<cost){showMsg('Not enough gold! Need '+cost+'g','var(--red)');return;}
+  G.gold-=cost;
+  G.upgrades[key]=lvl+1;
+  showMsg(`⬆ ${def.icon} ${def.name} → Lv${lvl+1}!`,'var(--yellow)');
+
+  // Side effects
+  if(key==='explosive'&&(lvl+1)===1){G.tnt+=2;showMsg('💥 Unlocked TNT! Got 2 free!','var(--orange)');}
+  if(key==='luck')renderGrid(); // re-highlight ores
+  renderUpgrades();updateStats();saveGame(true);
+}
+function buyEquip(id){
+  const item=EQUIP_ITEMS[id];
+  if(G.gold<item.goldCost){showMsg('Not enough gold! Need '+item.goldCost+'g','var(--red)');return;}
+  G.gold-=item.goldCost;
+  G.equip[item.slot]=id;
+  showMsg(`🛡 Equipped ${item.icon} ${item.name}!`,'var(--yellow)');
+  updateStats();renderEquipTab();saveGame(true);
+}
+function unequip(slot){G.equip[slot]=null;renderEquipTab();updateStats();}
+function buySkillNode(id){
+  const node=SKILL_TREE.find(n=>n.id===id);
+  if(!node||G.skillTree[id])return;
+  if(G.souls<node.cost){showMsg('Not enough Souls! Need '+node.cost+'🌟','var(--red)');return;}
+  if(!node.requires.every(r=>G.skillTree[r])){showMsg('Requires previous nodes first!','var(--red)');return;}
+  G.souls-=node.cost;
+  G.skillTree[id]=true;
+  if(id==='void_unlock'){TOOL_UNLOCK['void_pick']=20;showMsg('🌀 Void Path: Void Pick unlocked at level 20!','var(--purple)');}
+  if(id==='omega_miner'){showMsg('⚡ OMEGA MINER: All stats x1.5!','var(--yellow)');}
+  if(id==='chain_master'){showMsg('⛓ Chain Master: Chain mining always triggers!','var(--teal)');}
+  if(id==='ascension'){TOOL_UNLOCK['void_pick']=15;showMsg('🌠 ASCENSION! Void Pick at Lv15, 2x all gains!','#ffffbb');}
+  showMsg(`🌿 Unlocked: ${node.icon} ${node.name}!`,'var(--purple)');
+  renderSkillTree();updateStats();saveGame(true);
+}
+
+// ═════════════════════
+// PRESTIGE
+// ═════════════════════
+function confirmPrestige(souls){
+  document.getElementById('prestige-msg').textContent=`You will gain +${souls} Souls. Reset level, depth, inventory. Keep Souls, Skill Tree, Artifacts.`;
+  document.getElementById('prestige-overlay').style.display='flex';
+}
+function doPrestige(){
+  const nextSouls=Math.floor(G.level*0.5+G.depth/20+G.bossesDefeated*2)+1;
+  const bonusSouls=G.skillTree.prestige_boost?nextSouls+1:nextSouls;
+  G.souls+=bonusSouls;
+  G.totalSouls+=bonusSouls;
+  G.prestigeCount++;
+
+  // Reset
+  G.level=1;G.xp=0;G.xpNext=20;
+  G.depth=0;G.layerIndex=0;G.mined=0;
+  G.health=getMaxHP();
+  G.gold=0;G.inventory={};G.blocks=[];
+  G.upgrades={};G.equip={head:null,body:null,feet:null,ring:null};
+  G.combo=0;G.comboTimer=0;G.isBossLayer=false;G.bossHP=0;
+  G.tnt=0;G.nuke=0;G.tool='wood';G.marketMult={};
+
+  closeOverlay('prestige-overlay');
+  generateLayer();
+  renderGrid();
+  fullRedraw();
+  showNotif(`✨ REBIRTH! +${bonusSouls} Souls! Prestige #${G.prestigeCount}`);
+  saveGame(true);
+}
+
+// ═════════════════════
+// QUESTS
+// ═════════════════════
+function updateQuestProgress(){
+  let newComplete=false;
+  QUEST_POOL.forEach(q=>{
+    if(G.quests[q.id]==='done')return;
+    let progress=0;
+    if(q.type==='mined')progress=G.mined;
+    else if(q.type==='depth')progress=G.depth;
+    else if(q.type==='inv')progress=G.inventory[q.res]||0;
+    else if(q.type==='gold')progress=G.totalGold;
+    else if(q.type==='level')progress=G.level;
+    else if(q.type==='bosses')progress=G.bossesDefeated;
+    else if(q.type==='artifacts')progress=G.artifactsFound;
+    else if(q.type==='prestige')progress=G.prestigeCount;
+    G.questProgress[q.id]=progress;
+    if(progress>=q.goal&&G.quests[q.id]!=='done'){
+      G.quests[q.id]='done';
+      newComplete=true;
+      // Give rewards
+      Object.entries(q.reward).forEach(([k,v])=>{
+        if(k==='gold'){G.gold+=v;G.totalGold+=v;}
+        else if(k==='xp')gainXP(v);
+        else if(k==='souls'){G.souls+=v;G.totalSouls+=v;}
+      });
+      const rewardStr=Object.entries(q.reward).map(([k,v])=>`+${v} ${k}`).join(', ');
+      showNotif(`📋 QUEST DONE: ${q.name}! ${rewardStr}`);
+    }
+  });
+  if(newComplete)renderQuests();
+}
+
+// ═════════════════════
+// UI HELPERS
+// ═════════════════════
+function showMsg(txt,color){
+  const el=document.getElementById('msg-box');
+  el.innerHTML=txt;el.style.color=color||'var(--green)';
+}
+function spawnPopup(blockIdx,text,color){
+  const el=document.getElementById('block-'+blockIdx);
+  if(!el)return;
+  const rect=el.getBoundingClientRect();
+  const p=document.createElement('div');
+  p.className='popup';p.textContent=text;p.style.color=color||'#fff';
+  p.style.left=(rect.left+rect.width/2-20)+'px';
+  p.style.top=(rect.top+window.scrollY-10)+'px';
+  document.body.appendChild(p);
+  setTimeout(()=>p.remove(),900);
+}
+function showLevelUp(){
+  const overlay=document.getElementById('overlay');
+  const msg=document.getElementById('overlay-msg');
+  overlay.style.display='flex';
+  let unlocked='';
+  for(const[t,lvl]of Object.entries(TOOL_UNLOCK))if(lvl===G.level)unlocked=`\nUnlocked: ${t.toUpperCase()} pickaxe!`;
+  msg.textContent=`Level ${G.level}!${unlocked}\nMax HP +10`;
+}
+function closeOverlay(id){document.getElementById(id).style.display='none';}
+function switchTab(tab){
+  document.querySelectorAll('.tab-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+tab).classList.add('active');
+  document.getElementById('tab-content-'+tab).classList.add('active');
+}
+function regenerateLayer(){generateLayer();renderGrid();showMsg('Generated new layer at '+G.depth+'m','#aaa');}
+
+// ═════════════════════
+// CHEAT CONSOLE (/give, /level, /max)
+// ═════════════════════
+function cheatRecomputeXpNext(level){
+  let next=150;
+  for(let L=1;L<level;L++)next=Math.floor(next*1.85);
+  return next;
+}
+function cheatSetLevel(n){
+  n=Math.max(1,Math.min(999,Math.floor(n)));
+  G.level=n;
+  G.xp=0;
+  G.xpNext=cheatRecomputeXpNext(n);
+  G.maxHealth=getMaxHP();
+  G.health=Math.min(G.health,G.maxHealth);
+}
+function cheatApplySkillTreeSideEffects(){
+  if(G.skillTree.ascension)TOOL_UNLOCK.void_pick=15;
+  else if(G.skillTree.void_unlock)TOOL_UNLOCK.void_pick=20;
+  else TOOL_UNLOCK.void_pick=40;
+}
+function cheatMaxAll(){
+  Object.entries(UPGRADES).forEach(([k,v])=>{G.upgrades[k]=v.max;});
+  G.gold+=5000000;
+  G.totalGold+=5000000;
+  G.souls+=500;
+  G.totalSouls+=500;
+  SKILL_TREE.forEach(n=>{G.skillTree[n.id]=true;});
+  cheatApplySkillTreeSideEffects();
+  G.tnt=99;
+  G.nuke=99;
+  G.artifacts=ARTIFACT_POOL.map(a=>a.id);
+  G.artifactsFound=G.artifacts.length;
+  cheatSetLevel(50);
+  G.health=getMaxHP();
+  G.combo=20+(G.upgrades.combo_master||0)*5;
+  G.tool='void_pick';
+}
+function runCheatCommand(raw){
+  const line=raw.trim();
+  if(!line)return;
+  const parts=line.split(/\s+/);
+  const cmd=parts[0].toLowerCase();
+
+  if(cmd==='/help'||cmd==='?'){
+    showMsg(
+      'Cheats: /give &lt;id&gt; &lt;n&gt; • /level &lt;n&gt; • /depth &lt;n&gt; • /heal [n|max] • /god [on|off] • /boss • /artifact &lt;id&gt; • /clearinv • /unlock &lt;tool&gt; • /resetcd • /max',
+      'var(--yellow)'
+    );
+    showNotif('/give gold 5000 | /depth 150 | /heal max | /god on | /boss | /artifact nether_star | /resetcd');
+    return;
+  }
+
+  if(cmd==='/give'){
+    const id=(parts[1]||'').toLowerCase();
+    const n=Math.max(0,Math.floor(parseInt(parts[2],10)||0));
+    if(!id){showMsg('Usage: /give &lt;resource&gt; &lt;amount&gt;','var(--red)');return;}
+    if(n>1e12){showMsg('Amount too large','var(--red)');return;}
+    if(id==='gold'){G.gold+=n;G.totalGold+=n;}
+    else if(id==='souls'){G.souls+=n;G.totalSouls+=n;}
+    else if(id==='tnt'){G.tnt+=n;}
+    else if(id==='nuke'){G.nuke+=n;}
+    else if(id==='xp'){gainXP(n);}
+    else if(id==='depth'){G.depth+=n;}
+    else if(RESOURCE_ICONS[id]){G.inventory[id]=(G.inventory[id]||0)+n;}
+    else{showMsg('Unknown id. Try: gold, souls, tnt, nuke, xp, depth, or an ore name','var(--red)');return;}
+    fullRedraw();
+    saveGame(true);
+    showNotif('CHEAT: +'+n+' '+id);
+    return;
+  }
+
+  if(cmd==='/depth'||cmd==='/tp'){
+    const n=parseInt(parts[1],10);
+    if(!Number.isFinite(n)||n<0){showMsg('Usage: /depth &lt;0+&gt;','var(--red)');return;}
+    G.depth=Math.min(999999,Math.floor(n));
+    // Reset boss overlay/hp if any and regenerate a clean layer at this depth.
+    G.isBossLayer=false;G.bossHP=0;G.bossMaxHP=0;G.currentBoss=null;
+    const bh=document.getElementById('boss-hp-wrap');if(bh)bh.style.display='none';
+    closeOverlay('boss-overlay');
+    generateLayer();
+    fullRedraw();
+    saveGame(true);
+    showNotif('CHEAT: depth '+G.depth+'m');
+    return;
+  }
+
+  if(cmd==='/level'){
+    const n=parseInt(parts[1],10);
+    if(!Number.isFinite(n)||n<1){showMsg('Usage: /level &lt;1-999&gt;','var(--red)');return;}
+    cheatSetLevel(n);
+    fullRedraw();
+    saveGame(true);
+    showNotif('CHEAT: level '+G.level);
+    return;
+  }
+
+  if(cmd==='/heal'){
+    const arg=(parts[1]||'max').toLowerCase();
+    if(arg==='max'){ G.health=getMaxHP(); }
+    else{
+      const n=parseInt(arg,10);
+      if(!Number.isFinite(n)||n<=0){showMsg('Usage: /heal [n|max]','var(--red)');return;}
+      G.health=Math.min(getMaxHP(),G.health+Math.floor(n));
+    }
+    updateStats();
+    saveGame(true);
+    showNotif('CHEAT: healed');
+    return;
+  }
+
+  if(cmd==='/god'){
+    const arg=(parts[1]||'toggle').toLowerCase();
+    if(arg==='on') G._godMode=true;
+    else if(arg==='off') G._godMode=false;
+    else G._godMode=!G._godMode;
+    saveGame(true);
+    showNotif('CHEAT: god '+(G._godMode?'ON':'OFF'));
+    return;
+  }
+
+  if(cmd==='/boss'){
+    // Force boss layer at current depth (does not mark boss as done)
+    generateLayer(true);
+    renderGrid();
+    updateStats();
+    saveGame(true);
+    showNotif('CHEAT: forced boss layer');
+    return;
+  }
+
+  if(cmd==='/artifact'){
+    const id=(parts[1]||'').toLowerCase();
+    if(!id){showMsg('Usage: /artifact &lt;id&gt;','var(--red)');return;}
+    const a=ARTIFACT_POOL.find(x=>x.id===id);
+    if(!a){showMsg('Unknown artifact id','var(--red)');return;}
+    if(!G.artifacts.includes(id)){ G.artifacts.push(id); G.artifactsFound=(G.artifactsFound||0)+1; }
+    if(id==='soul_gem')G.souls+=3;
+    renderArtifacts();
+    updateStats();
+    saveGame(true);
+    showNotif('CHEAT: artifact '+a.icon+' '+a.name);
+    return;
+  }
+
+  if(cmd==='/clearinv'){
+    G.inventory={};
+    renderInventory();
+    renderMarket();
+    updateStats();
+    saveGame(true);
+    showNotif('CHEAT: inventory cleared');
+    return;
+  }
+
+  if(cmd==='/unlock'){
+    const t=(parts[1]||'').toLowerCase();
+    if(!t){showMsg('Usage: /unlock &lt;tool&gt;','var(--red)');return;}
+    if(!(t in TOOL_UNLOCK)){showMsg('Unknown tool. Try: wood, stone, iron, diamond, netherite, void_pick','var(--red)');return;}
+    cheatSetLevel(Math.max(G.level,TOOL_UNLOCK[t]));
+    G.tool=t;
+    fullRedraw();
+    saveGame(true);
+    showNotif('CHEAT: unlocked '+t.toUpperCase());
+    return;
+  }
+
+  if(cmd==='/resetcd'){
+    G.skillCooldown=0;
+    if(BA&&BA.active){ BA.pInvuln=0; }
+    updateStats();
+    saveGame(true);
+    showNotif('CHEAT: cooldowns reset');
+    return;
+  }
+
+  if(cmd==='/max'){
+    cheatMaxAll();
+    fullRedraw();
+    saveGame(true);
+    showNotif('CHEAT: /max — upgrades, skills, artifacts, level 50, void pick');
+    return;
+  }
+
+  showMsg('Unknown command. Type /help','var(--red)');
+}
+function toggleCheatConsole(){
+  const w=document.getElementById('cheat-wrap');
+  const inp=document.getElementById('cheat-input');
+  if(!w||!inp)return;
+  const open=w.style.display==='flex';
+  if(open){
+    w.style.display='none';
+    w.setAttribute('aria-hidden','true');
+    inp.blur();
+  }else{
+    w.style.display='flex';
+    w.setAttribute('aria-hidden','false');
+    inp.focus();
+    inp.select();
+  }
+}
+function initCheatConsole(){
+  const inp=document.getElementById('cheat-input');
+  if(!inp)return;
+  inp.addEventListener('keydown',e=>{
+    if(e.key==='Enter'){
+      e.preventDefault();
+      runCheatCommand(inp.value);
+      inp.value='';
+    }else if(e.key==='Escape'){
+      e.preventDefault();
+      toggleCheatConsole();
+    }
+  });
+  document.addEventListener('keydown',e=>{
+    if(e.code!=='Backquote')return;
+    if(document.activeElement===inp)return;
+    e.preventDefault();
+    toggleCheatConsole();
+  });
+}
+
+let _notifTimer=null;
+function showNotif(msg){
+  let n=document.querySelector('.notif');
+  if(n)n.remove();
+  n=document.createElement('div');
+  n.className='notif';n.textContent=msg;
+  document.body.appendChild(n);
+  clearTimeout(_notifTimer);
+  _notifTimer=setTimeout(()=>n&&n.remove(),4000);
+}
+
+function fullRedraw(){
+  renderGrid();renderInventory();renderMarket();renderUpgrades();
+  renderQuests();renderArtifacts();updateStats();
+  document.querySelectorAll('.tool-btn').forEach(b=>b.classList.remove('active'));
+  const tb=document.getElementById('btn-'+G.tool);if(tb)tb.classList.add('active');
+  initMinerSystem();
+  renderMinerPanel();
+  renderSynergyPanel();
+  renderCraftPanel();
+  checkSynergies();
+}
+
+// ═════════════════════
+// GAME LOOP
+// ═════════════════════
+let lastTick=Date.now();
+function gameLoop_core(){const now=Date.now(),delta=now-lastTick;
+  lastTick=now;
+
+  // Combo decay
+  if(G.combo>0){
+    G.comboTimer-=delta;
+    if(G.comboTimer<=0){G.combo=Math.max(0,G.combo-1);G.comboTimer=300;}
+    updateStats();
+  }
+
+  // Skill cooldown
+  if(G.skillCooldown>0){
+    G.skillCooldown=Math.max(0,G.skillCooldown-delta);
+    updateSkillBtn();
+  }
+
+  // Timed buffs
+  if(G._dmgAmpTimer&&G._dmgAmpTimer>0){
+    G._dmgAmpTimer=Math.max(0,G._dmgAmpTimer-delta);
+    if(G._dmgAmpTimer===0){G._dmgAmpMult=1;showMsg('Damage Amp wore off.','#888');}
+  }
+
+  // Regen
+  const regenLvl=G.upgrades.regen||0;
+  if(regenLvl>0){
+    G.regenAcc=(G.regenAcc||0)+delta;
+    if(G.regenAcc>=5000){
+      G.regenAcc-=5000;
+      G.health=Math.min(getMaxHP(),G.health+regenLvl*2);
+      updateStats();
+    }
+  }
+  // Potion timers
+  if(G._luckyTimer&&G._luckyTimer>0){G._luckyTimer-=delta;if(G._luckyTimer<=0){G._luckyTimer=0;showMsg('Lucky Potion wore off.','#888');}}
+  if(G._comboCharmTimer&&G._comboCharmTimer>0){G._comboCharmTimer-=delta;if(G._comboCharmTimer<=0){G._comboCharmTimer=0;showMsg('Combo Charm expired.','#888');}}
+
+  // Idle miners
+  const miners=getTotalMiners();
+  if(miners>0){
+    const interval=getIdleInterval()/miners;
+    G.idleTick=(G.idleTick||0)+delta;
+    G.idleProgress=Math.min(1,G.idleTick/interval);
+    if(G.idleTick>=interval){
+      G.idleTick-=interval;G.idleProgress=0;
+      // Smart miner: prefer ores
+      let idx=-1;
+      if(G.upgrades.smart_miner>0){
+        const oreTypes=Object.entries(BT).filter(([k,v])=>v.sell>3).map(([k])=>k);
+        idx=G.blocks.findIndex(b=>!b.mined&&oreTypes.includes(b.type));
+      }
+      if(idx<0)idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+      if(idx>=0){
+        const b=G.blocks[idx];
+        const el=document.getElementById('block-'+idx);
+        if(el){el.classList.add('idle-active');setTimeout(()=>el&&el.classList.remove('idle-active'),500);}
+        const idlePower=getToolPower()*(1+(G.upgrades.auto_pro>0?2:0));
+        b.hp-=idlePower;
+        if(G.isBossLayer){G.bossHP=Math.max(0,G.bossHP-Math.round(idlePower));updateBossHP();if(G.bossHP<=0)defeatBoss();}
+        const r=1-(b.hp/b.maxHp);const c=document.getElementById('crack-'+idx);
+        if(c)c.className='crack-overlay '+(r>.66?'crack-3':r>.33?'crack-2':'crack-1');
+        if(G.isBossLayer&&b.type==='boss_stone'&&b.hp>0)bossStrikePlayer(0.45);
+        if(b.hp<=0)finishMining(idx,true);
+        updateStats();
+      }
+    }
+    updateStats();
+  }
+}
+
+
+
+// ═══════════════════════════════════════════════════
+// MINER MANAGEMENT SYSTEM
+// ═══════════════════════════════════════════════════
+const MINER_TYPES = {
+  basic:    {n:'Basic',  ic:'🤖', desc:'Mines any block',          power:1.0, speed:1.0, smartness:0, color:'#9b59b6'},
+  smart:    {n:'Smart',  ic:'🧠', desc:'Targets ores first',       power:1.2, speed:1.0, smartness:1, color:'#3498db'},
+  berserker:{n:'Berserk',ic:'💪', desc:'3x power, slow',           power:3.0, speed:0.4, smartness:0, color:'#e74c3c'},
+  sniper:   {n:'Sniper', ic:'🎯', desc:'Targets rarest ore',       power:2.0, speed:0.7, smartness:2, color:'#f5c518'},
+  collector:{n:'Collect',ic:'📦', desc:'+50% drops, normal speed', power:0.8, speed:1.0, smartness:0, color:'#2ecc71'},
+};
+const MINER_TARGETS = ['any','ores','boss','gems','stone'];
+const MINER_TARGET_LABELS = {any:'Any Block',ores:'Ore Blocks',boss:'Boss DPS',gems:'Gem Ores',stone:'Stone Only'};
+const MINER_TARGET_COLORS = {any:'#888',ores:'#f5c518',boss:'#e74c3c',gems:'#9b59b6',stone:'#aaa'};
+const MINER_XP_PER_LEVEL = [0,100,300,700,1500,3000];
+
+function initMinerSystem(){
+  if(!G.miners) G.miners = [];
+  if(!G.minerXP) G.minerXP = {};
+}
+function addMiner(type='basic'){
+  if(!G.miners) G.miners=[];
+  const id='m'+Date.now();
+  const cost = {basic:0, smart:300, berserker:500, sniper:800, collector:400}[type]||0;
+  if(cost>0&&G.gold<cost){ showMsg('Need '+cost+'g to recruit '+type+' miner!','var(--red)'); return; }
+  if(cost>0) G.gold-=cost;
+  G.miners.push({id, type, level:1, xp:0, target:'any', name:MINER_TYPES[type].n+'#'+(G.miners.length+1)});
+  showMsg('Recruited '+MINER_TYPES[type].ic+' '+MINER_TYPES[type].n+' miner!','var(--purple)');
+  renderMinerPanel();updateStats();saveGame(true);
+}
+function levelUpMiner(id){
+  const m=G.miners.find(x=>x.id===id);
+  if(!m)return;
+  if(m.level>=5){ showMsg('Miner already max level!','var(--red)'); return; }
+  const costs=[0,50,150,400,1000]; // iron cost per level
+  const ironCost=costs[m.level]||999;
+  if((G.inventory.iron||0)<ironCost){ showMsg('Need '+ironCost+' iron to level up!','var(--red)'); return; }
+  G.inventory.iron-=ironCost;
+  m.level++;m.xp=0;
+  showMsg(MINER_TYPES[m.type].ic+' leveled up to Lv'+m.level+'!','var(--purple)');
+  renderMinerPanel();renderInventory();updateStats();
+}
+function setMinerTarget(id,target){
+  const m=G.miners.find(x=>x.id===id);
+  if(m){ m.target=target; renderMinerPanel(); }
+}
+function upgradeMinerType(id,newType){
+  const m=G.miners.find(x=>x.id===id);
+  if(!m)return;
+  const cost={smart:300,berserker:500,sniper:800,collector:400}[newType]||999;
+  if(G.gold<cost){ showMsg('Need '+cost+'g!','var(--red)'); return; }
+  G.gold-=cost;
+  m.type=newType;
+  showMsg('Miner upgraded to '+MINER_TYPES[newType].n+'!','var(--purple)');
+  renderMinerPanel();updateStats();saveGame(true);
+}
+function removeMiner(id){
+  G.miners=G.miners.filter(x=>x.id!==id);
+  renderMinerPanel();updateStats();
+}
+function getMinerPower(m){
+  const base=MINER_TYPES[m.type]?.power||1;
+  const lvlBonus=1+(m.level-1)*0.3;
+  let p=base*lvlBonus*getToolPower();
+  // Synergy: smart_miner upgrade boosts smart/sniper miners
+  if((m.type==='smart'||m.type==='sniper')&&(G.upgrades.smart_miner||0)>0) p*=1+(G.upgrades.smart_miner*0.2);
+  return p;
+}
+function getMinerInterval(m){
+  const base=MINER_TYPES[m.type]?.speed||1;
+  const speedUpg=G.upgrades.auto_speed||0;
+  return Math.max(800, 8000/base*Math.pow(0.85,speedUpg));
+}
+function getMinerTargetIdx(m){
+  if(m.target==='boss'||G.isBossLayer) return -2; // special: damage boss
+  const oreTypes=Object.entries(BT).filter(([k,v])=>v.sell>3).map(([k])=>k);
+  const gemTypes=['diamond','emerald','ruby','sapphire','amethyst','ancient','void'];
+  let idx=-1;
+  if(m.target==='gems'){
+    idx=G.blocks.findIndex(b=>!b.mined&&gemTypes.includes(b.type));
+    if(idx<0) idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+  } else if(m.target==='ores'){
+    idx=G.blocks.findIndex(b=>!b.mined&&oreTypes.includes(b.type));
+    if(idx<0) idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+  } else if(m.target==='stone'){
+    idx=G.blocks.findIndex(b=>!b.mined&&b.type==='stone');
+    if(idx<0) idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+  } else {
+    // smart / sniper: use smartness
+    const smartness=MINER_TYPES[m.type]?.smartness||0;
+    if(smartness>=2) idx=G.blocks.findIndex(b=>!b.mined&&gemTypes.includes(b.type));
+    if(idx<0&&smartness>=1) idx=G.blocks.findIndex(b=>!b.mined&&oreTypes.includes(b.type));
+    if(idx<0) idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+  }
+  return idx;
+}
+function tickMiners(delta){
+  if(!G.miners||!G.miners.length) return;
+  if(!G._minerTicks) G._minerTicks={};
+  G.miners.forEach(m=>{
+    if(!G._minerTicks[m.id]) G._minerTicks[m.id]=0;
+    G._minerTicks[m.id]+=delta;
+    const interval=getMinerInterval(m);
+    if(G._minerTicks[m.id]>=interval){
+      G._minerTicks[m.id]-=interval;
+      const power=getMinerPower(m);
+      // Boss DPS
+      if(G.isBossLayer&&(m.target==='boss'||m.target==='any')){
+        G.bossHP=Math.max(0,G.bossHP-Math.round(power));
+        updateBossHP();
+        // Also feed boss arena DPS
+        if(BA.active) BA.bossHP=G.bossHP;
+        if(G.bossHP<=0) defeatBoss();
+        // miner xp
+        m.xp=(m.xp||0)+2;
+        checkMinerLevelUp(m);
+        return;
+      }
+      const idx=getMinerTargetIdx(m);
+      if(idx<0) return;
+      const b=G.blocks[idx];
+      const el=document.getElementById('block-'+idx);
+      if(el){el.classList.add('idle-active');setTimeout(()=>el&&el.classList.remove('idle-active'),400);}
+      b.hp-=power;
+      const r=1-(b.hp/b.maxHp);
+      const c=document.getElementById('crack-'+idx);
+      if(c)c.className='crack-overlay '+(r>.66?'crack-3':r>.33?'crack-2':'crack-1');
+      if(G.isBossLayer&&b.type==='boss_stone'&&b.hp>0)bossStrikePlayer(0.4);
+      if(b.hp<=0){
+        // collector bonus
+        if(m.type==='collector'&&BT[b.type]?.drop){
+          G.inventory[BT[b.type].drop]=(G.inventory[BT[b.type].drop]||0)+1;
+        }
+        finishMining(idx,true);
+      }
+      m.xp=(m.xp||0)+1;
+      checkMinerLevelUp(m);
+      updateStats();
+    }
+  });
+}
+function checkMinerLevelUp(m){
+  if(m.level>=5) return;
+  const needed=MINER_XP_PER_LEVEL[m.level]||9999;
+  if(m.xp>=needed){ m.xp-=needed; m.level++; showNotif(MINER_TYPES[m.type].ic+' '+m.name+' leveled up to Lv'+m.level+'!'); }
+}
+function getTotalMiners(){
+  // legacy compat + new miner system
+  const legacy=(G.upgrades.auto_basic||0)+(G.upgrades.auto_pro||0)*3;
+  const managed=(G.miners||[]).length;
+  return legacy+managed;
+}
+function renderMinerPanel(){
+  const el=document.getElementById('miners-panel');
+  if(!el) return;
+  el.innerHTML='';
+  // Recruit buttons
+  const rb=document.createElement('div');
+  rb.style.cssText='margin-bottom:8px;display:flex;flex-wrap:wrap;gap:4px';
+  Object.entries(MINER_TYPES).forEach(([type,def])=>{
+    const cost={basic:0,smart:300,berserker:500,sniper:800,collector:400}[type]||0;
+    const b=document.createElement('button');
+    b.className='add-miner-btn';
+    b.style.flex='1';b.style.minWidth='60px';b.style.fontSize='4px';
+    b.innerHTML=def.ic+' '+def.n+(cost>0?'<br>'+cost+'g':'<br>FREE');
+    b.onclick=()=>addMiner(type);
+    rb.appendChild(b);
+  });
+  el.appendChild(rb);
+
+  const all=G.miners||[];
+  if(!all.length){
+    el.innerHTML+='<div style="font-size:5px;color:#444;text-align:center;padding:8px">No managed miners yet. Recruit above!</div>';
+    return;
+  }
+  all.forEach(m=>{
+    const def=MINER_TYPES[m.type]||MINER_TYPES.basic;
+    const card=document.createElement('div');
+    card.className='miner-card';
+    const xpPct=Math.round((m.xp||0)/Math.max(1,MINER_XP_PER_LEVEL[m.level]||1)*100);
+    const power=getMinerPower(m).toFixed(1);
+    const speed=(getMinerInterval(m)/1000).toFixed(1);
+
+    // Target buttons
+    const tBtns=MINER_TARGETS.map(t=>`<button class="miner-action-btn ${m.target===t?'active':''}" onclick="setMinerTarget('${m.id}','${t}')">${MINER_TARGET_LABELS[t]}</button>`).join('');
+    // Upgrade type buttons
+    const upBtns=Object.entries(MINER_TYPES).filter(([k])=>k!==m.type).map(([k,d])=>{
+      const c={smart:300,berserker:500,sniper:800,collector:400}[k]||0;
+      return `<button class="miner-action-btn" onclick="upgradeMinerType('${m.id}','${k}')" title="${d.desc}">→${d.ic}${c?c+'g':''}</button>`;
+    }).join('');
+    const ironCost=[0,50,150,400,1000][m.level]||'MAX';
+    card.innerHTML=`
+      <div class="miner-card-hdr">
+        <span class="miner-icon-big">${def.ic}</span>
+        <div>
+          <div class="miner-name">${m.name}</div>
+          <span class="miner-type-badge">${def.n}</span>
+        </div>
+        <span class="miner-lvl-badge">Lv${m.level}/5</span>
+      </div>
+      <div class="miner-xp-bar"><div class="miner-xp-fill" style="width:${xpPct}%"></div></div>
+      <div class="miner-stats">
+        <span>⚡<span class="miner-stat-val">${power}</span></span>
+        <span>⏱<span class="miner-stat-val">${speed}s</span></span>
+        <span>🎯<span class="miner-stat-val" style="color:${MINER_TARGET_COLORS[m.target]}">${MINER_TARGET_LABELS[m.target]}</span></span>
+      </div>
+      <div style="font-size:4px;color:#444;margin-bottom:3px">TARGET:</div>
+      <div class="miner-actions" style="margin-bottom:4px">${tBtns}</div>
+      <div style="font-size:4px;color:#444;margin-bottom:3px">UPGRADE TYPE:</div>
+      <div class="miner-actions" style="margin-bottom:4px">${upBtns}</div>
+      <div class="miner-actions">
+        ${m.level<5?`<button class="miner-action-btn" onclick="levelUpMiner('${m.id}')">LvUp (${ironCost}🔩iron)</button>`:'<span style="color:var(--green);font-size:4px">MAX LEVEL</span>'}
+        <button class="miner-action-btn" style="color:var(--red)" onclick="removeMiner('${m.id}')">DISMISS</button>
+      </div>
+    `;
+    el.appendChild(card);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// SYNERGY SYSTEM
+// ═══════════════════════════════════════════════════
+const SYNERGIES=[
+  {id:'syn_fortune_vein', name:'Payload Mining',
+   desc:'Fortune + Vein Miner', bonus:'+50% drops on vein blocks',
+   req:{fortune:1,vein:1},
+   apply:()=>{ G._syn_fortune_vein=true; }},
+  {id:'syn_xp_chain', name:'Chain Scholarship',
+   desc:'XP Boost + Chain Mining', bonus:'Chain blocks give double XP',
+   req:{xpboost:1,chain:1},
+   apply:()=>{ G._syn_xp_chain=true; }},
+  {id:'syn_auto_fortune', name:'Miner\'s Bounty',
+   desc:'Auto Miner + Fortune', bonus:'Idle miners have +20% double drop',
+   req:{auto_basic:1,fortune:2},
+   apply:()=>{ G._syn_auto_fortune=true; }},
+  {id:'syn_smart_gem', name:'Gem Scanner',
+   desc:'Smart Miner + Gem Sense', bonus:'Smart miners +80% gem XP',
+   req:{smart_miner:1,gem_sense:1},
+   apply:()=>{ G._syn_smart_gem=true; }},
+  {id:'syn_combo_quick', name:'Rapid Fury',
+   desc:'Combo Master + Quick Swing', bonus:'Combo multiplier applies to hits',
+   req:{combo_master:2,quick:2},
+   apply:()=>{ G._syn_combo_quick=true; }},
+  {id:'syn_regen_armor', name:'Fortress',
+   desc:'Regen + Obsidian Armor', bonus:'Regen heals 50% more while at full armor',
+   req:{regen:2,armor:2},
+   apply:()=>{ G._syn_regen_armor=true; }},
+  {id:'syn_depth_mkt', name:'Deep Profits',
+   desc:'Depth Runner + Market Savvy', bonus:'Sell price +5% per 100m depth',
+   req:{depth_runner:1,market_savvy:1},
+   apply:()=>{ G._syn_depth_mkt=true; }},
+  {id:'syn_luck_art', name:'Relic Sense',
+   desc:'Luck Charm + Lucky Streak', bonus:'Artifact chance doubled',
+   req:{luck:3,lucky_streak:2},
+   apply:()=>{ G._syn_luck_art=true; }},
+  {id:'syn_tnt_vein', name:'Demolisher',
+   desc:'Explosives + Vein Miner', bonus:'TNT blast radius +2',
+   req:{explosive:2,vein:2},
+   apply:()=>{ G._syn_tnt_vein=true; }},
+  {id:'syn_skill_cd', name:'Flow State',
+   desc:'Combo Master + Quick Swing + XP Boost', bonus:'Skills cooldown -30%',
+   req:{combo_master:3,quick:1,xpboost:1},
+   apply:()=>{ G._syn_skill_cd=true; }},
+];
+
+function checkSynergies(){
+  let active=[];
+  // reset
+  SYNERGIES.forEach(s=>{ G['_'+s.id]=false; });
+  SYNERGIES.forEach(s=>{
+    const met=Object.entries(s.req).every(([k,v])=>(G.upgrades[k]||0)>=v);
+    if(met){ s.apply(); active.push(s.id); }
+  });
+  G._activeSynergies=active;
+  return active;
+}
+function getSynergyBonus_sellPct(){
+  if(G._syn_depth_mkt) return (G.depth/100)*0.05;
+  return 0;
+}
+function getSynergyBonus_artifactMult(){
+  if(G._syn_luck_art) return 2;
+  return 1;
+}
+function getSynergyBonus_skillCdMult(){
+  if(G._syn_skill_cd) return 0.7;
+  return 1;
+}
+function getSynergyBonus_tntRadius(){
+  if(G._syn_tnt_vein) return 2;
+  return 0;
+}
+
+function renderSynergyPanel(){
+  const el=document.getElementById('synergy-panel');
+  if(!el) return;
+  const active=checkSynergies();
+  el.innerHTML='<div style="font-size:5px;color:#888;margin-bottom:8px">Combining upgrades unlocks powerful bonuses</div>';
+  SYNERGIES.forEach(s=>{
+    const isActive=active.includes(s.id);
+    const d=document.createElement('div');
+    d.className='synergy-item'+(isActive?' active':'');
+    const reqStr=Object.entries(s.req).map(([k,v])=>`${k} Lv${v}`).join(' + ');
+    d.innerHTML=`
+      <div class="synergy-name">${isActive?'✅':'🔒'} ${s.name}</div>
+      <div class="synergy-desc">${s.desc}</div>
+      <div class="synergy-bonus">${isActive?'🔥 '+s.bonus:'Locked'}</div>
+      <div class="synergy-req ${isActive?'met':''}">Requires: ${reqStr}</div>
+    `;
+    el.appendChild(d);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// CRAFTING SYSTEM
+// ═══════════════════════════════════════════════════
+const RECIPES=[
+  {id:'tnt',        name:'TNT',         ic:'💥', result:'tnt',       amt:1,
+   desc:'Explosive — clears 3x3 area',
+   ing:[{r:'redstone',a:5},{r:'coal',a:3}]},
+  {id:'nuke',       name:'Nuke',        ic:'☢', result:'nuke',      amt:1,
+   desc:'Clears entire layer',
+   ing:[{r:'diamond',a:2},{r:'redstone',a:10},{r:'obsidian',a:5}]},
+  {id:'health_pot', name:'Health Potion',ic:'🧪',result:'health_pot',amt:1,
+   desc:'Instantly restore 50 HP',
+   ing:[{r:'stone',a:10},{r:'coal',a:3},{r:'ice',a:2}]},
+  {id:'xp_orb',     name:'XP Orb',      ic:'🔮',result:'xp_orb',    amt:1,
+   desc:'Grants 500 XP instantly',
+   ing:[{r:'lapis',a:5},{r:'coal',a:8}]},
+  {id:'gold_ingot',name:'Gold Bar',     ic:'🏅',result:'gold_coin',  amt:50,
+   desc:'Smelt gold ore into coins (+50g)',
+   ing:[{r:'gold',a:3}]},
+  {id:'lucky_potion',name:'Lucky Potion',ic:'🍀',result:'lucky_pot', amt:1,
+   desc:'+2 luck for 60 seconds',
+   ing:[{r:'emerald',a:1},{r:'lapis',a:3}]},
+  {id:'iron_pick',  name:'Iron Upgrade',ic:'⛏', result:'upg_iron',  amt:1,
+   desc:'Instantly buy 1 level of Sharp Edge',
+   ing:[{r:'iron',a:20},{r:'coal',a:10}]},
+  {id:'miner_kit',  name:'Miner Kit',   ic:'🤖',result:'miner_kit', amt:1,
+   desc:'Recruit a free Basic Miner',
+   ing:[{r:'iron',a:10},{r:'stone',a:30}]},
+  {id:'combo_charm',name:'Combo Charm', ic:'🔥',result:'combo_charm',amt:1,
+   desc:'Sets combo to max for 30 seconds',
+   ing:[{r:'ruby',a:1},{r:'gold',a:5}]},
+  {id:'void_tnt',   name:'Void TNT',    ic:'🌀',result:'void_tnt',  amt:1,
+   desc:'Vaporizes all void/ancient blocks',
+   ing:[{r:'voidcrystal',a:3},{r:'ancient',a:2}]},
+  {id:'armor_kit',  name:'Armor Kit',   ic:'🛡',result:'upg_armor', amt:1,
+   desc:'Instantly buy 1 level of Obsidian Armor',
+   ing:[{r:'obsidian',a:5},{r:'iron',a:10}]},
+  // Boss crafting
+  {id:'revive_token', name:'Revive Token', ic:'💠', result:'revive_token', amt:1,
+   desc:'Cheat death once on boss layers (grid)',
+   ing:[{r:'boss_token',a:3},{r:'crystal',a:4},{r:'gold',a:5}]},
+  {id:'shield_battery', name:'Shield Battery', ic:'🛡', result:'shield_battery', amt:1,
+   desc:'Permanently +600 void-shield stamina in arena',
+   ing:[{r:'boss_token',a:4},{r:'amethyst',a:2},{r:'crystal',a:6}]},
+  {id:'dmg_amp', name:'Damage Amp', ic:'⚡', result:'dmg_amp', amt:1,
+   desc:'2x mining power for 60 seconds',
+   ing:[{r:'boss_token',a:2},{r:'ruby',a:1},{r:'diamond',a:1}]},
+];
+
+const CRAFT_RESULTS={
+  tnt:{use:(g)=>{g.tnt+=1;}},
+  nuke:{use:(g)=>{g.nuke+=1;}},
+  health_pot:{use:(g)=>{g.health=Math.min(getMaxHP(),g.health+50);updateStats();}},
+  xp_orb:{use:(g)=>{gainXP(500);}},
+  gold_coin:{use:(g)=>{g.gold+=50;g.totalGold+=50;}},
+  lucky_pot:{use:(g)=>{g._luckyTimer=(g._luckyTimer||0)+60000;showNotif('🍀 Lucky Potion! +2 luck for 60s!');}},
+  upg_iron:{use:(g)=>{
+    const lvl=g.upgrades.sharp||0;
+    if(lvl<10){g.upgrades.sharp=lvl+1;showNotif('⚔ Sharp Edge upgraded to Lv'+(lvl+1)+'!');}
+    else showMsg('Sharp Edge already maxed!','var(--red)');
+  }},
+  miner_kit:{use:(g)=>{addMiner('basic');}},
+  combo_charm:{use:(g)=>{g._comboCharmTimer=30000;g.combo=20+(g.upgrades.combo_master||0)*5;showNotif('🔥 Combo maxed for 30 seconds!');}},
+  void_tnt:{use:(g)=>{
+    g.blocks.forEach((b,i)=>{
+      if(!b.mined&&(b.type==='void'||b.type==='ancient')){b.hp=0;finishMining(i);}
+    });
+    showMsg('🌀 Void TNT! All void/ancient blocks vaporized!','var(--purple)');
+  }},
+  upg_armor:{use:(g)=>{
+    const lvl=g.upgrades.armor||0;
+    if(lvl<5){g.upgrades.armor=lvl+1;showNotif('🛡 Obsidian Armor upgraded to Lv'+(lvl+1)+'!');}
+    else showMsg('Armor already maxed!','var(--red)');
+  }},
+  revive_token:{use:(g)=>{g.reviveToken=(g.reviveToken||0)+1;showNotif('💠 Revive Token acquired! (Boss layers only)');}},
+  shield_battery:{use:(g)=>{g.shieldMaxBonus=(g.shieldMaxBonus||0)+600;showNotif('🛡 Shield Battery installed! +600 stamina');}},
+  dmg_amp:{use:(g)=>{g._dmgAmpTimer=60000;g._dmgAmpMult=2;showNotif('⚡ Damage Amp! 2x power for 60s');}},
+};
+
+function canCraft(recipe){
+  return recipe.ing.every(i=>(G.inventory[i.r]||0)>=i.a);
+}
+function doCraft(recipeId){
+  const rec=RECIPES.find(r=>r.id===recipeId);
+  if(!rec)return;
+  if(!canCraft(rec)){showMsg('Missing ingredients!','var(--red)');return;}
+  rec.ing.forEach(i=>{G.inventory[i.r]-=i.a;});
+  // Apply result
+  const cr=CRAFT_RESULTS[rec.result];
+  if(cr){cr.use(G);}
+  showMsg('🔨 Crafted: '+rec.ic+' '+rec.name+'!','var(--yellow)');
+  renderInventory();updateStats();renderCraftPanel();saveGame(true);
+}
+function renderCraftPanel(){
+  const el=document.getElementById('craft-panel');
+  if(!el)return;
+  el.innerHTML='<div style="font-size:9px;color:#888;margin-bottom:10px;line-height:1.8">Craft items using resources.<br>Click CRAFT to use.</div>';
+  RECIPES.forEach(rec=>{
+    const ok=canCraft(rec);
+    const d=document.createElement('div');
+    d.className='craft-recipe'+(ok?'':' cant-craft');
+    const ings=rec.ing.map(i=>{
+      const have=(G.inventory[i.r]||0)>=i.a;
+      const got=G.inventory[i.r]||0;
+      return `<span class="craft-ing ${have?'have':'miss'}">${RESOURCE_ICONS[i.r]?.emoji||'?'} ${i.a} ${i.r} <span style="color:#555">(${got})</span></span>`;
+    }).join('');
+    d.innerHTML=`
+      <div class="craft-name">${rec.ic} ${rec.name}</div>
+      <div class="craft-desc" style="font-size:7px;color:#666;margin-bottom:5px">${rec.desc}</div>
+      <div class="craft-ingredients" style="margin-bottom:5px">${ings}</div>
+      <div class="craft-result" style="font-size:7px;color:var(--blue);margin-bottom:6px">→ ${rec.ic} ${rec.name} x${rec.amt}</div>
+    `;
+    const btn=document.createElement('button');
+    btn.className='tool-btn';
+    btn.style.cssText='font-size:8px;padding:6px 12px;width:100%;'+(ok?'background:#1a2a0a;border-color:#5efc82':'background:#1a0a0a;border-color:#444;opacity:0.4;cursor:not-allowed');
+    btn.textContent=ok?'🔨 CRAFT':'⚠ Need more resources';
+    if(ok) btn.onclick=(e)=>{e.stopPropagation();doCraft(rec.id);};
+    d.appendChild(btn);
+    el.appendChild(d);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+// BOSS ARENA (canvas-based fight minigame)
+// ═══════════════════════════════════════════════════
+const BA={
+  active:false,
+  canvas:null, ctx:null,
+  W:540, H:360,
+  // player
+  px:5, py:7, // grid position (cols 0-8, rows 0-8 => px in 0..8)
+  pHP:100, pMaxHP:100,
+  pInvuln:0,   // ms of invincibility after hit
+  // boss
+  bossHP:100, bossMaxHP:100,
+  bossName:'BOSS', bossIcon:'👹',
+  bossPhase:1,
+  weakPoints:[],  // [{x,y,active,timer}] in canvas coords
+  attackPattern:'rain',
+  // projectiles [{x,y,vx,vy,type,r}]
+  projs:[],
+  // miner bullets [{x,y,vx,vy}]
+  minerBullets:[],
+  // timers
+  attackTimer:0, attackCooldown:1400,
+  weakTimer:0, weakCooldown:3000,
+  minerFireTimer:0, minerFireInterval:2500,
+  arenaTimer:0, arenaMaxTime:90000,
+  // animation
+  raf:null, lastFrame:0,
+  bossX:0,bossY:0,bossW:120,bossH:80,
+  bossAnim:0,
+  // particles
+  particles:[],
+  // void-barrier (blocks purple homing shots)
+  shieldActive:false,
+  shieldStamina:2200,
+  shieldMax:2200,
+  shieldCd:0,
+};
+
+const ARENA_COLS=9, ARENA_ROWS=9;
+const CELL_W=54, CELL_H=36; // 9x54=486, 9x36=324; padded to 540x360
+
+const BOSS_PATTERNS={
+  stone_golem:{
+    attack(ba){
+      // slow rocks in grid pattern
+      const cols=[2,4,6];
+      cols.forEach(c=>{
+        ba.projs.push({x:c*CELL_W+CELL_W/2,y:ba.bossY+ba.bossH+5,vx:0,vy:1.5,r:10,color:'#7a6a5a',type:'rock'});
+      });
+    },
+    cd:1800
+  },
+  lava_titan:{
+    attack(ba){
+      // lava pools spreading in a row
+      const startCol=Math.floor(Math.random()*6);
+      for(let i=0;i<3;i++){
+        ba.projs.push({x:(startCol+i)*CELL_W+CELL_W/2,y:ba.bossY+ba.bossH,vx:0,vy:2,r:14,color:'#e74c3c',type:'lava',dmg:20});
+      }
+    },
+    cd:1500
+  },
+  diamond_dragon:{
+    attack(ba){
+      // laser beams across rows
+      const row=Math.floor(Math.random()*5)+2;
+      for(let x=0;x<9;x++){
+        setTimeout(()=>{
+          if(ba.active) ba.projs.push({x:0,y:row*CELL_H+CELL_H/2,vx:5,vy:0,r:8,color:'#5ddef4',type:'laser',dmg:15,life:2000});
+        },x*80);
+      }
+    },
+    cd:2500
+  },
+  ice_witch:{
+    attack(ba){
+      // ice walls with 1 gap
+      const gap=Math.floor(Math.random()*ARENA_COLS);
+      for(let c=0;c<ARENA_COLS;c++){
+        if(c===gap) continue;
+        ba.projs.push({x:c*CELL_W+CELL_W/2,y:-20,vx:0,vy:1.2,r:12,color:'#a0d0f0',type:'ice',dmg:12});
+      }
+    },
+    cd:2000
+  },
+  void_wraith:{
+    attack(ba){
+      // homing orbs — slow curve-in so they can be dodged; life prevents endless chase
+      for(let i=0;i<2;i++){
+        const px=ba.px*CELL_W+CELL_W/2;
+        const py=ba.py*CELL_H+CELL_H/2;
+        const bx=ba.bossX+ba.bossW/2;
+        const by=ba.bossY+ba.bossH;
+        const dx=px-bx, dy=py-by;
+        const len=Math.sqrt(dx*dx+dy*dy)||1;
+        const ang=i*0.35;
+        const ca=Math.cos(ang), sa=Math.sin(ang);
+        const ix=(dx/len)*ca-(dy/len)*sa;
+        const iy=(dx/len)*sa+(dy/len)*ca;
+        ba.projs.push({x:bx,y:by,vx:ix*0.85,vy:iy*0.85,r:11,color:'#8e44ad',type:'void',homing:true,dmg:15,life:11000});
+      }
+    },
+    cd:1800
+  },
+  ancient_god:{
+    attack(ba){
+      // spiral shot
+      const cx=ba.bossX+ba.bossW/2;
+      const cy=ba.bossY+ba.bossH;
+      for(let a=0;a<360;a+=45){
+        const rad=a*Math.PI/180;
+        ba.projs.push({x:cx,y:cy,vx:Math.cos(rad)*2,vy:Math.sin(rad)*2,r:9,color:'#ffd700',type:'ancient',dmg:25});
+      }
+    },
+    cd:2500
+  },
+  void_emperor:{
+    attack(ba){
+      // mixed: laser + rocks + homing
+      BOSS_PATTERNS.diamond_dragon.attack(ba);
+      setTimeout(()=>{ if(ba.active) BOSS_PATTERNS.void_wraith.attack(ba); },500);
+    },
+    cd:2000
+  },
+  star_devourer:{
+    attack(ba){
+      // all patterns
+      BOSS_PATTERNS.lava_titan.attack(ba);
+      setTimeout(()=>{ if(ba.active) BOSS_PATTERNS.ice_witch.attack(ba); },600);
+      setTimeout(()=>{ if(ba.active) BOSS_PATTERNS.void_wraith.attack(ba); },1200);
+    },
+    cd:2500
+  },
+};
+
+function getBossPattern(bossName){
+  const nm=bossName.toLowerCase();
+  if(nm.includes('golem'))    return 'stone_golem';
+  if(nm.includes('titan'))    return 'lava_titan';
+  if(nm.includes('dragon'))   return 'diamond_dragon';
+  if(nm.includes('witch'))    return 'ice_witch';
+  if(nm.includes('wraith'))   return 'void_wraith';
+  if(nm.includes('god'))      return 'ancient_god';
+  if(nm.includes('emperor'))  return 'void_emperor';
+  if(nm.includes('devourer')) return 'star_devourer';
+  return 'stone_golem'; // fallback
+}
+
+function openBossArena(bossConfig){
+  const ov=document.getElementById('boss-arena-overlay');
+  ov.style.display='flex';
+  BA.active=true;
+  BA.bossHP=G.bossHP;
+  BA.bossMaxHP=G.bossMaxHP;
+  BA.bossName=bossConfig.name;
+  BA.bossIcon=bossConfig.icon;
+  BA.pHP=G.health;
+  BA.pMaxHP=getMaxHP();
+  BA.pInvuln=0;
+  BA.projs=[];
+  BA.minerBullets=[];
+  BA.particles=[];
+  BA.weakPoints=[];
+  BA.px=4; BA.py=7; // center bottom
+  BA.shieldActive=false;
+  BA.shieldMax=2200+(G.shieldMaxBonus||0);
+  BA.shieldStamina=BA.shieldMax;
+  BA.shieldCd=0;
+  BA.attackTimer=0;
+  BA.weakTimer=0;
+  BA.minerFireTimer=0;
+  BA.arenaTimer=0;
+  BA.bossPhase=1;
+  BA.attackPattern=getBossPattern(bossConfig.name);
+  BA.bossX=BA.W/2-60; BA.bossY=10;
+  BA.lastFrame=performance.now();
+
+  document.getElementById('arena-boss-name').textContent=bossConfig.icon+' '+bossConfig.name;
+  document.getElementById('arena-phase').textContent='Phase 1';
+
+  // Canvas setup
+  BA.canvas=document.getElementById('boss-canvas');
+  BA.canvas.width=BA.W; BA.canvas.height=BA.H;
+  BA.ctx=BA.canvas.getContext('2d');
+
+  // Canvas click for weak points
+  BA.canvas.onclick=(e)=>{
+    const rect=BA.canvas.getBoundingClientRect();
+    const mx=(e.clientX-rect.left)*(BA.W/rect.width);
+    const my=(e.clientY-rect.top)*(BA.H/rect.height);
+    BA.weakPoints.forEach(wp=>{
+      if(!wp.active) return;
+      const dx=mx-(BA.bossX+wp.rx);const dy=my-(BA.bossY+wp.ry);
+      if(Math.sqrt(dx*dx+dy*dy)<18){
+        hitWeakPoint(wp);
+      }
+    });
+  };
+
+  // Spawn initial weak points
+  spawnWeakPoints();
+  // Update miners bar
+  renderArenaMinersBar();
+  // Start loop
+  if(BA.raf) cancelAnimationFrame(BA.raf);
+  BA.raf=requestAnimationFrame(arenaLoop);
+  // Key controls
+  document.onkeydown=arenaKeydown;
+  document.onkeyup=arenaKeyup;
+}
+
+function exitArena(){
+  BA.active=false;
+  if(BA.raf){ cancelAnimationFrame(BA.raf); BA.raf=null; }
+  document.getElementById('boss-arena-overlay').style.display='none';
+  document.onkeydown=null;
+  document.onkeyup=null;
+  // Sync HP back
+  G.health=Math.max(1,BA.pHP);
+  G.bossHP=Math.max(0,BA.bossHP);
+  updateBossHP();
+  updateStats();
+  showMsg('⚠ Fled from boss arena! Fight continues on the grid.','var(--red)');
+}
+
+function renderArenaMinersBar(){
+  const bar=document.getElementById('arena-miners-bar');
+  if(!bar) return;
+  bar.innerHTML='';
+  const all=G.miners||[];
+  all.forEach(m=>{
+    const def=MINER_TYPES[m.type]||MINER_TYPES.basic;
+    const d=document.createElement('div');
+    d.className='arena-miner-dot';
+    d.title=def.n+' Lv'+m.level;
+    d.textContent=def.ic;
+    bar.appendChild(d);
+  });
+  const legacy=(G.upgrades.auto_basic||0)+(G.upgrades.auto_pro||0)*3;
+  for(let i=0;i<legacy;i++){
+    const d=document.createElement('div');
+    d.className='arena-miner-dot';
+    d.textContent='🤖';
+    bar.appendChild(d);
+  }
+}
+
+function spawnWeakPoints(){
+  BA.weakPoints=[];
+  const count=1+(BA.bossPhase>1?1:0);
+  const positions=[{rx:20,ry:30},{rx:80,ry:20},{rx:100,ry:50}];
+  for(let i=0;i<Math.min(count,positions.length);i++){
+    BA.weakPoints.push({rx:positions[i].rx,ry:positions[i].ry,active:false,flash:0});
+  }
+}
+function activateWeakPoint(){
+  const inactive=BA.weakPoints.filter(w=>!w.active);
+  if(inactive.length){ inactive[0].active=true; }
+}
+function hitWeakPoint(wp){
+  wp.active=false;
+  const dmg=Math.round(G.bossMaxHP*0.08*(1+BA.bossPhase*0.05));
+  BA.bossHP=Math.max(0,BA.bossHP-dmg);
+  G.bossHP=BA.bossHP;
+  // particles burst
+  for(let i=0;i<12;i++){
+    const a=Math.random()*Math.PI*2;
+    BA.particles.push({x:BA.bossX+wp.rx,y:BA.bossY+wp.ry,vx:Math.cos(a)*3,vy:Math.sin(a)*3,life:800,color:'#ffcc00',r:4});
+  }
+  updateBossHP();
+  if(BA.bossHP<=0){ arenaVictory(); return; }
+  // Phase check
+  const pct=BA.bossHP/BA.bossMaxHP;
+  if(pct<0.65&&BA.bossPhase===1){ BA.bossPhase=2; document.getElementById('arena-phase').textContent='⚠ Phase 2!'; spawnWeakPoints(); BA.attackCooldown=Math.round(BA.attackCooldown*0.5); }
+  if(pct<0.35&&BA.bossPhase===2){ BA.bossPhase=3; document.getElementById('arena-phase').textContent='⚠⚠ ENRAGE!'; BA.attackCooldown=Math.round(BA.attackCooldown*0.38); }
+  showNotif('💥 Weak point hit! -'+dmg+' boss HP!');
+}
+
+function arenaKeydown(e){
+  if(!BA.active) return;
+  if(e.code==='Space'){
+    e.preventDefault();
+    if(BA.shieldCd<=0&&BA.shieldStamina>40) BA.shieldActive=true;
+    return;
+  }
+  const k=e.key;
+  let dx=0,dy=0;
+  if(k==='ArrowLeft'||k==='a'||k==='A')  dx=-1;
+  if(k==='ArrowRight'||k==='d'||k==='D') dx=1;
+  if(k==='ArrowUp'||k==='w'||k==='W')    dy=-1;
+  if(k==='ArrowDown'||k==='s'||k==='S')  dy=1;
+  if(dx||dy){
+    e.preventDefault();
+    const nx=Math.max(0,Math.min(ARENA_COLS-1,BA.px+dx));
+    const ny=Math.max(Math.floor(ARENA_ROWS*0.45),Math.min(ARENA_ROWS-1,BA.py+dy)); // player stays in bottom 55%
+    BA.px=nx; BA.py=ny;
+  }
+}
+function arenaKeyup(e){
+  if(!BA.active) return;
+  if(e.code==='Space'){
+    e.preventDefault();
+    BA.shieldActive=false;
+  }
+}
+
+function arenaVoidShieldHits(p,playerCX,playerCY){
+  if(!BA.shieldActive||BA.shieldCd>0) return false;
+  if(!p.homing||p.type!=='void') return false;
+  const scx=playerCX, scy=playerCY-34;
+  const sw=56, sh=20;
+  const hw=sw/2, hh=sh/2;
+  const nx=Math.max(scx-hw,Math.min(scx+hw,p.x));
+  const ny=Math.max(scy-hh,Math.min(scy+hh,p.y));
+  const dx=p.x-nx, dy=p.y-ny;
+  return dx*dx+dy*dy<(p.r+5)*(p.r+5);
+}
+
+let _arenaLastMinerFire=0;
+function arenaLoop(timestamp){
+  if(!BA.active) return;
+  const dt=Math.min(timestamp-BA.lastFrame,100);
+  BA.lastFrame=timestamp;
+  BA.arenaTimer+=dt;
+
+  // Timer display
+  const remaining=Math.max(0,Math.ceil((BA.arenaMaxTime-BA.arenaTimer)/1000));
+  const timerEl=document.getElementById('arena-timer');
+  if(timerEl) timerEl.textContent='Time: '+remaining+'s';
+  if(BA.arenaTimer>=BA.arenaMaxTime){ arenaTimeUp(); return; }
+
+  // Attack timer
+  BA.attackTimer+=dt;
+  const pat=BOSS_PATTERNS[BA.attackPattern];
+  const cd=(pat?.cd||2000)*0.8;
+  if(BA.attackTimer>=cd){
+    BA.attackTimer=0;
+    if(pat) pat.attack(BA);
+  }
+
+  // Weak point timer
+  BA.weakTimer+=dt;
+  if(BA.weakTimer>=BA.weakCooldown){
+    BA.weakTimer=0;
+    activateWeakPoint();
+  }
+
+  // Miner fire timer
+  BA.minerFireTimer+=dt;
+  const miners=(G.miners||[]).length+(G.upgrades.auto_basic||0)+(G.upgrades.auto_pro||0)*3;
+  const mFireCd=miners>0?Math.max(500,3000/miners):99999;
+  if(miners>0&&BA.minerFireTimer>=mFireCd){
+    BA.minerFireTimer=0;
+    // fire a bullet from random side toward boss
+    const side=Math.random()<0.5?0:BA.W;
+    BA.minerBullets.push({x:side,y:BA.bossY+BA.bossH/2+Math.random()*30-15,vx:side===0?4:-4,vy:-0.5,r:5,color:'#9b59b6'});
+    // Miners deal boss DPS
+    const minerDPS=miners*getToolPower()*0.15;
+    BA.bossHP=Math.max(0,BA.bossHP-minerDPS);
+    G.bossHP=BA.bossHP;
+    if(BA.bossHP<=0){ arenaVictory(); return; }
+    updateBossHP();
+  }
+
+  // Move projectiles
+  const playerCX=BA.px*CELL_W+CELL_W/2;
+  const playerCY=BA.py*CELL_H+CELL_H/2;
+  BA.projs=BA.projs.filter(p=>{
+    if(p.homing){ // void orbs — gentle turn + hard speed cap (old logic stacked on i-frames and felt un-dodgeable)
+      const dx=playerCX-p.x, dy=playerCY-p.y;
+      const len=Math.sqrt(dx*dx+dy*dy)||1;
+      p.vx=p.vx*0.93+(dx/len)*0.14;
+      p.vy=p.vy*0.93+(dy/len)*0.14;
+      const sp=Math.sqrt(p.vx*p.vx+p.vy*p.vy)||0;
+      const maxHomingSp=1.35;
+      if(sp>maxHomingSp){ p.vx=(p.vx/sp)*maxHomingSp; p.vy=(p.vy/sp)*maxHomingSp; }
+    }
+    p.x+=p.vx; p.y+=p.vy;
+    if(p.life!=null) { p.life-=dt; if(p.life<=0) return false; }
+    if(p.x<-30||p.x>BA.W+30||p.y<-30||p.y>BA.H+50) return false;
+    if(arenaVoidShieldHits(p,playerCX,playerCY)){
+      for(let i=0;i<10;i++){
+        const a=Math.random()*Math.PI*2;
+        BA.particles.push({x:p.x,y:p.y,vx:Math.cos(a)*2.4,vy:Math.sin(a)*2.4,life:380,color:['#b388ff','#7c4dff','#e1bee7','#fff'][i&3],r:3+Math.random()*2});
+      }
+      return false;
+    }
+    // Player hitbox — always remove projectile on touch (even during i-frames) so purple orbs don't stick
+    const dx=p.x-playerCX, dy=p.y-playerCY;
+    const dist=Math.sqrt(dx*dx+dy*dy);
+    if(dist<p.r+12){
+      if(BA.pInvuln<=0){
+        const armor=getArmor();
+        const rawDmg=p.dmg||10;
+        const bossDepth=(G.currentBoss&&G.currentBoss.depth)||0;
+        // Depth-based boss damage scaling (VERY strong)
+        const depthMult=1+Math.pow(bossDepth/100,1.2)*0.6;
+        const dmg=Math.max(1,Math.round((rawDmg*depthMult)*(1-Math.pow(0.75,G.upgrades.hazard_resist||0))*armor));
+        BA.pHP=Math.max(0,BA.pHP-dmg);
+        BA.pInvuln=1400;
+        G.health=BA.pHP;
+        if(BA.pHP<=0){ arenaDefeat(); return false; }
+        for(let i=0;i<6;i++){
+          const a=Math.random()*Math.PI*2;
+          BA.particles.push({x:playerCX,y:playerCY,vx:Math.cos(a)*2.5,vy:Math.sin(a)*2.5,life:500,color:'#e74c3c',r:5});
+        }
+        updateStats();
+      }else{
+        for(let i=0;i<4;i++){
+          const a=Math.random()*Math.PI*2;
+          BA.particles.push({x:p.x,y:p.y,vx:Math.cos(a)*1.5,vy:Math.sin(a)*1.5,life:220,color:'#ce93d8',r:3});
+        }
+      }
+      return false;
+    }
+    return true;
+  });
+
+  // Move miner bullets
+  BA.minerBullets=BA.minerBullets.filter(b=>{
+    b.x+=b.vx; b.y+=b.vy;
+    if(b.x<-20||b.x>BA.W+20||b.y<-20||b.y>BA.H+20) return false;
+    // Boss collision
+    if(b.x>BA.bossX&&b.x<BA.bossX+BA.bossW&&b.y>BA.bossY&&b.y<BA.bossY+BA.bossH){
+      for(let i=0;i<5;i++){const a=Math.random()*Math.PI*2;BA.particles.push({x:b.x,y:b.y,vx:Math.cos(a)*2,vy:Math.sin(a)*2,life:400,color:'#9b59b6',r:4});}
+      return false;
+    }
+    return true;
+  });
+
+  // Particles
+  BA.particles=BA.particles.filter(p=>{
+    p.x+=p.vx; p.y+=p.vy; p.vy+=0.05;
+    p.life-=dt;
+    return p.life>0;
+  });
+
+  // Boss animation
+  BA.bossAnim+=dt*0.003;
+  BA.bossY=10+Math.sin(BA.bossAnim)*6;
+
+  // Invuln decay
+  if(BA.pInvuln>0) BA.pInvuln=Math.max(0,BA.pInvuln-dt);
+
+  // Void shield: hold SPACE — blocks purple shots; stamina then short overheat
+  if(BA.shieldActive&&BA.shieldCd<=0){
+    BA.shieldStamina-=dt;
+    if(BA.shieldStamina<=0){
+      BA.shieldActive=false;
+      BA.shieldCd=1600;
+      BA.shieldStamina=0;
+    }
+  }else{
+    if(BA.shieldCd>0) BA.shieldCd=Math.max(0,BA.shieldCd-dt);
+    if(BA.shieldCd<=0&&BA.shieldStamina<BA.shieldMax)
+      BA.shieldStamina=Math.min(BA.shieldMax,BA.shieldStamina+dt*320);
+  }
+
+  // Update player HP bar
+  const phpBar=document.getElementById('arena-player-hp-bar');
+  const phpNum=document.getElementById('arena-player-hp-num');
+  if(phpBar) phpBar.style.width=(BA.pHP/BA.pMaxHP*100)+'%';
+  if(phpNum) phpNum.textContent=Math.ceil(BA.pHP)+'/'+BA.pMaxHP;
+
+  // Boss HP bar
+  const bpct=Math.max(0,BA.bossHP/BA.bossMaxHP*100);
+  const abBar=document.getElementById('arena-boss-hp-bar');
+  const abNum=document.getElementById('arena-boss-hp-num');
+  if(abBar) abBar.style.width=bpct+'%';
+  if(abNum) abNum.textContent=Math.ceil(BA.bossHP)+'/'+BA.bossMaxHP;
+
+  // DRAW
+  drawArena();
+  BA.raf=requestAnimationFrame(arenaLoop);
+}
+
+function drawBossSprite(ctx){
+  const bx=BA.bossX, by=BA.bossY, bw=BA.bossW, bh=BA.bossH;
+  const t=BA.bossAnim;
+  const ph=BA.bossPhase;
+  const pat=BA.attackPattern||'stone_golem';
+  const ePulse=0.65+0.35*Math.sin(t*2.8);
+
+  function fill(x,y,w,h,c){
+    ctx.fillStyle=c;
+    ctx.fillRect(bx+x,by+y,w,h);
+  }
+  function strokeBox(x,y,w,h,c,lw=2){
+    ctx.strokeStyle=c;
+    ctx.lineWidth=lw;
+    ctx.strokeRect(bx+x,by+y,w,h);
+  }
+
+  ctx.save();
+  ctx.shadowBlur=ph>=2?16:10;
+  ctx.shadowColor=ph===3?'rgba(255,0,60,.55)':ph===2?'rgba(255,120,50,.4)':'rgba(180,30,30,.35)';
+
+  if(pat==='stone_golem'){
+    fill(4,6,112,62,'#4a4a52');
+    fill(12,14,96,48,'#5d5d68');
+    fill(20,4,72,18,'#6a6a78');
+    fill(28,22,56,12,'#3d3d45');
+    fill(18,38,84,28,'#55535e');
+    fill(40,46,40,14,'#2c2c32');
+    fill(32,10,16,10,'#ff3030');
+    fill(72,10,16,10,'#ff3030');
+    ctx.globalAlpha=ePulse;
+    fill(34,8,12,8,'#ff6666');
+    fill(74,8,12,8,'#ff6666');
+    ctx.globalAlpha=1;
+    strokeBox(4,6,112,62,'#2a2a30',3);
+    fill(48,-2,24,8,'#6a7a55');
+    fill(44,52,32,10,'#3a3a40');
+  }else if(pat==='lava_titan'){
+    const lg=ctx.createLinearGradient(bx,by,bx,by+bh);
+    lg.addColorStop(0,'#1a0808');lg.addColorStop(0.45,'#4a1510');lg.addColorStop(0.7,'#c0392b');lg.addColorStop(1,'#f1c40f');
+    ctx.fillStyle=lg;
+    ctx.fillRect(bx+2,by+4,bw-4,bh-6);
+    fill(8,10,104,24,'#2a0a08');
+    for(let i=0;i<5;i++) fill(16+i*20,32+Math.sin(t+i)*3,10,22,'#e74c3c');
+    fill(38,18,44,20,'#f39c12');
+    ctx.globalAlpha=0.9;
+    fill(48,24,24,10,'#fff8e0');
+    ctx.globalAlpha=1;
+    fill(30,2,60,14,'#111');
+    fill(36,8,12,8,'#ff0');
+    fill(72,8,12,8,'#ff0');
+    strokeBox(2,4,bw-4,bh-6,'#922b21',3);
+  }else if(pat==='diamond_dragon'){
+    fill(10,8,100,58,'#1a3a4a');
+    fill(4,24,28,36,'#1e5080');
+    fill(88,24,28,36,'#1e5080');
+    fill(40,0,40,28,'#2c80a0');
+    fill(50,-4,20,12,'#5ddef4');
+    fill(24,34,72,32,'#2980b9');
+    const cg=ctx.createRadialGradient(bx+60,by+24,2,bx+60,by+30,40);
+    cg.addColorStop(0,'#a8eeff');cg.addColorStop(1,'#1abc9c');
+    ctx.fillStyle=cg;
+    ctx.fillRect(bx+28,by+18,bw-56,28);
+    fill(32,38,8,6,'#0d2d3a');
+    fill(80,38,8,6,'#0d2d3a');
+    for(let i=0;i<6;i++) fill(20+i*16,52+Math.sin(t*1.5+i)*2,12,8,'#5ddef4');
+    strokeBox(10,8,100,58,'#5ddef4',2);
+  }else if(pat==='ice_witch'){
+    fill(14,10,92,58,'#1a3048');
+    fill(24,4,72,45,'#5dade2');
+    fill(36,12,48,28,'#aed6f1');
+    fill(44,18,32,44,'#d4e6f1');
+    fill(48,22,24,8,'#1a1a2e');
+    fill(52,24,6,4,'#5dade2');
+    fill(62,24,6,4,'#5dade2');
+    fill(42,2,36,14,'#85c1e9');
+    fill(30,40,60,22,'#2471a3');
+    for(let k=0;k<8;k++) fill(20+k*12,6+(k%2)*3,6,14,'#a3e4ff');
+    strokeBox(14,10,92,58,'#7fb3d5',2);
+  }else if(pat==='void_wraith'){
+    fill(0,8,120,64,'#1a0a22');
+    const vg=ctx.createRadialGradient(bx+60,by+40,4,bx+60,by+40,70);
+    vg.addColorStop(0,'#6c3483');vg.addColorStop(0.5,'#4a148c');vg.addColorStop(1,'#0d0208');
+    ctx.fillStyle=vg;
+    ctx.fillRect(bx+4,by+6,bw-8,bh-10);
+    ctx.globalAlpha=0.85;
+    fill(8+Math.sin(t)*6,20,20,44,'#2c0735');
+    fill(92-Math.sin(t)*6,20,20,44,'#2c0735');
+    ctx.globalAlpha=1;
+    const eg=ctx.createRadialGradient(bx+60,by+32,2,bx+60,by+32,18);
+    eg.addColorStop(0,`rgba(200,150,255,${ePulse})`);eg.addColorStop(1,'#8e44ad');
+    ctx.fillStyle=eg;
+    ctx.beginPath();ctx.arc(bx+60,by+34,16,0,Math.PI*2);ctx.fill();
+    ctx.fillStyle='#fff';
+    ctx.beginPath();ctx.arc(bx+56,by+32,4,0,Math.PI*2);ctx.arc(bx+64,by+32,3,0,Math.PI*2);ctx.fill();
+    strokeBox(4,8,bw-8,bh-8,'#9b59b6',2);
+  }else if(pat==='ancient_god'){
+    const gg=ctx.createLinearGradient(bx,by,bx+bw,by+bh);
+    gg.addColorStop(0,'#7d6608');gg.addColorStop(0.4,'#f4d03f');gg.addColorStop(1,'#b7950b');
+    ctx.fillStyle=gg;
+    ctx.fillRect(bx+6,by+6,bw-12,bh-12);
+    fill(20,16,80,36,'#f7dc6f');
+    fill(32,24,56,20,'#1a1a08');
+    fill(40,30,40,8,'#f39c12');
+    fill(40,8,40,14,'#d4ac0d');
+    strokeBox(6,6,bw-12,bh-12,'#fff9c4',2);
+    ctx.strokeStyle='#fff8c0';ctx.lineWidth=2;
+    ctx.beginPath();ctx.arc(bx+60,by+2,22,Math.PI*0.15,Math.PI*0.85);ctx.stroke();
+  }else if(pat==='void_emperor'){
+    fill(2,4,116,72,'#1a0508');
+    fill(10,12,100,52,'#4a0e16');
+    fill(24,8,72,24,'#7b241c');
+    fill(40,20,40,38,'#633974');
+    fill(48,0,24,16,'#f1c40f');
+    fill(52,2,16,8,'#fff');
+    fill(34,28,52,20,'#8e44ad');
+    const eg2=ctx.createRadialGradient(bx+60,by+32,0,bx+60,by+32,30);
+    eg2.addColorStop(0,'#ff6b6b');eg2.addColorStop(1,'#c0392b');
+    ctx.fillStyle=eg2;
+    ctx.fillRect(bx+36,by+22,48,24);
+    fill(44,26,32,10,'#1a0505');
+    strokeBox(2,4,116,72,'#c0392b',3);
+  }else if(pat==='star_devourer'){
+    fill(0,0,bw,bh,'#050510');
+    for(let i=0;i<40;i++){
+      ctx.fillStyle=i%3===0?'#fff':i%3===1?'#aaf':'#aaf8';
+      ctx.fillRect(bx+((i*17)%116)+4,by+((i*13)%72)+4,2,2);
+    }
+    fill(16,12,88,54,'#0a0a18');
+    const sg=ctx.createRadialGradient(bx+60,by+36,4,bx+60,by+36,55);
+    sg.addColorStop(0,'#5b2c6f');sg.addColorStop(0.45,'#1a0a2a');sg.addColorStop(1,'#000');
+    ctx.fillStyle=sg;
+    ctx.beginPath();
+    for(let s=0;s<=12;s++){
+      const a=(s/12)*Math.PI*2;
+      ctx.lineTo(bx+60+Math.cos(a)*52,by+38+Math.sin(a)*34);
+    }
+    ctx.closePath();ctx.fill();
+    ctx.strokeStyle='#b794f6';ctx.lineWidth=2;ctx.stroke();
+    ctx.fillStyle='#fff';
+    for(let j=0;j<5;j++){
+      const a=t*0.5+j*1.25;
+      ctx.beginPath();ctx.arc(bx+60+Math.cos(a)*22,by+36+Math.sin(a)*18,3,0,Math.PI*2);ctx.fill();
+    }
+  }else{
+    fill(4,4,bw-8,bh-8,'#555');
+    strokeBox(4,4,bw-8,bh-8,'#888',2);
+  }
+
+  ctx.restore();
+
+  ctx.font='22px serif';
+  ctx.textAlign='right';
+  ctx.textBaseline='top';
+  ctx.fillStyle='rgba(255,255,255,.55)';
+  ctx.fillText(BA.bossIcon,bx+bw-2,by+2);
+}
+
+function drawArena(){
+  const {ctx,W,H}=BA;
+  ctx.clearRect(0,0,W,H);
+
+  // Background grid
+  ctx.strokeStyle='rgba(255,255,255,0.04)';ctx.lineWidth=1;
+  for(let c=0;c<ARENA_COLS;c++){ctx.beginPath();ctx.moveTo(c*CELL_W,0);ctx.lineTo(c*CELL_W,H);ctx.stroke();}
+  for(let r=0;r<ARENA_ROWS;r++){ctx.beginPath();ctx.moveTo(0,r*CELL_H);ctx.lineTo(W,r*CELL_H);ctx.stroke();}
+
+  // Player zone indicator
+  ctx.fillStyle='rgba(0,100,0,0.05)';
+  ctx.fillRect(0,Math.floor(ARENA_ROWS*0.45)*CELL_H,W,H-Math.floor(ARENA_ROWS*0.45)*CELL_H);
+
+  const bx=BA.bossX, by=BA.bossY, bw=BA.bossW, bh=BA.bossH;
+  drawBossSprite(ctx);
+
+  // Weak points
+  BA.weakPoints.forEach(wp=>{
+    const wx=bx+wp.rx, wy=by+wp.ry;
+    if(wp.active){
+      const glow=ctx.createRadialGradient(wx,wy,0,wx,wy,20);
+      glow.addColorStop(0,'rgba(255,200,0,0.9)');
+      glow.addColorStop(1,'rgba(255,200,0,0)');
+      ctx.fillStyle=glow;ctx.beginPath();ctx.arc(wx,wy,20,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#ffff00';ctx.beginPath();ctx.arc(wx,wy,10,0,Math.PI*2);ctx.fill();
+      ctx.fillStyle='#fff';ctx.font='8px "Press Start 2P",monospace';ctx.textAlign='center';ctx.textBaseline='middle';
+      ctx.fillText('!',wx,wy);
+    } else {
+      ctx.fillStyle='rgba(255,100,0,0.3)';ctx.beginPath();ctx.arc(wx,wy,8,0,Math.PI*2);ctx.fill();
+    }
+  });
+
+  // Projectiles
+  BA.projs.forEach(p=>{
+    if(p.type==='laser'){
+      ctx.strokeStyle=p.color;ctx.lineWidth=p.r*2;ctx.beginPath();ctx.moveTo(p.x-20,p.y);ctx.lineTo(p.x+20,p.y);ctx.stroke();
+    } else {
+      const g=ctx.createRadialGradient(p.x,p.y,0,p.x,p.y,p.r);
+      g.addColorStop(0,'white');g.addColorStop(1,p.color);
+      ctx.fillStyle=g;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+    }
+  });
+
+  // Miner bullets
+  BA.minerBullets.forEach(b=>{
+    ctx.fillStyle=b.color;ctx.beginPath();ctx.arc(b.x,b.y,b.r,0,Math.PI*2);ctx.fill();
+  });
+
+  // Particles
+  BA.particles.forEach(p=>{
+    ctx.globalAlpha=Math.max(0,p.life/800);
+    ctx.fillStyle=p.color;ctx.beginPath();ctx.arc(p.x,p.y,p.r,0,Math.PI*2);ctx.fill();
+  });
+  ctx.globalAlpha=1;
+
+  const px2=BA.px*CELL_W+CELL_W/2;const py2=BA.py*CELL_H+CELL_H/2;
+
+  // Void barrier (matches arenaVoidShieldHits rect)
+  if(BA.shieldActive&&BA.shieldCd<=0){
+    const scx=px2, scy=py2-34, sw=56, sh=20;
+    const sg=ctx.createLinearGradient(scx-sw/2,scy,scx+sw/2,scy+sh);
+    sg.addColorStop(0,'rgba(120,220,255,.25)');
+    sg.addColorStop(0.45,'rgba(170,120,255,.5)');
+    sg.addColorStop(1,'rgba(120,220,255,.25)');
+    ctx.fillStyle=sg;
+    ctx.fillRect(scx-sw/2,scy-sh/2,sw,sh);
+    ctx.strokeStyle='rgba(230,240,255,.92)';
+    ctx.lineWidth=2;
+    ctx.strokeRect(scx-sw/2,scy-sh/2,sw,sh);
+    ctx.strokeStyle='rgba(180,100,255,.6)';
+    ctx.lineWidth=1;
+    ctx.strokeRect(scx-sw/2+3,scy-sh/2+3,sw-6,sh-6);
+  }
+  ctx.fillStyle='rgba(0,0,0,.5)';
+  ctx.fillRect(px2-30,py2+19,60,5);
+  if(BA.shieldCd>0){
+    ctx.fillStyle='#c0392b';
+    ctx.fillRect(px2-30,py2+19,60*(1-BA.shieldCd/1600),5);
+  }else{
+    ctx.fillStyle='#9b59b6';
+    ctx.fillRect(px2-30,py2+19,60*(BA.shieldStamina/BA.shieldMax),5);
+  }
+
+  // Player character
+  if(BA.pInvuln>0&&Math.floor(BA.pInvuln/100)%2===0){
+    // invuln flash - skip draw
+  } else {
+    // player glow
+    ctx.fillStyle='rgba(0,200,255,0.15)';ctx.beginPath();ctx.arc(px2,py2,22,0,Math.PI*2);ctx.fill();
+    // body
+    ctx.fillStyle='#27ae60';ctx.fillRect(px2-10,py2-14,20,24);
+    // head
+    ctx.fillStyle='#f39c12';ctx.fillRect(px2-7,py2-22,14,14);
+    // eyes
+    ctx.fillStyle='#000';ctx.fillRect(px2-4,py2-18,4,4);ctx.fillRect(px2+1,py2-18,4,4);
+    // pick
+    ctx.strokeStyle='#aaa';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(px2+10,py2-10);ctx.lineTo(px2+20,py2-20);ctx.stroke();
+  }
+
+  // Depth meter
+  ctx.fillStyle='rgba(0,0,0,0.5)';ctx.fillRect(0,0,W,20);
+  ctx.fillStyle='#888';ctx.font='7px "Press Start 2P",monospace';ctx.textAlign='left';ctx.textBaseline='middle';
+  ctx.fillText('WASD • SPACE void shield (purple only) • bar = shield stamina • weak points',6,10);
+}
+
+function arenaVictory(){
+  BA.active=false;
+  if(BA.raf){cancelAnimationFrame(BA.raf);BA.raf=null;}
+  document.getElementById('boss-arena-overlay').style.display='none';
+  document.onkeydown=null;
+  document.onkeyup=null;
+  G.health=Math.max(1,BA.pHP);
+  G.bossHP=0;
+  defeatBoss();
+  showNotif('🏆 ARENA VICTORY! Boss defeated in battle!');
+}
+
+function arenaTimeUp(){
+  // time ran out — boss still lives but player gets partial reward
+  BA.active=false;
+  if(BA.raf){cancelAnimationFrame(BA.raf);BA.raf=null;}
+  document.getElementById('boss-arena-overlay').style.display='none';
+  document.onkeydown=null;
+  document.onkeyup=null;
+  G.bossHP=Math.max(0,BA.bossHP);
+  updateBossHP();
+  showMsg('⏱ Time up! Boss partially damaged. Keep mining to finish it!','var(--red)');
+}
+
+function arenaDefeat(){
+  BA.active=false;
+  if(BA.raf){cancelAnimationFrame(BA.raf);BA.raf=null;}
+  document.getElementById('boss-arena-overlay').style.display='none';
+  document.onkeydown=null;
+  document.onkeyup=null;
+  failBossFight('💀 The boss bested you in the arena!');
+}
+
+// Hook: open arena when boss layer starts
+// We patch the boss overlay button to open arena
+
+function startBossArena(){
+  closeOverlay('boss-overlay');
+  if(G.currentBoss) openBossArena(G.currentBoss);
+}
+
+// ═══════════════════════════════════════════════════
+// PATCH EXISTING FUNCTIONS FOR NEW SYSTEMS
+// ═══════════════════════════════════════════════════
+
+
+
+
+
+
+
+
+
+// Patch gameLoop to add miner ticking + combo charm + lucky pot timers
+
+
+setInterval(()=>{
+  gameLoop_core();
+  // Tick managed miners
+  const now2=Date.now();
+  if(!G._lastManaged) G._lastManaged=now2;
+  const dt2=Math.min(now2-G._lastManaged,500);
+  G._lastManaged=now2;
+  tickMiners(dt2);
+  // Lucky pot timer
+  if(G._luckyTimer>0){G._luckyTimer=Math.max(0,G._luckyTimer-80);}
+  // Combo charm timer
+  if(G._comboCharmTimer>0){G._comboCharmTimer=Math.max(0,G._comboCharmTimer-80);}
+},80);
+setInterval(()=>saveGame(true),60000);
+// infinite_soul: gain 1 soul every 100 blocks if node unlocked
+setInterval(()=>{
+  if(G.skillTree&&G.skillTree.infinite_soul&&G.mined>0&&G.mined%(100)==0){
+    G.souls+=1;G.totalSouls+=1;
+    showNotif('♾ Infinite Soul: +1 Soul! Total: '+G.souls);
+    updateStats();renderUpgrades();
+  }
+},3000);
+setInterval(fluctuateMarket,30000);
+// Craft TNT auto when ingredients available and upgrade level>=1
+setInterval(()=>{
+  if((G.upgrades.explosive||0)>=1&&(G.inventory.redstone||0)>=5&&(G.inventory.coal||0)>=3&&G.tnt<10){
+    craftTNT();renderInventory();updateStats();
+  }
+},5000);
+
+// ═════════════════════
+// OFFLINE PROGRESS
+// ═════════════════════
+function processOffline(){
+  const saved=G.savedAt||Date.now();
+  const elapsed=Math.min(Date.now()-saved,1000*60*60*(2+(G.upgrades.offline_bonus||0)));// cap
+  if(elapsed<60000)return;// less than 1 min, skip
+  const miners=getTotalMiners();
+  if(miners===0)return;
+  const interval=getIdleInterval()/miners;
+  const ticks=Math.floor(elapsed/interval);
+  if(ticks<=0)return;
+  const offlineMult=G.skillTree.offline1?2:1;
+  let collected={};
+  for(let t=0;t<Math.min(ticks,500);t++){
+    const idx=G.blocks.findIndex(b=>!b.mined&&b.type!=='bedrock');
+    if(idx<0)break;
+    const b=G.blocks[idx];
+    const def=BT[b.type]||BT.stone;
+    b.hp=0;b.mined=true;G.mined++;
+    if(def.drop){
+      const amt=def.amt*offlineMult;
+      collected[def.drop]=(collected[def.drop]||0)+amt;
+      G.inventory[def.drop]=(G.inventory[def.drop]||0)+amt;
+    }
+    gainXP(def.xp);
+  }
+  const mins=Math.round(elapsed/60000);
+  const items=Object.entries(collected).map(([k,v])=>`+${v} ${k}`).join(', ');
+  const el=document.getElementById('offline-box');
+  document.getElementById('offline-msg').innerHTML=`Away for ${mins} min.<br>Miners collected: ${items||'nothing (no miners)'}`;
+  el.style.display='block';
+}
+
+// ═════════════════════
+// INIT
+// ═════════════════════
+(function init(){
+  const loaded=loadGame();
+  if(loaded){
+    processOffline();
+    if(!G.blocks||G.blocks.length===0)generateLayer();
+    renderGrid();
+    showMsg('💾 Welcome back, miner! Saved: '+new Date(G.savedAt||Date.now()).toLocaleTimeString(),'var(--green)');
+  }else{
+    generateLayer();
+    renderGrid();
+    showMsg('⛏ Welcome! Mine blocks, sell for Gold, buy upgrades!','var(--green)');
+  }
+  // Init market multipliers
+  Object.keys(RESOURCE_ICONS).forEach(r=>{if(!G.marketMult[r])G.marketMult[r]=1;});
+  fullRedraw();
+  initCheatConsole();
+})();</script>
+
+<!-- ══ BOSS ARENA ══ -->
+<div class="boss-arena-overlay" id="boss-arena-overlay">
+  <div class="boss-arena-wrap">
+    <div class="arena-hdr">
+      <div class="arena-boss-name" id="arena-boss-name">BOSS NAME</div>
+      <div class="arena-phase" id="arena-phase">Phase 1</div>
+      <div style="font-size:6px;color:#555" id="arena-timer">Time: 60s</div>
+    </div>
+    <div class="bar-wrap" style="width:100%;max-width:580px">
+      <div class="bar-label"><span id="arena-boss-lbl">Boss HP</span><span id="arena-boss-hp-num">--</span></div>
+      <div class="bar-track"><div class="bar-fill boss-fill" id="arena-boss-hp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="arena-miners-bar" id="arena-miners-bar"></div>
+    <div class="arena-canvas-wrap">
+      <canvas id="boss-canvas" width="540" height="360"></canvas>
+    </div>
+    <div class="arena-player-hp">
+      <div class="bar-label"><span>Player HP</span><span id="arena-player-hp-num">100/100</span></div>
+      <div class="bar-track"><div class="bar-fill hp-fill" id="arena-player-hp-bar" style="width:100%"></div></div>
+    </div>
+    <div class="arena-ctrl-hint">WASD / arrows — hold SPACE for void shield (stops purple orbs; bar under you) — click weak points</div>
+    <button class="arena-close-btn" onclick="exitArena()">FLEE (forfeit bonus rewards)</button>
+  </div>
+</div>
+
+</body>
+</html>
