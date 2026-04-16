@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&amp;family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #121212; }
+        .slide-container { position: relative; width: 1280px; height: 720px; overflow: hidden; background-color: #121212; }
+        p { margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Top and Bottom Warning Borders -->
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 24px; background-color: #E53935; z-index: 1;"></div>
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 0px; top: 696px; width: 1280px; height: 24px; background-color: #E53935; z-index: 1;"></div>
+<!-- Headline -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 120px; top: 80px; width: 1040px; height: 180px; z-index: 10;">
+<p style="font-family: 'Oswald', sans-serif; font-size: 72px; font-weight: 700; color: #FFFFFF; line-height: 1.1; text-transform: uppercase; letter-spacing: -0.5px;">
+                Secondhand Smoke:<br/><span style="color: #E53935;">No Safe Level</span>
+</p>
+</div>
+<!-- Decorative Line -->
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 120px; top: 250px; width: 100px; height: 8px; background-color: #E53935; border-radius: 4px; z-index: 1;"></div>
+<!-- Bullet 1: Harms adults and children (Icon + Text) -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 120px; top: 320px; width: 64px; height: 64px; background-color: #1E1E1E; border-radius: 32px; z-index: 10; display: flex; align-items: center; justify-content: center; color: #E53935; font-size: 28px;">
+<i class="fa-solid fa-users"></i>
+</div>
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 210px; top: 320px; width: 440px; height: 64px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 500; color: #FFFFFF; line-height: 1.2;">
+                Harms adults and children
+            </p>
+</div>
+<!-- Bullet 2: Causes heart disease & stroke (Icon + Text) -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 680px; top: 320px; width: 64px; height: 64px; background-color: #1E1E1E; border-radius: 32px; z-index: 10; display: flex; align-items: center; justify-content: center; color: #E53935; font-size: 28px;">
+<i class="fa-solid fa-heart-pulse"></i>
+</div>
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 770px; top: 320px; width: 440px; height: 80px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 500; color: #FFFFFF; line-height: 1.1;">
+                Causes heart disease &amp; stroke
+            </p>
+</div>
+<!-- Bullet 3: Causes lung cancer (Icon + Text) -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 120px; top: 430px; width: 64px; height: 64px; background-color: #1E1E1E; border-radius: 32px; z-index: 10; display: flex; align-items: center; justify-content: center; color: #E53935; font-size: 28px;">
+<i class="fa-solid fa-lungs"></i>
+</div>
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 210px; top: 430px; width: 440px; height: 64px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 500; color: #FFFFFF; line-height: 1.1;">
+                Causes lung cancer
+            </p>
+</div>
+<!-- Bullet 4: Triggers asthma attacks (Icon + Text) -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 680px; top: 430px; width: 64px; height: 64px; background-color: #1E1E1E; border-radius: 32px; z-index: 10; display: flex; align-items: center; justify-content: center; color: #E53935; font-size: 28px;">
+<i class="fa-solid fa-head-side-cough"></i>
+</div>
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 770px; top: 430px; width: 440px; height: 80px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 500; color: #FFFFFF; line-height: 1.1;">
+                Triggers asthma attacks <span style="font-size: 20px; color: #AAAAAA; font-weight: 400; display: block;">in children</span>
+</p>
+</div>
+<!-- Bullet 5: Linked to SIDS (Icon + Text) -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 120px; top: 540px; width: 64px; height: 64px; background-color: #1E1E1E; border-radius: 32px; z-index: 10; display: flex; align-items: center; justify-content: center; color: #E53935; font-size: 28px;">
+<i class="fa-solid fa-baby"></i>
+</div>
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 210px; top: 540px; width: 440px; height: 80px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 500; color: #FFFFFF; line-height: 1.1;">
+                Linked to SIDS <span style="font-size: 20px; color: #AAAAAA; font-weight: 400; display: block;">in infants</span>
+</p>
+</div>
+<!-- Citation -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 120px; top: 660px; width: 1040px; height: 30px; z-index: 10;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 400; color: #777777; letter-spacing: 0.5px;">
+                Source: CDC — Secondhand Smoke: https://www.cdc.gov/tobacco/secondhand-smoke/health.html
+            </p>
+</div>
+</div>
+</body>
+</html>
