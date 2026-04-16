@@ -1,1 +1,53 @@
+<!DOCTYPE html>
 
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<link href="https://fonts.googleapis.com/css2?family=Oswald:wght@500;700&amp;family=Roboto:wght@400;500;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet"/>
+<style>
+        body { margin: 0; padding: 0; overflow: hidden; background-color: #121212; }
+        .slide-container { position: relative; width: 1280px; height: 720px; overflow: hidden; background-color: #121212; }
+        p { margin: 0; padding: 0; }
+    </style>
+</head>
+<body>
+<div class="slide-container">
+<!-- Top and Bottom Warning Borders -->
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 0px; top: 0px; width: 1280px; height: 24px; background-color: #E53935; z-index: 1;"></div>
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 0px; top: 696px; width: 1280px; height: 24px; background-color: #E53935; z-index: 1;"></div>
+<!-- Warning Label Background -->
+<div data-object="true" data-object-type="shape" style="position: absolute; left: 100px; top: 120px; width: 330px; height: 56px; background-color: #E53935; border-radius: 4px; z-index: 1;"></div>
+<!-- Warning Label Icon -->
+<div data-object="true" data-object-type="icon" style="position: absolute; left: 112px; top: 136px; width: 24px; height: 24px; z-index: 10; color: #FFFFFF; font-size: 22px; display: flex; align-items: center; justify-content: center;">
+<i class="fa-solid fa-hand-holding-medical"></i>
+</div>
+<!-- Warning Label Text -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 148px; top: 120px; width: 274px; height: 56px; z-index: 10; display: flex; align-items: center;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 20px; font-weight: 700; color: #FFFFFF; letter-spacing: 1.5px; text-transform: uppercase; line-height: 1.2;">
+                TAKE ACTION TODAY
+            </p>
+</div>
+<!-- Main Headline - Adjusted top and height to prevent paintAboveDeclaredBox issues -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 100px; top: 188px; width: 1080px; height: 302px; z-index: 10;">
+<p style="font-family: 'Oswald', sans-serif; font-size: 112px; font-weight: 700; color: #FFFFFF; line-height: 1.1; text-transform: uppercase; letter-spacing: -1px;">
+                QUIT SMOKING<br/>
+<span style="color: #E53935;">BEFORE IT QUITS YOU.</span>
+</p>
+</div>
+<!-- Sub-message - Repositioned to balance vertical space -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 100px; top: 510px; width: 1080px; height: 110px; z-index: 10;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 32px; font-weight: 400; color: #CCCCCC; line-height: 1.5;">
+                Don't wait for the damage to become permanent.<br/>
+                Protect your future. Protect the people around you. Quit today.
+            </p>
+</div>
+<!-- Citation - Pushed down to fill tail strip -->
+<div data-object="true" data-object-type="textbox" style="position: absolute; left: 100px; top: 660px; width: 1080px; height: 24px; z-index: 10;">
+<p style="font-family: 'Roboto', sans-serif; font-size: 14px; font-weight: 400; color: #777777; letter-spacing: 0.5px;">
+                Sources: CDC (Centers for Disease Control and Prevention) &amp; WHO (World Health Organization)
+            </p>
+</div>
+</div>
+</body>
+</html>
