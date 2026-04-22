@@ -1,0 +1,431 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Push-up Pose Tracker</title>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0a0f; --card: #13131a; --card2: #1a1a24;
+    --text: #f0f0f8; --sub: #6b6b80;
+    --green: #00e87a; --green-dim: rgba(0,232,122,0.12);
+    --red: #ff4060; --border: rgba(255,255,255,0.07); --radius: 16px;
+  }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; max-width: 430px; margin: 0 auto; overflow-x: hidden; }
+  #loading-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; padding: 32px; }
+  .load-logo { font-size: 52px; }
+  .load-title { font-size: 24px; font-weight: 700; letter-spacing: -0.5px; }
+  .load-sub { font-size: 14px; color: var(--sub); line-height: 1.6; max-width: 280px; }
+  .load-bar-wrap { width: 220px; height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; }
+  .load-bar { height: 100%; background: var(--green); border-radius: 2px; width: 0%; transition: width 0.5s ease; }
+  #load-status { font-size: 13px; color: var(--sub); }
+  #app { display: none; flex-direction: column; min-height: 100dvh; }
+  .cam-section { position: relative; background: #000; width: 100%; aspect-ratio: 3/4; overflow: hidden; }
+  #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transform: scaleX(-1); }
+  #pose-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+  .status-pill { position: absolute; top: 16px; left: 50%; transform: translateX(-50%); padding: 6px 18px; border-radius: 20px; font-size: 13px; font-weight: 600; letter-spacing: 0.04em; text-transform: uppercase; backdrop-filter: blur(10px); white-space: nowrap; }
+  .status-pill.up { background: rgba(0,232,122,0.2); color: var(--green); border: 1px solid rgba(0,232,122,0.3); }
+  .status-pill.down { background: rgba(255,64,96,0.2); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+  .status-pill.wait { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+  .rep-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+  .rep-num { font-size: 88px; font-weight: 800; line-height: 1; letter-spacing: -4px; color: #fff; text-shadow: 0 2px 20px rgba(0,0,0,0.5); transition: transform 0.12s, color 0.15s; }
+  .rep-num.flash { transform: scale(1.18); color: var(--green); }
+  .rep-lbl { font-size: 13px; color: rgba(255,255,255,0.55); font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+  .angle-badge { position: absolute; bottom: 16px; right: 16px; background: rgba(0,0,0,0.55); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; }
+  .angle-num { font-size: 20px; font-weight: 700; }
+  .angle-lbl { font-size: 10px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+  .pose-badge { position: absolute; bottom: 16px; left: 16px; background: rgba(0,0,0,0.55); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; }
+  .pose-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sub); transition: background 0.3s; }
+  .pose-dot.on { background: var(--green); }
+  .pose-txt { font-size: 12px; color: var(--sub); font-weight: 500; }
+  #guide-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; }
+  .guide-inner { text-align: center; padding: 28px 24px; max-width: 300px; }
+  .guide-icon { font-size: 52px; margin-bottom: 14px; }
+  .guide-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+  .guide-text { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; margin-bottom: 20px; }
+  .guide-btn { padding: 14px 36px; background: var(--green); color: #000; font-size: 16px; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; }
+  .controls { display: flex; gap: 10px; padding: 12px 14px; background: var(--card); border-bottom: 1px solid var(--border); }
+  .ctrl-btn { flex: 1; padding: 11px 6px; border-radius: 12px; border: 1px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--card2); color: var(--text); transition: opacity 0.15s, transform 0.1s; }
+  .ctrl-btn:active { transform: scale(0.96); opacity: 0.8; }
+  .ctrl-btn.primary { background: var(--green-dim); color: var(--green); border-color: rgba(0,232,122,0.25); }
+  .ctrl-btn.danger { background: rgba(255,64,96,0.1); color: var(--red); border-color: rgba(255,64,96,0.2); }
+  .stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 12px 14px; }
+  .stat-box { background: var(--card); border-radius: 12px; padding: 12px; border: 1px solid var(--border); text-align: center; }
+  .stat-n { font-size: 26px; font-weight: 700; letter-spacing: -1px; }
+  .stat-l { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 1px; }
+  .section { padding: 0 14px 12px; }
+  .sec-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
+  .goal-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); }
+  .goal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .goal-frac { font-size: 15px; font-weight: 700; }
+  .track { height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+  .gfill { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.4s ease; }
+  .goal-row { display: flex; gap: 8px; margin-top: 12px; }
+  .ginput { flex: 1; padding: 9px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 15px; outline: none; -webkit-appearance: none; }
+  .gset { padding: 9px 16px; background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,232,122,0.25); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+  .sens-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); }
+  .sens-row { display: flex; align-items: center; gap: 10px; }
+  .sens-lbl { font-size: 13px; color: var(--sub); min-width: 76px; }
+  .sens-slider { flex: 1; -webkit-appearance: none; height: 4px; background: var(--card2); border-radius: 2px; outline: none; }
+  .sens-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; }
+  .sens-val { font-size: 13px; font-weight: 600; min-width: 36px; text-align: right; }
+  .sens-note { font-size: 12px; color: var(--sub); margin-top: 10px; line-height: 1.5; }
+  .hist-card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); }
+  .bars { display: flex; align-items: flex-end; gap: 6px; height: 60px; }
+  .bw { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+  .br { width: 100%; border-radius: 3px 3px 0 0; background: var(--card2); min-height: 3px; }
+  .br.today { background: var(--green); }
+  .bd { font-size: 10px; color: var(--sub); }
+  #celebrate-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+  #calibration-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.94); z-index: 50; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+  .c-icon { font-size: 52px; }
+  .c-title { font-size: 22px; font-weight: 700; }
+  .c-text { font-size: 14px; color: var(--sub); line-height: 1.7; max-width: 300px; }
+  .c-btn { padding: 15px 40px; background: var(--green); color: #000; font-size: 16px; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; margin-top: 4px; }
+  #error-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+  .e-icon { font-size: 48px; }
+  .e-msg { font-size: 14px; color: var(--sub); line-height: 1.7; max-width: 300px; white-space: pre-wrap; }
+  .e-btn { padding: 14px 36px; background: var(--green); color: #000; font-size: 15px; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div class="load-logo">💪</div>
+  <div class="load-title">Push-up Tracker</div>
+  <div class="load-sub">Loading AI pose detection model…</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+  <div id="load-status">Starting up…</div>
+</div>
+
+<div id="error-screen">
+  <div class="e-icon">⚠️</div>
+  <div class="load-title" style="margin-bottom:8px">Setup Error</div>
+  <div class="e-msg" id="err-msg"></div>
+  <button class="e-btn" onclick="location.reload()">Try Again</button>
+</div>
+
+<div id="calibration-overlay">
+  <div class="c-icon">📐</div>
+  <div class="c-title">Get Into Position</div>
+  <div class="c-text">
+    Prop your phone on the floor to your side so your full upper body is visible — head to hips at minimum.<br><br>
+    Good lighting helps the model detect your pose accurately.
+  </div>
+  <button class="c-btn" onclick="startTracking()">Start Tracking</button>
+</div>
+
+<div id="app">
+  <div class="cam-section">
+    <video id="video" autoplay muted playsinline></video>
+    <canvas id="pose-canvas"></canvas>
+    <div class="status-pill wait" id="status-pill">Detecting…</div>
+    <div class="rep-overlay">
+      <div class="rep-num" id="rep-big">0</div>
+      <div class="rep-lbl">reps today</div>
+    </div>
+    <div class="angle-badge">
+      <div class="angle-num" id="angle-disp">—°</div>
+      <div class="angle-lbl">Elbow</div>
+    </div>
+    <div class="pose-badge">
+      <div class="pose-dot" id="pose-dot"></div>
+      <div class="pose-txt" id="pose-txt">No pose</div>
+    </div>
+    <div id="guide-overlay">
+      <div class="guide-inner">
+        <div class="guide-icon">📱</div>
+        <div class="guide-title">Set Up Your Phone</div>
+        <div class="guide-text">Prop your phone sideways on the floor so your whole body is visible during push-ups.</div>
+        <button class="guide-btn" onclick="document.getElementById('guide-overlay').style.display='none'">Got it</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="controls">
+    <button class="ctrl-btn primary" id="toggle-btn" onclick="toggleTracking()">⏸ Pause</button>
+    <button class="ctrl-btn" onclick="document.getElementById('calibration-overlay').style.display='flex'">📐 Guide</button>
+    <button class="ctrl-btn danger" onclick="resetSession()">↺ Reset</button>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box"><div class="stat-n" id="s-today">0</div><div class="stat-l">Today</div></div>
+    <div class="stat-box"><div class="stat-n" id="s-session">0</div><div class="stat-l">Session</div></div>
+    <div class="stat-box"><div class="stat-n" id="s-best">0</div><div class="stat-l">Best Day</div></div>
+  </div>
+
+  <div class="section">
+    <div class="sec-lbl">Daily Goal</div>
+    <div class="goal-card">
+      <div class="goal-top">
+        <span style="font-size:13px;color:var(--sub)">Progress</span>
+        <span class="goal-frac"><span id="g-p">0</span> / <span id="g-g">50</span></span>
+      </div>
+      <div class="track"><div class="gfill" id="gfill" style="width:0%"></div></div>
+      <div class="goal-row">
+        <input type="number" class="ginput" id="g-input" value="50" min="1" max="999"/>
+        <button class="gset" onclick="setGoal()">Set Goal</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-lbl">Detection Thresholds</div>
+    <div class="sens-card">
+      <div class="sens-row">
+        <span class="sens-lbl">Up angle</span>
+        <input type="range" class="sens-slider" id="up-t" min="120" max="175" value="155" oninput="updateSens()"/>
+        <span class="sens-val" id="up-v">155°</span>
+      </div>
+      <div style="height:10px"></div>
+      <div class="sens-row">
+        <span class="sens-lbl">Down angle</span>
+        <input type="range" class="sens-slider" id="dn-t" min="50" max="120" value="90" oninput="updateSens()"/>
+        <span class="sens-val" id="dn-v">90°</span>
+      </div>
+      <div class="sens-note">Arms above Up angle = top position. Below Down angle = bottom position. Adjust if reps aren't counting correctly.</div>
+    </div>
+  </div>
+
+  <div class="section">
+    <div class="sec-lbl">Last 7 Days</div>
+    <div class="hist-card"><div class="bars" id="hist-bars"></div></div>
+  </div>
+  <div style="height:32px"></div>
+</div>
+
+<canvas id="celebrate-canvas"></canvas>
+
+<script>
+// ── Storage ───────────────────────────────────────────────────────────────────
+const KEY='pu_mp_v1';
+function load(){try{return JSON.parse(localStorage.getItem(KEY))||{d:{},g:50};}catch(e){return{d:{},g:50};}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+let data=load();
+function todayKey(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
+function getT(){return data.d[todayKey()]||0;}
+function setT(v){data.d[todayKey()]=Math.max(0,v);save();}
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let tracking=true, sessionReps=0, celebrated=getT()>=data.g;
+let repPhase='neutral', smoothAngle=null;
+let upThresh=155, dnThresh=90;
+let videoEl, canvasEl, ctx;
+
+// ── Angle math ────────────────────────────────────────────────────────────────
+function angleBetween(ax,ay,bx,by,cx,cy){
+  const abx=bx-ax,aby=by-ay,cbx=bx-cx,cby=by-cy;
+  const dot=abx*cbx+aby*cby;
+  const mag=Math.sqrt(abx**2+aby**2)*Math.sqrt(cbx**2+cby**2);
+  if(!mag)return 180;
+  return Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI;
+}
+// MediaPipe: 11=L-shoulder,12=R-shoulder,13=L-elbow,14=R-elbow,15=L-wrist,16=R-wrist
+function getBestElbow(lms){
+  const pairs=[[11,13,15],[12,14,16]];
+  let best=null,bestVis=0;
+  for(const[si,ei,wi]of pairs){
+    const s=lms[si],e=lms[ei],w=lms[wi];
+    if(!s||!e||!w)continue;
+    const v=s.visibility*e.visibility*w.visibility;
+    if(v>bestVis){bestVis=v;best=angleBetween(s.x,s.y,e.x,e.y,w.x,w.y);}
+  }
+  return{angle:best,vis:bestVis};
+}
+
+// ── Rep counting ──────────────────────────────────────────────────────────────
+function processAngle(angle){
+  if(angle===null)return;
+  smoothAngle=smoothAngle===null?angle:smoothAngle*0.7+angle*0.3;
+  const a=smoothAngle;
+  document.getElementById('angle-disp').textContent=Math.round(a)+'°';
+  const pill=document.getElementById('status-pill');
+  if((repPhase==='neutral'||repPhase==='up')&&a>=upThresh){repPhase='up';pill.textContent='UP ↑';pill.className='status-pill up';}
+  if(repPhase==='up'&&a<=dnThresh){repPhase='down';pill.textContent='DOWN ↓';pill.className='status-pill down';}
+  if(repPhase==='down'&&a>=upThresh){repPhase='up';countRep();}
+  if(repPhase==='neutral'){pill.textContent='Get in position…';pill.className='status-pill wait';}
+}
+function countRep(){
+  setT(getT()+1);sessionReps++;
+  const el=document.getElementById('rep-big');
+  el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),200);
+  render();
+  document.getElementById('status-pill').textContent='✓ Rep!';
+  if(getT()>=data.g&&!celebrated){celebrated=true;boom();}
+}
+
+// ── Skeleton drawing ──────────────────────────────────────────────────────────
+const CONNS=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+function drawSkeleton(lms){
+  if(!ctx)return;
+  ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+  if(!lms)return;
+  const W=canvasEl.width,H=canvasEl.height;
+  ctx.save();ctx.scale(-1,1);ctx.translate(-W,0);
+  ctx.lineWidth=3;
+  for(const[a,b]of CONNS){
+    const pa=lms[a],pb=lms[b];
+    if(!pa||!pb||pa.visibility<0.35||pb.visibility<0.35)continue;
+    ctx.beginPath();ctx.strokeStyle='rgba(0,232,122,0.8)';
+    ctx.moveTo(pa.x*W,pa.y*H);ctx.lineTo(pb.x*W,pb.y*H);ctx.stroke();
+  }
+  lms.forEach(lm=>{
+    if(!lm||lm.visibility<0.4)return;
+    ctx.beginPath();ctx.arc(lm.x*W,lm.y*H,5,0,2*Math.PI);
+    ctx.fillStyle='#00e87a';ctx.fill();
+  });
+  ctx.restore();
+}
+
+// ── Pose detection callback ───────────────────────────────────────────────────
+function onPoseResults(results){
+  if(!tracking)return;
+  if(results.poseLandmarks&&results.poseLandmarks.length){
+    drawSkeleton(results.poseLandmarks);
+    const{angle,vis}=getBestElbow(results.poseLandmarks);
+    const ok=vis>0.08;
+    document.getElementById('pose-dot').className='pose-dot'+(ok?' on':'');
+    document.getElementById('pose-txt').textContent=ok?'Pose found':'Low confidence';
+    if(ok){document.getElementById('guide-overlay').style.display='none';processAngle(angle);}
+    else{document.getElementById('status-pill').textContent='Adjust position';document.getElementById('status-pill').className='status-pill wait';}
+  } else {
+    if(ctx)ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+    document.getElementById('pose-dot').className='pose-dot';
+    document.getElementById('pose-txt').textContent='No pose';
+    document.getElementById('status-pill').textContent='No pose detected';
+    document.getElementById('status-pill').className='status-pill wait';
+  }
+}
+
+// ── Camera loop ───────────────────────────────────────────────────────────────
+let poseInstance=null;
+async function detectLoop(){
+  if(tracking&&poseInstance&&videoEl&&videoEl.readyState>=2){
+    try{await poseInstance.send({image:videoEl});}catch(e){}
+  }
+  requestAnimationFrame(detectLoop);
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+async function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script');
+    s.src=src;s.crossOrigin='anonymous';
+    s.onload=res;s.onerror=()=>rej(new Error('Failed to load: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+async function init(){
+  const bar=document.getElementById('load-bar');
+  const status=document.getElementById('load-status');
+  try{
+    status.textContent='Requesting camera…';bar.style.width='20%';
+    const stream=await navigator.mediaDevices.getUserMedia({
+      video:{facingMode:{ideal:'environment'},width:{ideal:640},height:{ideal:480}},audio:false
+    });
+    videoEl=document.getElementById('video');
+    videoEl.srcObject=stream;
+    await new Promise(r=>videoEl.onloadedmetadata=r);
+    await videoEl.play();
+    canvasEl=document.getElementById('pose-canvas');
+    canvasEl.width=videoEl.videoWidth||640;
+    canvasEl.height=videoEl.videoHeight||480;
+    ctx=canvasEl.getContext('2d');
+    bar.style.width='45%';status.textContent='Loading MediaPipe…';
+
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/control_utils/control_utils.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
+
+    bar.style.width='75%';status.textContent='Initializing pose model…';
+
+    poseInstance=new Pose({
+      locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`
+    });
+    poseInstance.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    poseInstance.onResults(onPoseResults);
+    await poseInstance.initialize();
+
+    bar.style.width='100%';status.textContent='Ready!';
+    await new Promise(r=>setTimeout(r,500));
+
+    document.getElementById('loading-screen').style.display='none';
+    const app=document.getElementById('app');
+    app.style.display='flex';app.style.flexDirection='column';
+    document.getElementById('calibration-overlay').style.display='flex';
+    render();
+  }catch(e){
+    console.error(e);
+    document.getElementById('loading-screen').style.display='none';
+    const errScr=document.getElementById('error-screen');
+    errScr.style.display='flex';errScr.style.flexDirection='column';
+    const isCamera=e.name==='NotAllowedError'||e.name==='NotFoundError'||String(e.message).toLowerCase().includes('camera')||String(e.message).toLowerCase().includes('permission');
+    document.getElementById('err-msg').textContent=isCamera
+      ?'Camera access was denied.\nPlease allow camera access in your browser settings, then reload.'
+      :'Could not load the pose model.\nCheck your internet connection and reload.\n\n'+e.message;
+  }
+}
+
+function startTracking(){
+  document.getElementById('calibration-overlay').style.display='none';
+  detectLoop();
+}
+
+// ── Controls ──────────────────────────────────────────────────────────────────
+function toggleTracking(){
+  tracking=!tracking;
+  const btn=document.getElementById('toggle-btn');
+  btn.textContent=tracking?'⏸ Pause':'▶ Resume';
+  btn.className='ctrl-btn '+(tracking?'primary':'');
+}
+function resetSession(){sessionReps=0;repPhase='neutral';smoothAngle=null;render();}
+function setGoal(){const v=parseInt(document.getElementById('g-input').value);if(v>0){data.g=v;save();celebrated=getT()>=v;render();}}
+function updateSens(){
+  upThresh=parseInt(document.getElementById('up-t').value);
+  dnThresh=parseInt(document.getElementById('dn-t').value);
+  document.getElementById('up-v').textContent=upThresh+'°';
+  document.getElementById('dn-v').textContent=dnThresh+'°';
+}
+
+// ── Render ────────────────────────────────────────────────────────────────────
+function render(){
+  const t=getT(),g=data.g;
+  document.getElementById('rep-big').textContent=t;
+  document.getElementById('s-today').textContent=t;
+  document.getElementById('s-session').textContent=sessionReps;
+  const all=Object.values(data.d);
+  document.getElementById('s-best').textContent=all.length?Math.max(...all):0;
+  document.getElementById('g-p').textContent=t;
+  document.getElementById('g-g').textContent=g;
+  document.getElementById('g-input').value=g;
+  document.getElementById('gfill').style.width=Math.min(t/g,1)*100+'%';
+  const now=new Date(),days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now);d.setDate(now.getDate()-i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    days.push({l:i===0?'·':['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()],c:data.d[k]||0,today:i===0});
+  }
+  const mx=Math.max(...days.map(d=>d.c),g,1);
+  document.getElementById('hist-bars').innerHTML=days.map(d=>{
+    const h=Math.max(Math.round((d.c/mx)*52),d.c>0?4:3);
+    return`<div class="bw"><div class="br${d.today?' today':''}" style="height:${h}px"></div><div class="bd">${d.l}</div></div>`;
+  }).join('');
+}
+
+// ── Confetti ──────────────────────────────────────────────────────────────────
+function boom(){
+  const cv=document.getElementById('celebrate-canvas'),c=cv.getContext('2d');
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const cols=['#00e87a','#4dabf7','#ff9f43','#ff4060','#a29bfe'];
+  const ps=Array.from({length:100},()=>({x:Math.random()*cv.width,y:-20,vx:(Math.random()-.5)*9,vy:2+Math.random()*6,col:cols[~~(Math.random()*5)],w:7+Math.random()*7,h:3+Math.random()*3,r:Math.random()*360,rv:(Math.random()-.5)*10}));
+  let f=0;
+  (function fr(){c.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{c.save();c.translate(p.x,p.y);c.rotate(p.r*Math.PI/180);c.fillStyle=p.col;c.globalAlpha=Math.max(0,1-f/100);c.fillRect(-p.w/2,-p.h/2,p.w,p.h);c.restore();p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.r+=p.rv;});f++;if(f<110)requestAnimationFrame(fr);else c.clearRect(0,0,cv.width,cv.height);})();
+}
+
+init();
+</script>
+</body>
+</html>
