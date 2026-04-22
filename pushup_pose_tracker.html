@@ -1,0 +1,761 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
+<title>Push-up Trainer</title>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --bg: #0a0a0f; --card: #13131a; --card2: #1a1a24;
+  --text: #f0f0f8; --sub: #6b6b80;
+  --green: #00e87a; --green-dim: rgba(0,232,122,0.12);
+  --red: #ff4060; --red-dim: rgba(255,64,96,0.12);
+  --amber: #ffb830; --blue: #4dabf7; --purple: #bf5af2;
+  --border: rgba(255,255,255,0.07); --radius: 16px;
+}
+body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; max-width: 430px; margin: 0 auto; overflow-x: hidden; }
+
+.tab-bar { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
+.tab { flex: 1; padding: 13px 4px 11px; font-size: 11px; font-weight: 600; text-align: center; color: var(--sub); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.04em; text-transform: uppercase; }
+.tab.active { color: var(--green); border-bottom-color: var(--green); }
+.tab-icon { font-size: 17px; display: block; margin-bottom: 2px; }
+.page { display: none; } .page.active { display: block; }
+
+#loading-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; padding: 32px; }
+.load-bar-wrap { width: 220px; height: 4px; background: var(--card2); border-radius: 2px; overflow: hidden; }
+.load-bar { height: 100%; background: var(--green); border-radius: 2px; width: 0%; transition: width 0.5s ease; }
+#error-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+.btn-green { padding: 14px 36px; background: var(--green); color: #000; font-size: 15px; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; }
+#calib-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.94); z-index: 50; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+
+.cam-section { position: relative; background: #000; width: 100%; aspect-ratio: 3/4; overflow: hidden; }
+#video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+#pose-canvas { position: absolute; inset: 0; width: 100%; height: 100%; }
+
+.cam-top-bar { position: absolute; top: 0; left: 0; right: 0; display: flex; justify-content: space-between; align-items: flex-start; padding: 12px 14px; pointer-events: none; }
+.cam-top-bar > * { pointer-events: auto; }
+.status-pill { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; backdrop-filter: blur(10px); white-space: nowrap; }
+.status-pill.up { background: rgba(0,232,122,0.2); color: var(--green); border: 1px solid rgba(0,232,122,0.3); }
+.status-pill.down { background: rgba(255,64,96,0.2); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
+.status-pill.wait { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+.icon-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: transform 0.15s; -webkit-tap-highlight-color: transparent; }
+.icon-btn:active { transform: scale(0.88); }
+
+.rep-overlay { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); text-align: center; pointer-events: none; }
+.rep-num { font-size: 88px; font-weight: 800; line-height: 1; letter-spacing: -4px; color: #fff; text-shadow: 0 2px 24px rgba(0,0,0,0.6); transition: transform 0.12s, color 0.15s; }
+.rep-num.flash { transform: scale(1.18); color: var(--green); }
+.rep-lbl { font-size: 12px; color: rgba(255,255,255,0.5); font-weight: 600; letter-spacing: 0.15em; text-transform: uppercase; margin-top: 2px; }
+
+.battle-hud { position: absolute; top: 0; left: 0; right: 0; pointer-events: none; }
+.battle-hud-inner { padding: 8px 14px 6px; background: linear-gradient(to bottom, rgba(0,0,0,0.75), transparent); }
+.bh-names { display: flex; justify-content: space-between; margin-bottom: 5px; }
+.bh-name { font-size: 12px; font-weight: 700; color: #fff; }
+.bh-score { font-size: 12px; font-weight: 700; }
+.bh-bar { height: 6px; background: rgba(255,255,255,0.12); border-radius: 3px; overflow: hidden; position: relative; }
+.bh-you { height: 100%; background: var(--green); position: absolute; left: 0; border-radius: 3px; transition: width 0.3s ease; }
+.bh-bot { height: 100%; background: var(--red); position: absolute; right: 0; border-radius: 3px; transition: width 0.3s ease; }
+.bh-timer { text-align: center; margin-top: 5px; font-size: 13px; font-weight: 700; color: var(--amber); }
+
+.angle-badge { position: absolute; bottom: 16px; right: 16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); text-align: center; pointer-events: none; }
+.angle-num { font-size: 20px; font-weight: 700; } .angle-lbl { font-size: 10px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+.pose-badge { position: absolute; bottom: 16px; left: 16px; background: rgba(0,0,0,0.6); backdrop-filter: blur(8px); padding: 8px 12px; border-radius: 12px; border: 1px solid var(--border); display: flex; align-items: center; gap: 6px; pointer-events: none; }
+.pose-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--sub); transition: background 0.3s; } .pose-dot.on { background: var(--green); }
+.pose-txt { font-size: 12px; color: var(--sub); font-weight: 500; }
+#guide-overlay { position: absolute; inset: 0; background: rgba(0,0,0,0.72); display: flex; align-items: center; justify-content: center; z-index: 5; }
+.guide-inner { text-align: center; padding: 28px 24px; max-width: 300px; }
+.guide-icon { font-size: 52px; margin-bottom: 14px; }
+.guide-title { font-size: 20px; font-weight: 700; margin-bottom: 8px; }
+.guide-text { font-size: 14px; color: rgba(255,255,255,0.55); line-height: 1.6; margin-bottom: 20px; }
+
+.controls { display: flex; gap: 8px; padding: 10px 12px; background: var(--card); border-bottom: 1px solid var(--border); }
+.ctrl-btn { flex: 1; padding: 10px 4px; border-radius: 12px; border: 1px solid var(--border); font-size: 12px; font-weight: 600; cursor: pointer; background: var(--card2); color: var(--text); transition: opacity 0.15s, transform 0.1s; -webkit-tap-highlight-color: transparent; }
+.ctrl-btn:active { transform: scale(0.95); opacity: 0.8; }
+.ctrl-btn.primary { background: var(--green-dim); color: var(--green); border-color: rgba(0,232,122,0.25); }
+.ctrl-btn.danger { background: var(--red-dim); color: var(--red); border-color: rgba(255,64,96,0.2); }
+
+.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 10px 12px; }
+.stat-box { background: var(--card); border-radius: 12px; padding: 12px; border: 1px solid var(--border); text-align: center; }
+.stat-n { font-size: 24px; font-weight: 700; letter-spacing: -1px; }
+.stat-l { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+
+.section { padding: 0 12px 12px; }
+.sec-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
+.card { background: var(--card); border-radius: var(--radius); padding: 14px 16px; border: 1px solid var(--border); }
+.goal-top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.track { height: 6px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+.gfill { height: 100%; border-radius: 3px; background: var(--green); transition: width 0.4s ease; }
+.goal-row { display: flex; gap: 8px; margin-top: 12px; }
+.ginput { flex: 1; padding: 9px 12px; background: var(--card2); border: 1px solid var(--border); border-radius: 10px; color: var(--text); font-size: 15px; outline: none; -webkit-appearance: none; }
+.gset { padding: 9px 16px; background: var(--green-dim); color: var(--green); border: 1px solid rgba(0,232,122,0.25); border-radius: 10px; font-size: 13px; font-weight: 600; cursor: pointer; }
+.sens-row { display: flex; align-items: center; gap: 10px; }
+.sens-lbl { font-size: 13px; color: var(--sub); min-width: 76px; }
+.sens-slider { flex: 1; -webkit-appearance: none; height: 4px; background: var(--card2); border-radius: 2px; outline: none; }
+.sens-slider::-webkit-slider-thumb { -webkit-appearance: none; width: 18px; height: 18px; border-radius: 50%; background: var(--green); cursor: pointer; }
+.sens-val { font-size: 13px; font-weight: 600; min-width: 36px; text-align: right; }
+.hist-bars { display: flex; align-items: flex-end; gap: 6px; height: 60px; }
+.bw { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; height: 100%; justify-content: flex-end; }
+.br { width: 100%; border-radius: 3px 3px 0 0; background: var(--card2); min-height: 3px; }
+.br.today { background: var(--green); } .bd { font-size: 10px; color: var(--sub); }
+
+/* ELO page */
+.elo-hero { background: var(--card); margin: 12px; border-radius: var(--radius); border: 1px solid var(--border); padding: 22px; text-align: center; position: relative; overflow: hidden; }
+.elo-hero::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 50% 0%, rgba(191,90,242,0.1) 0%, transparent 65%); pointer-events:none; }
+.rank-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; border-radius: 20px; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 10px; }
+.elo-score { font-size: 60px; font-weight: 800; letter-spacing: -3px; line-height: 1; }
+.elo-change { font-size: 14px; font-weight: 700; margin-top: 8px; min-height: 20px; }
+.rank-progress { margin-top: 14px; }
+.rank-row { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); margin-bottom: 6px; }
+.rank-track { height: 5px; background: var(--card2); border-radius: 3px; overflow: hidden; }
+.rank-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+.bots-list { margin: 0 12px; display: flex; flex-direction: column; gap: 10px; }
+.bot-card { background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 14px 16px; display: flex; align-items: center; gap: 14px; cursor: pointer; transition: border-color 0.2s, transform 0.15s; -webkit-tap-highlight-color: transparent; }
+.bot-card:active:not(.locked) { transform: scale(0.98); }
+.bot-card.locked { opacity: 0.42; cursor: default; }
+.bot-avatar { width: 46px; height: 46px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 22px; flex-shrink: 0; }
+.bot-info { flex: 1; min-width: 0; }
+.bot-name { font-size: 14px; font-weight: 700; }
+.bot-desc { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.bot-win-pct { font-size: 11px; margin-top: 3px; }
+.bot-elo-tag { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px; flex-shrink: 0; text-align: center; }
+
+/* Countdown */
+#countdown-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.92); z-index: 70; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
+.countdown-num { font-size: 130px; font-weight: 900; letter-spacing: -6px; line-height: 1; }
+.countdown-lbl { font-size: 14px; color: var(--sub); letter-spacing: 0.1em; text-transform: uppercase; }
+
+/* Result */
+#battle-result { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.93); z-index: 80; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; padding: 40px; }
+.res-icon { font-size: 72px; }
+.res-title { font-size: 34px; font-weight: 800; letter-spacing: -1px; }
+.res-sub { font-size: 15px; color: var(--sub); }
+.res-scores { display: flex; gap: 24px; justify-content: center; margin: 8px 0; }
+.res-score-box { text-align: center; }
+.res-score-num { font-size: 40px; font-weight: 800; letter-spacing: -2px; }
+.res-score-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; }
+.res-elo { font-size: 20px; font-weight: 700; }
+.res-btns { display: flex; gap: 12px; margin-top: 8px; }
+.res-btn { padding: 14px 28px; border-radius: 50px; font-size: 15px; font-weight: 700; border: none; cursor: pointer; }
+
+/* History */
+.hist-list { margin: 0 12px; display: flex; flex-direction: column; gap: 8px; }
+.hist-item { background: var(--card); border-radius: 12px; border: 1px solid var(--border); padding: 12px 16px; display: flex; align-items: center; gap: 12px; }
+.hi-icon { font-size: 22px; }
+.hi-info { flex: 1; min-width: 0; }
+.hi-title { font-size: 14px; font-weight: 600; }
+.hi-sub { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.hi-score { text-align: right; }
+.hi-elo { font-size: 16px; font-weight: 700; }
+.hi-elo-total { font-size: 11px; color: var(--sub); margin-top: 2px; }
+
+#celebrate-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
+</style>
+</head>
+<body>
+
+<div id="loading-screen">
+  <div style="font-size:52px">💪</div>
+  <div style="font-size:24px;font-weight:700;letter-spacing:-0.5px">Push-up Trainer</div>
+  <div style="font-size:14px;color:var(--sub);max-width:260px;line-height:1.6">Loading AI pose detection…</div>
+  <div class="load-bar-wrap"><div class="load-bar" id="load-bar"></div></div>
+  <div id="load-status" style="font-size:13px;color:var(--sub)">Starting up…</div>
+</div>
+
+<div id="error-screen">
+  <div style="font-size:48px">⚠️</div>
+  <div style="font-size:22px;font-weight:700;margin-bottom:8px">Setup Error</div>
+  <div style="font-size:14px;color:var(--sub);line-height:1.7;max-width:300px;white-space:pre-wrap" id="err-msg"></div>
+  <button class="btn-green" onclick="location.reload()">Try Again</button>
+</div>
+
+<div id="calib-overlay">
+  <div style="font-size:52px">📐</div>
+  <div style="font-size:22px;font-weight:700">Get Into Position</div>
+  <div style="font-size:14px;color:var(--sub);line-height:1.7;max-width:300px">Prop your phone on the floor to your side so your full upper body is visible.<br><br>Good lighting helps the AI work accurately.</div>
+  <button class="btn-green" style="margin-top:8px" onclick="startTracking()">Start Tracking</button>
+</div>
+
+<div id="countdown-overlay">
+  <div style="font-size:14px;color:var(--sub);text-transform:uppercase;letter-spacing:0.1em">Battle starts in</div>
+  <div class="countdown-num" id="countdown-num" style="color:var(--amber)">3</div>
+  <div class="countdown-lbl" id="countdown-lbl">Get ready…</div>
+</div>
+
+<div id="battle-result">
+  <div class="res-icon" id="res-icon">🏆</div>
+  <div class="res-title" id="res-title">Victory!</div>
+  <div class="res-sub" id="res-sub">You defeated the bot</div>
+  <div class="res-scores">
+    <div class="res-score-box">
+      <div class="res-score-num" id="res-you" style="color:var(--green)">0</div>
+      <div class="res-score-lbl">You</div>
+    </div>
+    <div style="font-size:22px;color:var(--sub);align-self:center">vs</div>
+    <div class="res-score-box">
+      <div class="res-score-num" id="res-bot-score" style="color:var(--red)">0</div>
+      <div class="res-score-lbl" id="res-bot-lbl">Bot</div>
+    </div>
+  </div>
+  <div class="res-elo" id="res-elo"></div>
+  <div class="res-btns">
+    <button class="res-btn" style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="closeResult()">Done</button>
+    <button class="res-btn" style="background:var(--green);color:#000" onclick="rematch()">Rematch</button>
+  </div>
+</div>
+
+<div id="app" style="display:none">
+  <div class="tab-bar">
+    <div class="tab active" id="tab-train" onclick="switchTab('train')"><span class="tab-icon">💪</span>Train</div>
+    <div class="tab" id="tab-battle" onclick="switchTab('battle')"><span class="tab-icon">⚔️</span>Battle</div>
+    <div class="tab" id="tab-history" onclick="switchTab('history')"><span class="tab-icon">📊</span>History</div>
+  </div>
+
+  <!-- TRAIN -->
+  <div class="page active" id="page-train">
+    <div class="cam-section">
+      <video id="video" autoplay muted playsinline></video>
+      <canvas id="pose-canvas"></canvas>
+
+      <div class="battle-hud" id="battle-hud" style="display:none">
+        <div class="battle-hud-inner">
+          <div class="bh-names">
+            <span class="bh-name">You — <span id="bh-you">0</span></span>
+            <span class="bh-name" style="color:var(--amber)" id="bh-timer">60s</span>
+            <span class="bh-name" style="color:var(--red)"><span id="bh-bot-name">Bot</span> — <span id="bh-bot">0</span></span>
+          </div>
+          <div class="bh-bar">
+            <div class="bh-you" id="bh-fill-you" style="width:50%"></div>
+            <div class="bh-bot" id="bh-fill-bot" style="width:50%"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="cam-top-bar">
+        <div class="status-pill wait" id="status-pill">Detecting…</div>
+        <div class="icon-btn" id="flip-btn" onclick="flipCamera()" title="Flip camera">🔄</div>
+      </div>
+
+      <div class="rep-overlay">
+        <div class="rep-num" id="rep-big">0</div>
+        <div class="rep-lbl" id="rep-lbl">reps today</div>
+      </div>
+
+      <div class="angle-badge">
+        <div class="angle-num" id="angle-disp">—°</div>
+        <div class="angle-lbl">Elbow</div>
+      </div>
+      <div class="pose-badge">
+        <div class="pose-dot" id="pose-dot"></div>
+        <div class="pose-txt" id="pose-txt">No pose</div>
+      </div>
+      <div id="guide-overlay">
+        <div class="guide-inner">
+          <div class="guide-icon">📱</div>
+          <div class="guide-title">Set Up Your Phone</div>
+          <div class="guide-text">Prop your phone on the floor to your side. Use 🔄 to flip the camera if needed.</div>
+          <button class="btn-green" style="padding:12px 28px;font-size:14px" onclick="document.getElementById('guide-overlay').style.display='none'">Got it</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="controls">
+      <button class="ctrl-btn primary" id="toggle-btn" onclick="toggleTracking()">⏸ Pause</button>
+      <button class="ctrl-btn" onclick="document.getElementById('calib-overlay').style.display='flex'">📐 Guide</button>
+      <button class="ctrl-btn danger" onclick="resetSession()">↺ Reset</button>
+    </div>
+
+    <div class="stats-row">
+      <div class="stat-box"><div class="stat-n" id="s-today">0</div><div class="stat-l">Today</div></div>
+      <div class="stat-box"><div class="stat-n" id="s-session">0</div><div class="stat-l">Session</div></div>
+      <div class="stat-box"><div class="stat-n" id="s-best">0</div><div class="stat-l">Best Day</div></div>
+    </div>
+
+    <div class="section">
+      <div class="sec-lbl">Daily Goal</div>
+      <div class="card">
+        <div class="goal-top">
+          <span style="font-size:13px;color:var(--sub)">Progress</span>
+          <span style="font-size:15px;font-weight:700"><span id="g-p">0</span> / <span id="g-g">50</span></span>
+        </div>
+        <div class="track"><div class="gfill" id="gfill" style="width:0%"></div></div>
+        <div class="goal-row">
+          <input type="number" class="ginput" id="g-input" value="50" min="1" max="999"/>
+          <button class="gset" onclick="setGoal()">Set Goal</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-lbl">Detection Thresholds</div>
+      <div class="card">
+        <div class="sens-row">
+          <span class="sens-lbl">Up angle</span>
+          <input type="range" class="sens-slider" id="up-t" min="120" max="175" value="155" oninput="updateSens()"/>
+          <span class="sens-val" id="up-v">155°</span>
+        </div>
+        <div style="height:10px"></div>
+        <div class="sens-row">
+          <span class="sens-lbl">Down angle</span>
+          <input type="range" class="sens-slider" id="dn-t" min="50" max="120" value="90" oninput="updateSens()"/>
+          <span class="sens-val" id="dn-v">90°</span>
+        </div>
+        <div style="font-size:12px;color:var(--sub);margin-top:10px;line-height:1.5">Adjust if reps aren't detecting correctly. Up = arm extended, Down = arm bent.</div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-lbl">Last 7 Days</div>
+      <div class="card"><div class="hist-bars" id="hist-bars"></div></div>
+    </div>
+    <div style="height:28px"></div>
+  </div>
+
+  <!-- BATTLE -->
+  <div class="page" id="page-battle">
+    <div class="elo-hero">
+      <div class="rank-badge" id="rank-badge">🥉 Bronze</div>
+      <div class="elo-score" id="elo-display">1000</div>
+      <div style="font-size:13px;color:var(--sub)">ELO Rating</div>
+      <div class="elo-change" id="elo-change"></div>
+      <div class="rank-progress">
+        <div class="rank-row"><span id="rank-cur">Bronze</span><span id="rank-next">Silver</span></div>
+        <div class="rank-track"><div class="rank-fill" id="rank-fill" style="width:0%"></div></div>
+      </div>
+    </div>
+
+    <div class="section"><div class="sec-lbl">Choose Opponent</div></div>
+    <div class="bots-list" id="bots-list"></div>
+    <div style="height:28px"></div>
+  </div>
+
+  <!-- HISTORY -->
+  <div class="page" id="page-history">
+    <div style="padding:12px 12px 8px"><div class="sec-lbl">Battle History</div></div>
+    <div class="hist-list" id="hist-list"></div>
+    <div style="height:28px"></div>
+  </div>
+</div>
+
+<canvas id="celebrate-canvas"></canvas>
+
+<script>
+// ─── Data ────────────────────────────────────────────────────────────
+const KEY='pu_v4';
+function defData(){return{d:{},g:50,elo:1000,battles:[]};}
+function load(){try{const r=localStorage.getItem(KEY);return r?{...defData(),...JSON.parse(r)}:defData();}catch(e){return defData();}}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
+let data=load();
+function todayKey(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
+function getT(){return data.d[todayKey()]||0;}
+function setT(v){data.d[todayKey()]=Math.max(0,v);save();}
+
+// ─── Ranks ───────────────────────────────────────────────────────────
+const RANKS=[
+  {name:'Bronze',   min:0,    max:1199, color:'#cd7f32'},
+  {name:'Silver',   min:1200, max:1399, color:'#c0c0c0'},
+  {name:'Gold',     min:1400, max:1599, color:'#ffb830'},
+  {name:'Platinum', min:1600, max:1799, color:'#4ecdc4'},
+  {name:'Diamond',  min:1800, max:1999, color:'#4dabf7'},
+  {name:'Legend',   min:2000, max:9999, color:'#bf5af2'},
+];
+const RANK_EMOJI={Bronze:'🥉',Silver:'🥈',Gold:'🥇',Platinum:'💎',Diamond:'💠',Legend:'👑'};
+function getRank(elo){return RANKS.find(r=>elo>=r.min&&elo<=r.max)||RANKS[0];}
+
+// ─── Bots ────────────────────────────────────────────────────────────
+const BOTS=[
+  {id:'rookie',   name:'Rookie Bot',   emoji:'🤖', elo:800,  secs:30,  desc:'Just starting out',           style:'steady',  unlock:0},
+  {id:'grinder',  name:'The Grinder',  emoji:'💦', elo:950,  secs:45,  desc:'Slow and consistent',         style:'steady',  unlock:0},
+  {id:'sprinter', name:'Sprinter',     emoji:'⚡', elo:1100, secs:30,  desc:'Explodes early, fades fast',  style:'burst',   unlock:900},
+  {id:'joe',      name:'Average Joe',  emoji:'😤', elo:1200, secs:60,  desc:'Solid all-around opponent',   style:'steady',  unlock:1000},
+  {id:'iron',     name:'Iron Mike',    emoji:'🥊', elo:1400, secs:60,  desc:'Strong and relentless',       style:'strong',  unlock:1150},
+  {id:'machine',  name:'The Machine',  emoji:'🦾', elo:1600, secs:90,  desc:'Methodical and precise',     style:'strong',  unlock:1350},
+  {id:'beast',    name:'Beast Mode',   emoji:'🔥', elo:1800, secs:60,  desc:'Absolute monster pace',      style:'burst',   unlock:1550},
+  {id:'legend',   name:'The Legend',   emoji:'👑', elo:2100, secs:120, desc:'Near-impossible to beat',     style:'strong',  unlock:1750},
+];
+
+function botRepsAt(bot, elapsed){
+  const base = bot.elo / 2800 * 0.8;
+  let rate;
+  if(bot.style==='burst') rate = base * (1 - (elapsed/bot.secs)*0.5);
+  else if(bot.style==='strong') rate = base * 1.05;
+  else rate = base * 0.95;
+  const jitter = (Math.sin(elapsed*0.7+bot.elo)*0.3 + Math.cos(elapsed*1.1)*0.2);
+  return Math.max(0, Math.round(rate * elapsed + jitter));
+}
+
+function calcElo(mine, opp, won){
+  const K=32, exp=1/(1+Math.pow(10,(opp-mine)/400));
+  return Math.round(K*((won?1:0)-exp));
+}
+function winChance(mine, opp){return Math.round(1/(1+Math.pow(10,(opp-mine)/400))*100);}
+
+// ─── Camera & Pose ───────────────────────────────────────────────────
+let tracking=true, sessionReps=0, celebrated=getT()>=data.g;
+let repPhase='neutral', smoothAngle=null, upThresh=155, dnThresh=90;
+let videoEl, canvasEl, ctx, poseInst, currentStream;
+let facingMode='environment', videoMirrored=false;
+
+function ang(ax,ay,bx,by,cx,cy){
+  const dx1=ax-bx,dy1=ay-by,dx2=cx-bx,dy2=cy-by;
+  const dot=dx1*dx2+dy1*dy2, mag=Math.sqrt(dx1**2+dy1**2)*Math.sqrt(dx2**2+dy2**2);
+  return mag?Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI:180;
+}
+function bestElbow(lms){
+  let best=null,bv=0;
+  for(const[si,ei,wi]of[[11,13,15],[12,14,16]]){
+    const s=lms[si],e=lms[ei],w=lms[wi];
+    if(!s||!e||!w)continue;
+    const v=s.visibility*e.visibility*w.visibility;
+    if(v>bv){bv=v;best=ang(s.x,s.y,e.x,e.y,w.x,w.y);}
+  }
+  return{angle:best,vis:bv};
+}
+
+function processAngle(a){
+  if(a===null)return;
+  smoothAngle=smoothAngle===null?a:smoothAngle*0.7+a*0.3;
+  const sa=smoothAngle;
+  document.getElementById('angle-disp').textContent=Math.round(sa)+'°';
+  const pill=document.getElementById('status-pill');
+  if((repPhase==='neutral'||repPhase==='up')&&sa>=upThresh){repPhase='up';pill.textContent='UP ↑';pill.className='status-pill up';}
+  if(repPhase==='up'&&sa<=dnThresh){repPhase='down';pill.textContent='DOWN ↓';pill.className='status-pill down';}
+  if(repPhase==='down'&&sa>=upThresh){repPhase='up';countRep();}
+  if(repPhase==='neutral'){pill.textContent='Get in position…';pill.className='status-pill wait';}
+}
+
+function countRep(){
+  setT(getT()+1); sessionReps++;
+  if(battleActive) battleYou++;
+  const el=document.getElementById('rep-big');
+  el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),200);
+  render();
+  document.getElementById('status-pill').textContent='✓ Rep!';
+  if(!battleActive&&getT()>=data.g&&!celebrated){celebrated=true;boom();}
+  if(battleActive) updateBattleHUD();
+}
+
+const BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
+function drawPose(lms){
+  ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+  if(!lms)return;
+  const W=canvasEl.width,H=canvasEl.height;
+  ctx.save();
+  if(videoMirrored){ctx.scale(-1,1);ctx.translate(-W,0);}
+  ctx.lineWidth=3;
+  for(const[a,b]of BONES){
+    const pa=lms[a],pb=lms[b];
+    if(!pa||!pb||pa.visibility<0.35||pb.visibility<0.35)continue;
+    ctx.beginPath();ctx.strokeStyle='rgba(0,232,122,0.8)';
+    ctx.moveTo(pa.x*W,pa.y*H);ctx.lineTo(pb.x*W,pb.y*H);ctx.stroke();
+  }
+  lms.forEach(lm=>{
+    if(!lm||lm.visibility<0.4)return;
+    ctx.beginPath();ctx.arc(lm.x*W,lm.y*H,5,0,2*Math.PI);
+    ctx.fillStyle='#00e87a';ctx.fill();
+  });
+  ctx.restore();
+}
+
+function onPose(res){
+  if(!tracking)return;
+  if(res.poseLandmarks&&res.poseLandmarks.length){
+    drawPose(res.poseLandmarks);
+    const{angle,vis}=bestElbow(res.poseLandmarks);
+    const ok=vis>0.08;
+    document.getElementById('pose-dot').className='pose-dot'+(ok?' on':'');
+    document.getElementById('pose-txt').textContent=ok?'Pose found':'Low confidence';
+    if(ok){document.getElementById('guide-overlay').style.display='none';processAngle(angle);}
+    else{document.getElementById('status-pill').textContent='Adjust position';document.getElementById('status-pill').className='status-pill wait';}
+  } else {
+    ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
+    document.getElementById('pose-dot').className='pose-dot';
+    document.getElementById('pose-txt').textContent='No pose';
+    document.getElementById('status-pill').textContent='No pose';
+    document.getElementById('status-pill').className='status-pill wait';
+  }
+}
+
+function detectLoop(){
+  if(tracking&&poseInst&&videoEl&&videoEl.readyState>=2)
+    poseInst.send({image:videoEl}).catch(()=>{});
+  requestAnimationFrame(detectLoop);
+}
+
+async function startCamera(){
+  if(currentStream)currentStream.getTracks().forEach(t=>t.stop());
+  const stream=await navigator.mediaDevices.getUserMedia({
+    video:{facingMode:{ideal:facingMode},width:{ideal:640},height:{ideal:480}},audio:false
+  });
+  currentStream=stream;
+  videoEl.srcObject=stream;
+  await new Promise(r=>videoEl.onloadedmetadata=r);
+  await videoEl.play();
+  canvasEl.width=videoEl.videoWidth||640;
+  canvasEl.height=videoEl.videoHeight||480;
+  videoMirrored=(facingMode==='user');
+  videoEl.style.transform=videoMirrored?'scaleX(-1)':'none';
+}
+
+async function flipCamera(){
+  const btn=document.getElementById('flip-btn');
+  btn.style.opacity='0.5';
+  facingMode=facingMode==='environment'?'user':'environment';
+  try{await startCamera();}catch(e){facingMode=facingMode==='environment'?'user':'environment';}
+  btn.style.opacity='1';
+}
+
+// ─── Battle ──────────────────────────────────────────────────────────
+let battleActive=false, battleYou=0, battleBot=0;
+let battleStart=0, battleDur=60, battleBotRef=null, lastBotRef=null;
+let battleInterval=null;
+
+function startBattle(bot){
+  if(data.elo<bot.unlock)return;
+  lastBotRef=bot;
+  switchTab('train');
+  let n=3;
+  const ov=document.getElementById('countdown-overlay'),num=document.getElementById('countdown-num'),lbl=document.getElementById('countdown-lbl');
+  num.style.color='var(--amber)'; ov.style.display='flex';
+  num.textContent=n; lbl.textContent='Get into push-up position…';
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){num.textContent=n;num.style.color=n===2?'var(--red)':'var(--amber)';}
+    else if(n===0){num.textContent='GO!';num.style.color='var(--green)';lbl.textContent='Push as fast as you can!';}
+    else{clearInterval(tick);ov.style.display='none';beginBattle(bot);}
+  },1000);
+}
+
+function beginBattle(bot){
+  battleActive=true; battleYou=0; battleBot=0;
+  battleBotRef=bot; battleDur=bot.secs; battleStart=Date.now();
+  sessionReps=0; repPhase='neutral'; smoothAngle=null;
+  document.getElementById('battle-hud').style.display='block';
+  document.getElementById('rep-lbl').textContent='battle reps';
+  document.getElementById('rep-big').textContent='0';
+  document.getElementById('bh-bot-name').textContent=bot.name.split(' ')[0];
+  battleInterval=setInterval(()=>{
+    const el=(Date.now()-battleStart)/1000;
+    const rem=Math.max(0,battleDur-el);
+    battleBot=botRepsAt(bot,el);
+    document.getElementById('bh-timer').textContent=Math.ceil(rem)+'s';
+    updateBattleHUD();
+    if(el>=battleDur)endBattle();
+  },250);
+}
+
+function updateBattleHUD(){
+  const tot=Math.max(battleYou+battleBot,2);
+  document.getElementById('bh-you').textContent=battleYou;
+  document.getElementById('bh-bot').textContent=battleBot;
+  document.getElementById('bh-fill-you').style.width=(battleYou/tot*100)+'%';
+  document.getElementById('bh-fill-bot').style.width=(battleBot/tot*100)+'%';
+  document.getElementById('rep-big').textContent=battleYou;
+}
+
+function endBattle(){
+  if(!battleActive)return;
+  clearInterval(battleInterval);
+  battleActive=false;
+  document.getElementById('battle-hud').style.display='none';
+  document.getElementById('rep-lbl').textContent='reps today';
+  const bot=battleBotRef, won=battleYou>battleBot, tie=battleYou===battleBot;
+  const delta=tie?0:calcElo(data.elo,bot.elo,won);
+  data.elo=Math.max(100,data.elo+delta);
+  data.battles.unshift({date:new Date().toISOString(),botName:bot.name,botEmoji:bot.emoji,you:battleYou,bot:battleBot,won,tie,delta,newElo:data.elo});
+  if(data.battles.length>60)data.battles.length=60;
+  save();
+  // show result
+  document.getElementById('res-you').textContent=battleYou;
+  document.getElementById('res-bot-score').textContent=battleBot;
+  document.getElementById('res-bot-lbl').textContent=bot.name;
+  const ti=document.getElementById('res-title');
+  if(tie){
+    document.getElementById('res-icon').textContent='🤝'; ti.textContent='Draw!'; ti.style.color='';
+    document.getElementById('res-sub').textContent='Perfectly matched!';
+    document.getElementById('res-elo').textContent='No ELO change'; document.getElementById('res-elo').style.color='var(--sub)';
+  } else if(won){
+    document.getElementById('res-icon').textContent='🏆'; ti.textContent='Victory!'; ti.style.color='var(--green)';
+    document.getElementById('res-sub').textContent='You beat '+bot.name+'!';
+    document.getElementById('res-elo').textContent='+'+delta+' ELO → '+data.elo; document.getElementById('res-elo').style.color='var(--green)';
+    boom();
+  } else {
+    document.getElementById('res-icon').textContent='😤'; ti.textContent='Defeated'; ti.style.color='var(--red)';
+    document.getElementById('res-sub').textContent=bot.name+' pushed harder.';
+    document.getElementById('res-elo').textContent=delta+' ELO → '+data.elo; document.getElementById('res-elo').style.color='var(--red)';
+  }
+  const res=document.getElementById('battle-result');
+  res.style.display='flex'; res.style.flexDirection='column';
+  render(); renderElo(); renderBots(); renderHistory();
+}
+function closeResult(){
+  document.getElementById('battle-result').style.display='none';
+  document.getElementById('res-title').style.color='';
+  switchTab('battle');
+}
+function rematch(){
+  document.getElementById('battle-result').style.display='none';
+  document.getElementById('res-title').style.color='';
+  if(lastBotRef)startBattle(lastBotRef);
+}
+
+// ─── Render ──────────────────────────────────────────────────────────
+function render(){
+  const t=getT(),g=data.g;
+  if(!battleActive){document.getElementById('rep-big').textContent=t; document.getElementById('rep-lbl').textContent='reps today';}
+  document.getElementById('s-today').textContent=t;
+  document.getElementById('s-session').textContent=sessionReps;
+  const all=Object.values(data.d);
+  document.getElementById('s-best').textContent=all.length?Math.max(...all):0;
+  document.getElementById('g-p').textContent=t; document.getElementById('g-g').textContent=g; document.getElementById('g-input').value=g;
+  document.getElementById('gfill').style.width=Math.min(t/g,1)*100+'%';
+  const now=new Date(),days=[];
+  for(let i=6;i>=0;i--){
+    const d=new Date(now); d.setDate(now.getDate()-i);
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    days.push({l:i===0?'·':['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()],c:data.d[k]||0,today:i===0});
+  }
+  const mx=Math.max(...days.map(d=>d.c),g,1);
+  document.getElementById('hist-bars').innerHTML=days.map(d=>{
+    const h=Math.max(Math.round((d.c/mx)*52),d.c>0?4:3);
+    return`<div class="bw"><div class="br${d.today?' today':''}" style="height:${h}px"></div><div class="bd">${d.l}</div></div>`;
+  }).join('');
+}
+
+function renderElo(){
+  const elo=data.elo, rank=getRank(elo);
+  const ri=RANKS.indexOf(rank), next=RANKS[ri+1]||rank;
+  const pct=next===rank?100:((elo-rank.min)/(next.min-rank.min))*100;
+  document.getElementById('elo-display').textContent=elo;
+  const b=document.getElementById('rank-badge');
+  b.textContent=RANK_EMOJI[rank.name]+' '+rank.name;
+  b.style.cssText=`background:${rank.color}22;color:${rank.color};border:1px solid ${rank.color}44;`;
+  b.className='rank-badge';
+  document.getElementById('rank-cur').textContent=rank.name;
+  document.getElementById('rank-next').textContent=next.name;
+  document.getElementById('rank-fill').style.cssText=`width:${Math.round(pct)}%;background:${rank.color};`;
+}
+
+function renderBots(){
+  document.getElementById('bots-list').innerHTML=BOTS.map(bot=>{
+    const locked=data.elo<bot.unlock, rank=getRank(bot.elo), wc=winChance(data.elo,bot.elo);
+    return`<div class="bot-card${locked?' locked':''}" onclick="${locked?'':("startBattle(BOTS.find(b=>b.id==='"+bot.id+"'))")}">
+      <div class="bot-avatar" style="background:${rank.color}22;border:1px solid ${rank.color}44">${bot.emoji}</div>
+      <div class="bot-info">
+        <div class="bot-name">${bot.name}</div>
+        <div class="bot-desc">${locked?'Unlock at '+bot.unlock+' ELO':bot.desc+' · '+bot.secs+'s'}</div>
+        ${locked?'':'<div class="bot-win-pct" style="color:'+rank.color+'">Win chance: '+wc+'%</div>'}
+      </div>
+      <div style="text-align:center">
+        <div class="bot-elo-tag" style="background:${rank.color}22;color:${rank.color}">${bot.elo}</div>
+        ${locked?'<div style="font-size:18px;margin-top:4px">🔒</div>':''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function renderHistory(){
+  const list=document.getElementById('hist-list');
+  if(!data.battles||!data.battles.length){
+    list.innerHTML=`<div style="text-align:center;padding:48px 20px;color:var(--sub);font-size:14px;line-height:1.7">No battles yet.<br>Head to ⚔️ Battle to start!</div>`;
+    return;
+  }
+  list.innerHTML=data.battles.slice(0,40).map(b=>{
+    const d=new Date(b.date);
+    const ds=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
+    const icon=b.tie?'🤝':b.won?'🏆':'😤';
+    const eStr=(b.delta>=0?'+':'')+b.delta;
+    const ecol=b.tie?'var(--sub)':b.won?'var(--green)':'var(--red)';
+    return`<div class="hist-item">
+      <div class="hi-icon">${icon}</div>
+      <div class="hi-info">
+        <div class="hi-title">${b.botEmoji} ${b.botName}</div>
+        <div class="hi-sub">${ds} · You ${b.you} vs ${b.bot}</div>
+      </div>
+      <div class="hi-score">
+        <div class="hi-elo" style="color:${ecol}">${eStr}</div>
+        <div class="hi-elo-total">${b.newElo} ELO</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ─── UI helpers ──────────────────────────────────────────────────────
+function switchTab(name){
+  ['train','battle','history'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.toggle('active',t===name);
+    document.getElementById('page-'+t).classList.toggle('active',t===name);
+  });
+  if(name==='battle'){renderElo();renderBots();}
+  if(name==='history')renderHistory();
+}
+function toggleTracking(){
+  tracking=!tracking;
+  const b=document.getElementById('toggle-btn');
+  b.textContent=tracking?'⏸ Pause':'▶ Resume';
+  b.className='ctrl-btn '+(tracking?'primary':'');
+}
+function resetSession(){sessionReps=0;repPhase='neutral';smoothAngle=null;render();}
+function setGoal(){const v=parseInt(document.getElementById('g-input').value);if(v>0){data.g=v;save();celebrated=getT()>=v;render();}}
+function updateSens(){
+  upThresh=parseInt(document.getElementById('up-t').value);
+  dnThresh=parseInt(document.getElementById('dn-t').value);
+  document.getElementById('up-v').textContent=upThresh+'°';
+  document.getElementById('dn-v').textContent=dnThresh+'°';
+}
+
+// ─── Confetti ────────────────────────────────────────────────────────
+function boom(){
+  const cv=document.getElementById('celebrate-canvas'),c=cv.getContext('2d');
+  cv.width=window.innerWidth;cv.height=window.innerHeight;
+  const cols=['#00e87a','#4dabf7','#ffb830','#ff4060','#bf5af2'];
+  const ps=Array.from({length:100},()=>({x:Math.random()*cv.width,y:-20,vx:(Math.random()-.5)*9,vy:2+Math.random()*6,col:cols[~~(Math.random()*5)],w:7+Math.random()*7,h:3+Math.random()*3,r:Math.random()*360,rv:(Math.random()-.5)*10}));
+  let f=0;
+  (function fr(){c.clearRect(0,0,cv.width,cv.height);ps.forEach(p=>{c.save();c.translate(p.x,p.y);c.rotate(p.r*Math.PI/180);c.fillStyle=p.col;c.globalAlpha=Math.max(0,1-f/100);c.fillRect(-p.w/2,-p.h/2,p.w,p.h);c.restore();p.x+=p.vx;p.y+=p.vy;p.vy+=.15;p.r+=p.rv;});f++;if(f<110)requestAnimationFrame(fr);else c.clearRect(0,0,cv.width,cv.height);})();
+}
+
+// ─── Init ────────────────────────────────────────────────────────────
+function loadScript(src){
+  return new Promise((res,rej)=>{
+    const s=document.createElement('script'); s.src=src; s.crossOrigin='anonymous';
+    s.onload=res; s.onerror=()=>rej(new Error('Failed: '+src));
+    document.head.appendChild(s);
+  });
+}
+
+async function init(){
+  const bar=document.getElementById('load-bar'), status=document.getElementById('load-status');
+  try{
+    videoEl=document.getElementById('video'); canvasEl=document.getElementById('pose-canvas'); ctx=canvasEl.getContext('2d');
+    status.textContent='Requesting camera…'; bar.style.width='20%';
+    await startCamera();
+    bar.style.width='45%'; status.textContent='Loading MediaPipe Pose…';
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js');
+    await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
+    bar.style.width='78%'; status.textContent='Initializing model…';
+    poseInst=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
+    poseInst.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
+    poseInst.onResults(onPose);
+    await poseInst.initialize();
+    bar.style.width='100%'; status.textContent='Ready!';
+    await new Promise(r=>setTimeout(r,500));
+    document.getElementById('loading-screen').style.display='none';
+    document.getElementById('app').style.display='block';
+    document.getElementById('calib-overlay').style.display='flex';
+    render(); renderElo(); renderBots(); renderHistory();
+  }catch(e){
+    console.error(e);
+    document.getElementById('loading-screen').style.display='none';
+    const err=document.getElementById('error-screen'); err.style.display='flex'; err.style.flexDirection='column';
+    const cam=e.name==='NotAllowedError'||e.name==='NotFoundError'||String(e.message).toLowerCase().includes('cam');
+    document.getElementById('err-msg').textContent=cam
+      ?'Camera access was denied.\nAllow camera permissions in browser settings, then reload.'
+      :'Could not load pose model.\nCheck internet connection and reload.\n\n'+e.message;
+  }
+}
+function startTracking(){document.getElementById('calib-overlay').style.display='none'; detectLoop();}
+init();
+</script>
+</body>
+</html>
