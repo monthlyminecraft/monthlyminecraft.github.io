@@ -17,9 +17,9 @@
 body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif; background: var(--bg); color: var(--text); min-height: 100dvh; max-width: 430px; margin: 0 auto; overflow-x: hidden; }
 
 .tab-bar { display: flex; background: var(--card); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 40; }
-.tab { flex: 1; padding: 13px 4px 11px; font-size: 11px; font-weight: 600; text-align: center; color: var(--sub); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.04em; text-transform: uppercase; }
+.tab { flex: 1; padding: 13px 4px 11px; font-size: 10px; font-weight: 600; text-align: center; color: var(--sub); cursor: pointer; border-bottom: 2px solid transparent; transition: color 0.15s, border-color 0.15s; letter-spacing: 0.04em; text-transform: uppercase; }
 .tab.active { color: var(--green); border-bottom-color: var(--green); }
-.tab-icon { font-size: 17px; display: block; margin-bottom: 2px; }
+.tab-icon { font-size: 16px; display: block; margin-bottom: 2px; }
 .page { display: none; } .page.active { display: block; }
 
 #loading-screen { position: fixed; inset: 0; background: var(--bg); z-index: 100; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 20px; text-align: center; padding: 32px; }
@@ -28,6 +28,22 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 #error-screen { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 200; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
 .btn-green { padding: 14px 36px; background: var(--green); color: #000; font-size: 15px; font-weight: 700; border: none; border-radius: 50px; cursor: pointer; }
 #calib-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.94); z-index: 50; flex-direction: column; align-items: center; justify-content: center; gap: 16px; padding: 40px; text-align: center; }
+
+/* Setup overlay */
+#setup-overlay { display: none; position: fixed; inset: 0; background: var(--bg); z-index: 90; flex-direction: column; align-items: center; justify-content: center; padding: 32px; overflow-y: auto; }
+.setup-inner { width: 100%; max-width: 360px; }
+.setup-title { font-size: 28px; font-weight: 800; letter-spacing: -1px; margin-bottom: 6px; }
+.setup-sub { font-size: 14px; color: var(--sub); margin-bottom: 28px; line-height: 1.6; }
+.setup-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 10px; }
+.av-grid { display: grid; grid-template-columns: repeat(6, 1fr); gap: 8px; margin-bottom: 24px; }
+.av-opt { width: 100%; aspect-ratio: 1; border-radius: 12px; background: var(--card); border: 2px solid var(--border); display: flex; align-items: center; justify-content: center; font-size: 22px; cursor: pointer; transition: border-color 0.15s, transform 0.1s; -webkit-tap-highlight-color: transparent; }
+.av-opt:active { transform: scale(0.9); }
+.av-opt.selected { border-color: var(--green); background: var(--green-dim); }
+.setup-input { width: 100%; padding: 13px 16px; background: var(--card); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 16px; outline: none; margin-bottom: 20px; -webkit-appearance: none; }
+.setup-input:focus { border-color: rgba(0,232,122,0.4); }
+
+/* Profile edit overlay */
+#profile-edit-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.96); z-index: 85; flex-direction: column; align-items: center; justify-content: center; padding: 32px; }
 
 .cam-section { position: relative; background: #000; width: 100%; aspect-ratio: 3/4; overflow: hidden; }
 #video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
@@ -39,6 +55,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .status-pill.up { background: rgba(0,232,122,0.2); color: var(--green); border: 1px solid rgba(0,232,122,0.3); }
 .status-pill.down { background: rgba(255,64,96,0.2); color: var(--red); border: 1px solid rgba(255,64,96,0.3); }
 .status-pill.wait { background: rgba(255,255,255,0.08); color: rgba(255,255,255,0.5); border: 1px solid rgba(255,255,255,0.1); }
+.cam-top-right { display: flex; gap: 8px; }
 .icon-btn { width: 40px; height: 40px; border-radius: 50%; background: rgba(0,0,0,0.5); backdrop-filter: blur(8px); border: 1px solid rgba(255,255,255,0.15); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 18px; transition: transform 0.15s; -webkit-tap-highlight-color: transparent; }
 .icon-btn:active { transform: scale(0.88); }
 
@@ -74,10 +91,12 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .ctrl-btn.primary { background: var(--green-dim); color: var(--green); border-color: rgba(0,232,122,0.25); }
 .ctrl-btn.danger { background: var(--red-dim); color: var(--red); border-color: rgba(255,64,96,0.2); }
 
-.stats-row { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; padding: 10px 12px; }
+.stats-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; padding: 10px 12px; }
 .stat-box { background: var(--card); border-radius: 12px; padding: 12px; border: 1px solid var(--border); text-align: center; }
 .stat-n { font-size: 24px; font-weight: 700; letter-spacing: -1px; }
 .stat-l { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+.stat-box.streak-box { border-color: rgba(255,184,48,0.25); background: rgba(255,184,48,0.06); }
+.stat-box.streak-box .stat-n { color: var(--amber); }
 
 .section { padding: 0 12px 12px; }
 .sec-lbl { font-size: 11px; color: var(--sub); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; margin-bottom: 8px; }
@@ -120,6 +139,16 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .bot-win-pct { font-size: 11px; margin-top: 3px; }
 .bot-elo-tag { font-size: 13px; font-weight: 700; padding: 4px 10px; border-radius: 8px; flex-shrink: 0; text-align: center; }
 
+/* Friend Battle Panel */
+.friend-panel-card { margin: 0 12px 12px; }
+.fp-room-code { font-size: 34px; font-weight: 800; letter-spacing: 8px; text-align: center; color: var(--green); padding: 16px; background: var(--card2); border-radius: 12px; cursor: pointer; transition: opacity 0.15s; font-variant-numeric: tabular-nums; }
+.fp-room-code:active { opacity: 0.7; }
+.join-input { width: 100%; padding: 14px; background: var(--card2); border: 1px solid var(--border); border-radius: 12px; color: var(--text); font-size: 24px; font-weight: 800; letter-spacing: 7px; text-align: center; text-transform: uppercase; margin-bottom: 12px; outline: none; -webkit-appearance: none; }
+.join-input:focus { border-color: rgba(0,232,122,0.35); }
+.friend-avatar-big { width: 52px; height: 52px; border-radius: 50%; background: var(--card2); display: flex; align-items: center; justify-content: center; font-size: 26px; margin: 0 auto 10px; border: 2px solid var(--green); }
+.dur-btn { flex: 1; padding: 10px 4px; border-radius: 10px; border: 1px solid var(--border); font-size: 13px; font-weight: 600; cursor: pointer; background: var(--card2); color: var(--sub); transition: all 0.15s; -webkit-tap-highlight-color: transparent; }
+.dur-btn.active { background: var(--green-dim); color: var(--green); border-color: rgba(0,232,122,0.3); }
+
 /* Countdown */
 #countdown-overlay { display: none; position: fixed; inset: 0; background: rgba(10,10,15,0.92); z-index: 70; flex-direction: column; align-items: center; justify-content: center; gap: 12px; text-align: center; }
 .countdown-num { font-size: 130px; font-weight: 900; letter-spacing: -6px; line-height: 1; }
@@ -148,6 +177,24 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 .hi-score { text-align: right; }
 .hi-elo { font-size: 16px; font-weight: 700; }
 .hi-elo-total { font-size: 11px; color: var(--sub); margin-top: 2px; }
+.hist-item.friendly { border-color: rgba(77,171,247,0.2); background: rgba(77,171,247,0.04); }
+
+/* Profile page */
+.prof-hero { margin: 12px; background: var(--card); border-radius: var(--radius); border: 1px solid var(--border); padding: 24px; text-align: center; position: relative; overflow: hidden; }
+.prof-hero::before { content:''; position:absolute; inset:0; background: radial-gradient(ellipse at 50% 0%, rgba(0,232,122,0.07) 0%, transparent 65%); pointer-events:none; }
+.prof-avatar-display { font-size: 60px; margin-bottom: 10px; line-height: 1; }
+.prof-name-display { font-size: 22px; font-weight: 700; letter-spacing: -0.5px; margin-bottom: 4px; }
+.prof-rank-display { font-size: 13px; color: var(--sub); }
+.edit-btn { position: absolute; top: 14px; right: 14px; padding: 6px 12px; border-radius: 8px; background: var(--card2); border: 1px solid var(--border); color: var(--sub); font-size: 12px; font-weight: 600; cursor: pointer; }
+
+/* Settings toggle */
+.toggle-wrap { display: flex; justify-content: space-between; align-items: center; }
+.toggle-info { flex: 1; }
+.toggle-info .t-name { font-size: 14px; font-weight: 600; }
+.toggle-info .t-sub { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.pill-toggle { padding: 7px 16px; border-radius: 20px; font-size: 12px; font-weight: 700; cursor: pointer; border: none; transition: all 0.2s; }
+.pill-toggle.on { background: var(--green-dim); color: var(--green); outline: 1px solid rgba(0,232,122,0.25); }
+.pill-toggle.off { background: var(--card2); color: var(--sub); }
 
 #celebrate-canvas { position: fixed; inset: 0; pointer-events: none; z-index: 999; }
 </style>
@@ -176,6 +223,35 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
   <button class="btn-green" style="margin-top:8px" onclick="startTracking()">Start Tracking</button>
 </div>
 
+<!-- SETUP OVERLAY (first time) -->
+<div id="setup-overlay" style="display:none;flex-direction:column">
+  <div class="setup-inner">
+    <div style="font-size:48px;margin-bottom:16px;text-align:center">💪</div>
+    <div class="setup-title" style="text-align:center">Welcome!</div>
+    <div class="setup-sub" style="text-align:center">Set up your profile to track progress and battle friends.</div>
+    <div class="setup-lbl">Pick Your Avatar</div>
+    <div class="av-grid" id="setup-av-grid"></div>
+    <div class="setup-lbl">Your Name</div>
+    <input class="setup-input" id="setup-name-input" placeholder="Enter your name…" maxlength="20" autocomplete="off"/>
+    <button class="btn-green" style="width:100%" onclick="saveSetup()">Let's Go! 🚀</button>
+  </div>
+</div>
+
+<!-- PROFILE EDIT OVERLAY -->
+<div id="profile-edit-overlay" style="display:none;flex-direction:column">
+  <div class="setup-inner">
+    <div style="font-size:20px;font-weight:700;margin-bottom:20px;text-align:center">Edit Profile</div>
+    <div class="setup-lbl">Avatar</div>
+    <div class="av-grid" id="edit-av-grid"></div>
+    <div class="setup-lbl">Name</div>
+    <input class="setup-input" id="edit-name-input" placeholder="Your name…" maxlength="20" autocomplete="off"/>
+    <div style="display:flex;gap:10px">
+      <button class="ctrl-btn" style="flex:1;padding:13px" onclick="document.getElementById('profile-edit-overlay').style.display='none'">Cancel</button>
+      <button class="btn-green" style="flex:2" onclick="saveProfileEdit()">Save</button>
+    </div>
+  </div>
+</div>
+
 <div id="countdown-overlay">
   <div style="font-size:14px;color:var(--sub);text-transform:uppercase;letter-spacing:0.1em">Battle starts in</div>
   <div class="countdown-num" id="countdown-num" style="color:var(--amber)">3</div>
@@ -200,7 +276,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
   <div class="res-elo" id="res-elo"></div>
   <div class="res-btns">
     <button class="res-btn" style="background:var(--card);color:var(--text);border:1px solid var(--border)" onclick="closeResult()">Done</button>
-    <button class="res-btn" style="background:var(--green);color:#000" onclick="rematch()">Rematch</button>
+    <button class="res-btn" id="res-btn-rematch" style="background:var(--green);color:#000" onclick="rematch()">Rematch</button>
   </div>
 </div>
 
@@ -209,6 +285,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
     <div class="tab active" id="tab-train" onclick="switchTab('train')"><span class="tab-icon">💪</span>Train</div>
     <div class="tab" id="tab-battle" onclick="switchTab('battle')"><span class="tab-icon">⚔️</span>Battle</div>
     <div class="tab" id="tab-history" onclick="switchTab('history')"><span class="tab-icon">📊</span>History</div>
+    <div class="tab" id="tab-profile" onclick="switchTab('profile')"><span class="tab-icon">👤</span>Me</div>
   </div>
 
   <!-- TRAIN -->
@@ -233,7 +310,10 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
 
       <div class="cam-top-bar">
         <div class="status-pill wait" id="status-pill">Detecting…</div>
-        <div class="icon-btn" id="flip-btn" onclick="flipCamera()" title="Flip camera">🔄</div>
+        <div class="cam-top-right">
+          <div class="icon-btn" id="audio-btn" onclick="toggleAudio()" title="Toggle audio">🔊</div>
+          <div class="icon-btn" id="flip-btn" onclick="flipCamera()" title="Flip camera">🔄</div>
+        </div>
       </div>
 
       <div class="rep-overlay">
@@ -269,6 +349,7 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
       <div class="stat-box"><div class="stat-n" id="s-today">0</div><div class="stat-l">Today</div></div>
       <div class="stat-box"><div class="stat-n" id="s-session">0</div><div class="stat-l">Session</div></div>
       <div class="stat-box"><div class="stat-n" id="s-best">0</div><div class="stat-l">Best Day</div></div>
+      <div class="stat-box streak-box"><div class="stat-n" id="s-streak">0</div><div class="stat-l">🔥 Streak</div></div>
     </div>
 
     <div class="section">
@@ -324,8 +405,65 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
       </div>
     </div>
 
-    <div class="section"><div class="sec-lbl">Choose Opponent</div></div>
+    <div class="section"><div class="sec-lbl">vs AI Opponents</div></div>
     <div class="bots-list" id="bots-list"></div>
+
+    <!-- FRIENDS BATTLE -->
+    <div style="padding: 16px 12px 8px"><div class="sec-lbl">vs Friend</div></div>
+    <div class="friend-panel-card">
+      <div class="card" id="friend-panel">
+        <!-- idle -->
+        <div id="fp-idle">
+          <div style="font-size:13px;color:var(--sub);line-height:1.7;margin-bottom:14px">Battle a friend in real-time! One person creates a room and shares the code, the other joins.</div>
+          <div style="display:flex;gap:10px">
+            <button class="ctrl-btn primary" style="flex:1;padding:12px 4px" onclick="createRoom()">📡 Create Room</button>
+            <button class="ctrl-btn" style="flex:1;padding:12px 4px" onclick="showJoinUI()">🔗 Join Room</button>
+          </div>
+        </div>
+        <!-- hosting -->
+        <div id="fp-hosting" style="display:none">
+          <div style="font-size:12px;color:var(--sub);margin-bottom:10px;text-align:center;font-weight:600;text-transform:uppercase;letter-spacing:0.06em">Your Room Code</div>
+          <div class="fp-room-code" id="room-code-display" onclick="copyRoomCode()" title="Tap to copy">------</div>
+          <div style="font-size:11px;color:var(--sub);text-align:center;margin-top:6px;margin-bottom:14px">Tap code to copy · Share with your friend</div>
+          <div id="room-status" style="font-size:13px;color:var(--sub);text-align:center;min-height:20px;margin-bottom:14px">⏳ Waiting for friend to join…</div>
+          <button class="ctrl-btn danger" style="width:100%" onclick="cancelRoom()">Cancel</button>
+        </div>
+        <!-- joining ui -->
+        <div id="fp-joining" style="display:none">
+          <div style="font-size:13px;color:var(--sub);margin-bottom:10px;font-weight:600">Enter room code:</div>
+          <input class="join-input" id="join-code-input" maxlength="6" placeholder="XXXXXX" autocomplete="off" autocorrect="off" spellcheck="false" oninput="this.value=this.value.toUpperCase().replace(/[^A-Z0-9]/g,'')"/>
+          <div style="display:flex;gap:10px">
+            <button class="ctrl-btn" onclick="cancelJoin()">Cancel</button>
+            <button class="ctrl-btn primary" style="flex:2" onclick="joinRoom()">Connect →</button>
+          </div>
+        </div>
+        <!-- connecting state -->
+        <div id="fp-connecting" style="display:none;text-align:center">
+          <div style="font-size:24px;margin-bottom:10px">🔄</div>
+          <div style="font-size:14px;color:var(--sub)" id="fp-connecting-msg">Connecting…</div>
+          <button class="ctrl-btn danger" style="margin-top:14px;width:100%" onclick="cancelRoom()">Cancel</button>
+        </div>
+        <!-- connected -->
+        <div id="fp-connected" style="display:none">
+          <div class="friend-avatar-big" id="fp-friend-avatar">🤝</div>
+          <div id="fp-connected-name" style="font-size:16px;font-weight:700;text-align:center;margin-bottom:4px">Friend</div>
+          <div style="font-size:12px;color:var(--green);text-align:center;margin-bottom:16px">● Connected</div>
+          <div id="fp-host-controls">
+            <div style="font-size:12px;color:var(--sub);margin-bottom:8px;text-align:center">Duration:</div>
+            <div style="display:flex;gap:8px;margin-bottom:14px">
+              <button class="dur-btn" id="fp-dur-30" onclick="setFriendDur(30)">30s</button>
+              <button class="dur-btn active" id="fp-dur-60" onclick="setFriendDur(60)">60s</button>
+              <button class="dur-btn" id="fp-dur-90" onclick="setFriendDur(90)">90s</button>
+            </div>
+            <button class="ctrl-btn primary" style="width:100%;padding:13px;font-size:14px" onclick="startFriendBattle()">⚔️ Start Battle!</button>
+          </div>
+          <div id="fp-guest-controls" style="display:none">
+            <div style="font-size:13px;color:var(--sub);text-align:center;padding:10px 0">Waiting for host to start the battle…</div>
+          </div>
+          <button class="ctrl-btn danger" style="margin-top:10px;width:100%" onclick="disconnectFriend()">Disconnect</button>
+        </div>
+      </div>
+    </div>
     <div style="height:28px"></div>
   </div>
 
@@ -335,20 +473,132 @@ body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-se
     <div class="hist-list" id="hist-list"></div>
     <div style="height:28px"></div>
   </div>
+
+  <!-- PROFILE -->
+  <div class="page" id="page-profile">
+    <div class="prof-hero">
+      <button class="edit-btn" onclick="openEditProfile()">✏️ Edit</button>
+      <div class="prof-avatar-display" id="prof-avatar">💪</div>
+      <div class="prof-name-display" id="prof-name">—</div>
+      <div class="prof-rank-display" id="prof-rank-txt">🥉 Bronze · 1000 ELO</div>
+    </div>
+
+    <div class="section">
+      <div class="sec-lbl">Stats</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <div class="stat-box streak-box">
+          <div class="stat-n" id="prof-streak">0</div>
+          <div class="stat-l">🔥 Streak</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n" id="prof-total">0</div>
+          <div class="stat-l">Total Reps</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n" id="prof-best">0</div>
+          <div class="stat-l">Best Day</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-n" id="prof-battles">0</div>
+          <div class="stat-l">Battles</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="sec-lbl">Settings</div>
+      <div class="card">
+        <div class="toggle-wrap">
+          <div class="toggle-info">
+            <div class="t-name">Audio Cues</div>
+            <div class="t-sub">Rep beeps &amp; voice milestones</div>
+          </div>
+          <button class="pill-toggle on" id="audio-toggle-btn" onclick="toggleAudio()">ON</button>
+        </div>
+      </div>
+    </div>
+    <div style="height:28px"></div>
+  </div>
 </div>
 
 <canvas id="celebrate-canvas"></canvas>
 
 <script>
 // ─── Data ────────────────────────────────────────────────────────────
-const KEY='pu_v4';
-function defData(){return{d:{},g:50,elo:1000,battles:[]};}
+const KEY='pu_v5';
+const AVATARS=['💪','🏋️','🔥','⚡','🦁','🐉','🤖','👑','🎯','🏆','😤','🥊'];
+function defData(){return{d:{},g:50,elo:1000,battles:[],username:'',avatar:'💪',audioEnabled:true};}
 function load(){try{const r=localStorage.getItem(KEY);return r?{...defData(),...JSON.parse(r)}:defData();}catch(e){return defData();}}
 function save(){try{localStorage.setItem(KEY,JSON.stringify(data));}catch(e){}}
 let data=load();
 function todayKey(){const n=new Date();return`${n.getFullYear()}-${String(n.getMonth()+1).padStart(2,'0')}-${String(n.getDate()).padStart(2,'0')}`;}
 function getT(){return data.d[todayKey()]||0;}
 function setT(v){data.d[todayKey()]=Math.max(0,v);save();}
+
+function getStreak(){
+  const now=new Date();
+  const d=new Date(now);
+  let streak=0;
+  const todayK=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  if(!data.d[todayK]||data.d[todayK]===0) d.setDate(d.getDate()-1);
+  for(let i=0;i<365;i++){
+    const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+    if(data.d[k]>0){streak++;d.setDate(d.getDate()-1);}
+    else break;
+  }
+  return streak;
+}
+
+// ─── Audio ───────────────────────────────────────────────────────────
+let audioCtx=null, audioEnabled=data.audioEnabled!==false;
+
+function getAudioCtx(){
+  if(!audioCtx) audioCtx=new(window.AudioContext||window.webkitAudioContext)();
+  return audioCtx;
+}
+
+function beep(freq=660,dur=0.07,type='sine',vol=0.22){
+  if(!audioEnabled)return;
+  try{
+    const ctx=getAudioCtx();
+    if(ctx.state==='suspended')ctx.resume();
+    const osc=ctx.createOscillator();
+    const gain=ctx.createGain();
+    osc.connect(gain);gain.connect(ctx.destination);
+    osc.type=type;osc.frequency.value=freq;
+    gain.gain.setValueAtTime(vol,ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001,ctx.currentTime+dur);
+    osc.start();osc.stop(ctx.currentTime+dur);
+  }catch(e){}
+}
+
+function repBeep(){beep(700,0.06,'sine',0.18);}
+
+function chime(){
+  if(!audioEnabled)return;
+  [523,659,784,1047].forEach((f,i)=>setTimeout(()=>beep(f,0.18,'sine',0.2),i*90));
+}
+
+function speak(text){
+  if(!audioEnabled||!window.speechSynthesis)return;
+  try{
+    const u=new SpeechSynthesisUtterance(text);
+    u.rate=1.15;u.volume=0.85;
+    speechSynthesis.cancel();
+    speechSynthesis.speak(u);
+  }catch(e){}
+}
+
+function toggleAudio(){
+  audioEnabled=!audioEnabled;
+  data.audioEnabled=audioEnabled;
+  save();
+  const btn=document.getElementById('audio-btn');
+  if(btn) btn.textContent=audioEnabled?'🔊':'🔇';
+  const tb=document.getElementById('audio-toggle-btn');
+  if(tb){tb.textContent=audioEnabled?'ON':'OFF';tb.className='pill-toggle '+(audioEnabled?'on':'off');}
+  if(audioEnabled){try{getAudioCtx().resume();}catch(e){}beep(440,0.1,'sine',0.15);}
+}
 
 // ─── Ranks ───────────────────────────────────────────────────────────
 const RANKS=[
@@ -369,36 +619,36 @@ const BOTS=[
   {id:'sprinter', name:'Sprinter',     emoji:'⚡', elo:1100, secs:30,  desc:'Explodes early, fades fast',  style:'burst',   unlock:900},
   {id:'joe',      name:'Average Joe',  emoji:'😤', elo:1200, secs:60,  desc:'Solid all-around opponent',   style:'steady',  unlock:1000},
   {id:'iron',     name:'Iron Mike',    emoji:'🥊', elo:1400, secs:60,  desc:'Strong and relentless',       style:'strong',  unlock:1150},
-  {id:'machine',  name:'The Machine',  emoji:'🦾', elo:1600, secs:90,  desc:'Methodical and precise',     style:'strong',  unlock:1350},
-  {id:'beast',    name:'Beast Mode',   emoji:'🔥', elo:1800, secs:60,  desc:'Absolute monster pace',      style:'burst',   unlock:1550},
+  {id:'machine',  name:'The Machine',  emoji:'🦾', elo:1600, secs:90,  desc:'Methodical and precise',      style:'strong',  unlock:1350},
+  {id:'beast',    name:'Beast Mode',   emoji:'🔥', elo:1800, secs:60,  desc:'Absolute monster pace',       style:'burst',   unlock:1550},
   {id:'legend',   name:'The Legend',   emoji:'👑', elo:2100, secs:120, desc:'Near-impossible to beat',     style:'strong',  unlock:1750},
 ];
 
-function botRepsAt(bot, elapsed){
-  const base = bot.elo / 2800 * 0.8;
+function botRepsAt(bot,elapsed){
+  const base=bot.elo/2800*0.8;
   let rate;
-  if(bot.style==='burst') rate = base * (1 - (elapsed/bot.secs)*0.5);
-  else if(bot.style==='strong') rate = base * 1.05;
-  else rate = base * 0.95;
-  const jitter = (Math.sin(elapsed*0.7+bot.elo)*0.3 + Math.cos(elapsed*1.1)*0.2);
-  return Math.max(0, Math.round(rate * elapsed + jitter));
+  if(bot.style==='burst')rate=base*(1-(elapsed/bot.secs)*0.5);
+  else if(bot.style==='strong')rate=base*1.05;
+  else rate=base*0.95;
+  const jitter=(Math.sin(elapsed*0.7+bot.elo)*0.3+Math.cos(elapsed*1.1)*0.2);
+  return Math.max(0,Math.round(rate*elapsed+jitter));
 }
 
-function calcElo(mine, opp, won){
-  const K=32, exp=1/(1+Math.pow(10,(opp-mine)/400));
+function calcElo(mine,opp,won){
+  const K=32,exp=1/(1+Math.pow(10,(opp-mine)/400));
   return Math.round(K*((won?1:0)-exp));
 }
-function winChance(mine, opp){return Math.round(1/(1+Math.pow(10,(opp-mine)/400))*100);}
+function winChance(mine,opp){return Math.round(1/(1+Math.pow(10,(opp-mine)/400))*100);}
 
 // ─── Camera & Pose ───────────────────────────────────────────────────
-let tracking=true, sessionReps=0, celebrated=getT()>=data.g;
-let repPhase='neutral', smoothAngle=null, upThresh=155, dnThresh=90;
-let videoEl, canvasEl, ctx, poseInst, currentStream;
-let facingMode='environment', videoMirrored=false;
+let tracking=true,sessionReps=0,celebrated=getT()>=data.g;
+let repPhase='neutral',smoothAngle=null,upThresh=155,dnThresh=90;
+let videoEl,canvasEl,ctx,poseInst,currentStream;
+let facingMode='environment',videoMirrored=false;
 
 function ang(ax,ay,bx,by,cx,cy){
   const dx1=ax-bx,dy1=ay-by,dx2=cx-bx,dy2=cy-by;
-  const dot=dx1*dx2+dy1*dy2, mag=Math.sqrt(dx1**2+dy1**2)*Math.sqrt(dx2**2+dy2**2);
+  const dot=dx1*dx2+dy1*dy2,mag=Math.sqrt(dx1**2+dy1**2)*Math.sqrt(dx2**2+dy2**2);
   return mag?Math.acos(Math.max(-1,Math.min(1,dot/mag)))*180/Math.PI:180;
 }
 function bestElbow(lms){
@@ -425,14 +675,26 @@ function processAngle(a){
 }
 
 function countRep(){
-  setT(getT()+1); sessionReps++;
-  if(battleActive) battleYou++;
+  setT(getT()+1);sessionReps++;
+  if(battleActive)battleYou++;
+  if(friendBattleActive){
+    myFriendReps++;
+    if(peerConn&&peerConn.open)try{peerConn.send({t:'rep',n:myFriendReps});}catch(e){}
+    updateFriendBattleHUD();
+  }
+
+  // Audio cues
+  repBeep();
+  const total=getT();
+  if(total===data.g){setTimeout(()=>{chime();speak('Goal reached! Incredible work!');},100);}
+  else if(total%10===0&&total>0){setTimeout(()=>speak(total+' reps'),50);}
+
   const el=document.getElementById('rep-big');
-  el.classList.add('flash'); setTimeout(()=>el.classList.remove('flash'),200);
+  el.classList.add('flash');setTimeout(()=>el.classList.remove('flash'),200);
   render();
   document.getElementById('status-pill').textContent='✓ Rep!';
-  if(!battleActive&&getT()>=data.g&&!celebrated){celebrated=true;boom();}
-  if(battleActive) updateBattleHUD();
+  if(!battleActive&&!friendBattleActive&&getT()>=data.g&&!celebrated){celebrated=true;boom();}
+  if(battleActive)updateBattleHUD();
 }
 
 const BONES=[[11,12],[11,13],[13,15],[12,14],[14,16],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28]];
@@ -467,7 +729,7 @@ function onPose(res){
     document.getElementById('pose-txt').textContent=ok?'Pose found':'Low confidence';
     if(ok){document.getElementById('guide-overlay').style.display='none';processAngle(angle);}
     else{document.getElementById('status-pill').textContent='Adjust position';document.getElementById('status-pill').className='status-pill wait';}
-  } else {
+  }else{
     ctx.clearRect(0,0,canvasEl.width,canvasEl.height);
     document.getElementById('pose-dot').className='pose-dot';
     document.getElementById('pose-txt').textContent='No pose';
@@ -505,9 +767,9 @@ async function flipCamera(){
   btn.style.opacity='1';
 }
 
-// ─── Battle ──────────────────────────────────────────────────────────
-let battleActive=false, battleYou=0, battleBot=0;
-let battleStart=0, battleDur=60, battleBotRef=null, lastBotRef=null;
+// ─── Battle (vs Bot) ─────────────────────────────────────────────────
+let battleActive=false,battleYou=0,battleBot=0;
+let battleStart=0,battleDur=60,battleBotRef=null,lastBotRef=null;
 let battleInterval=null;
 
 function startBattle(bot){
@@ -516,20 +778,25 @@ function startBattle(bot){
   switchTab('train');
   let n=3;
   const ov=document.getElementById('countdown-overlay'),num=document.getElementById('countdown-num'),lbl=document.getElementById('countdown-lbl');
-  num.style.color='var(--amber)'; ov.style.display='flex';
-  num.textContent=n; lbl.textContent='Get into push-up position…';
+  num.style.color='var(--amber)';ov.style.display='flex';
+  num.textContent=n;lbl.textContent='Get into push-up position…';
+  if(audioEnabled)speak('3');
   const tick=setInterval(()=>{
     n--;
-    if(n>0){num.textContent=n;num.style.color=n===2?'var(--red)':'var(--amber)';}
-    else if(n===0){num.textContent='GO!';num.style.color='var(--green)';lbl.textContent='Push as fast as you can!';}
-    else{clearInterval(tick);ov.style.display='none';beginBattle(bot);}
+    if(n>0){
+      num.textContent=n;num.style.color=n===2?'var(--red)':'var(--amber)';
+      if(audioEnabled)speak(String(n));
+    }else if(n===0){
+      num.textContent='GO!';num.style.color='var(--green)';lbl.textContent='Push as fast as you can!';
+      if(audioEnabled)speak('Go!');
+    }else{clearInterval(tick);ov.style.display='none';beginBattle(bot);}
   },1000);
 }
 
 function beginBattle(bot){
-  battleActive=true; battleYou=0; battleBot=0;
-  battleBotRef=bot; battleDur=bot.secs; battleStart=Date.now();
-  sessionReps=0; repPhase='neutral'; smoothAngle=null;
+  battleActive=true;battleYou=0;battleBot=0;
+  battleBotRef=bot;battleDur=bot.secs;battleStart=Date.now();
+  sessionReps=0;repPhase='neutral';smoothAngle=null;
   document.getElementById('battle-hud').style.display='block';
   document.getElementById('rep-lbl').textContent='battle reps';
   document.getElementById('rep-big').textContent='0';
@@ -559,34 +826,35 @@ function endBattle(){
   battleActive=false;
   document.getElementById('battle-hud').style.display='none';
   document.getElementById('rep-lbl').textContent='reps today';
-  const bot=battleBotRef, won=battleYou>battleBot, tie=battleYou===battleBot;
+  const bot=battleBotRef,won=battleYou>battleBot,tie=battleYou===battleBot;
   const delta=tie?0:calcElo(data.elo,bot.elo,won);
   data.elo=Math.max(100,data.elo+delta);
   data.battles.unshift({date:new Date().toISOString(),botName:bot.name,botEmoji:bot.emoji,you:battleYou,bot:battleBot,won,tie,delta,newElo:data.elo});
   if(data.battles.length>60)data.battles.length=60;
   save();
-  // show result
   document.getElementById('res-you').textContent=battleYou;
   document.getElementById('res-bot-score').textContent=battleBot;
   document.getElementById('res-bot-lbl').textContent=bot.name;
+  document.getElementById('res-btn-rematch').style.display='';
   const ti=document.getElementById('res-title');
   if(tie){
-    document.getElementById('res-icon').textContent='🤝'; ti.textContent='Draw!'; ti.style.color='';
+    document.getElementById('res-icon').textContent='🤝';ti.textContent='Draw!';ti.style.color='';
     document.getElementById('res-sub').textContent='Perfectly matched!';
-    document.getElementById('res-elo').textContent='No ELO change'; document.getElementById('res-elo').style.color='var(--sub)';
-  } else if(won){
-    document.getElementById('res-icon').textContent='🏆'; ti.textContent='Victory!'; ti.style.color='var(--green)';
+    document.getElementById('res-elo').textContent='No ELO change';document.getElementById('res-elo').style.color='var(--sub)';
+  }else if(won){
+    document.getElementById('res-icon').textContent='🏆';ti.textContent='Victory!';ti.style.color='var(--green)';
     document.getElementById('res-sub').textContent='You beat '+bot.name+'!';
-    document.getElementById('res-elo').textContent='+'+delta+' ELO → '+data.elo; document.getElementById('res-elo').style.color='var(--green)';
-    boom();
-  } else {
-    document.getElementById('res-icon').textContent='😤'; ti.textContent='Defeated'; ti.style.color='var(--red)';
+    document.getElementById('res-elo').textContent='+'+delta+' ELO → '+data.elo;document.getElementById('res-elo').style.color='var(--green)';
+    boom();if(audioEnabled)speak('Victory!');
+  }else{
+    document.getElementById('res-icon').textContent='😤';ti.textContent='Defeated';ti.style.color='var(--red)';
     document.getElementById('res-sub').textContent=bot.name+' pushed harder.';
-    document.getElementById('res-elo').textContent=delta+' ELO → '+data.elo; document.getElementById('res-elo').style.color='var(--red)';
+    document.getElementById('res-elo').textContent=delta+' ELO → '+data.elo;document.getElementById('res-elo').style.color='var(--red)';
+    if(audioEnabled)speak('Better luck next time!');
   }
   const res=document.getElementById('battle-result');
-  res.style.display='flex'; res.style.flexDirection='column';
-  render(); renderElo(); renderBots(); renderHistory();
+  res.style.display='flex';res.style.flexDirection='column';
+  render();renderElo();renderBots();renderHistory();
 }
 function closeResult(){
   document.getElementById('battle-result').style.display='none';
@@ -599,19 +867,360 @@ function rematch(){
   if(lastBotRef)startBattle(lastBotRef);
 }
 
+// ─── Friend Battle (PeerJS) ──────────────────────────────────────────
+let peer=null,peerConn=null;
+let fpState='idle'; // idle | hosting | joining | connecting | connected | battling
+let iAmHost=false,friendName='',friendDur=60;
+let friendBattleActive=false,myFriendReps=0,friendReps=0;
+let friendFinalReps=-1,myFriendFinalReps=-1;
+let friendBattleTimer=null,friendBattleEndTimeout=null;
+let currentRoomCode='';
+
+function genCode(){
+  const chars='ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  return Array.from({length:6},()=>chars[Math.floor(Math.random()*chars.length)]).join('');
+}
+
+function loadPeerJS(){
+  return new Promise((res,rej)=>{
+    if(window.Peer){res();return;}
+    const s=document.createElement('script');
+    s.src='https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js';
+    s.onload=res;s.onerror=()=>rej(new Error('Could not load connection library'));
+    document.head.appendChild(s);
+  });
+}
+
+async function createRoom(){
+  try{await loadPeerJS();}
+  catch(e){alert('Could not load connection library. Check your internet connection.');return;}
+  if(peer){peer.destroy();peer=null;}
+  const code=genCode();
+  currentRoomCode=code;
+  const peerId='pu-'+code;
+  peer=new Peer(peerId);
+  fpState='hosting';showFriendPanel();
+  document.getElementById('room-code-display').textContent=code;
+  peer.on('open',()=>{});
+  peer.on('connection',conn=>{
+    peerConn=conn;
+    conn.on('open',()=>{
+      conn.send({t:'welcome',name:data.username||'Anonymous',avatar:data.avatar||'💪'});
+    });
+    conn.on('data',msg=>handlePeerMsg(msg));
+    conn.on('close',()=>{if(fpState!=='idle'){showFriendDisconnected();}});
+    conn.on('error',()=>{if(fpState!=='idle'){showFriendDisconnected();}});
+  });
+  peer.on('error',err=>{
+    if(err.type==='unavailable-id'){currentRoomCode=genCode();peer.destroy();createRoom();}
+    else{alert('Connection error: '+err.message);cancelRoom();}
+  });
+}
+
+function copyRoomCode(){
+  const code=currentRoomCode;
+  if(!code)return;
+  const url=window.location.href.split('?')[0]+'?room='+code;
+  if(navigator.share){
+    navigator.share({title:'Push-up Battle!',text:'Challenge me! Room code: '+code,url:url}).catch(()=>{});
+  }else if(navigator.clipboard){
+    navigator.clipboard.writeText(url).then(()=>{
+      const el=document.getElementById('room-code-display');
+      const orig=el.textContent;
+      el.textContent='COPIED!';el.style.fontSize='20px';el.style.letterSpacing='2px';
+      setTimeout(()=>{el.textContent=orig;el.style.fontSize='';el.style.letterSpacing='';},1500);
+    }).catch(()=>{});
+  }
+}
+
+function showJoinUI(){
+  fpState='joining';showFriendPanel();
+  // Check URL for pre-filled room code
+  const urlRoom=new URLSearchParams(window.location.search).get('room');
+  if(urlRoom)document.getElementById('join-code-input').value=urlRoom.toUpperCase();
+}
+
+async function joinRoom(){
+  const code=document.getElementById('join-code-input').value.trim().toUpperCase();
+  if(code.length!==6){alert('Please enter the full 6-character room code.');return;}
+  try{await loadPeerJS();}
+  catch(e){alert('Could not load connection library. Check your internet connection.');return;}
+  if(peer){peer.destroy();peer=null;}
+  peer=new Peer();
+  fpState='connecting';
+  document.getElementById('fp-connecting-msg').textContent='Connecting to '+code+'…';
+  showFriendPanel();
+  peer.on('open',()=>{
+    const conn=peer.connect('pu-'+code,{reliable:true});
+    peerConn=conn;
+    conn.on('open',()=>{
+      conn.send({t:'hello',name:data.username||'Anonymous',avatar:data.avatar||'💪'});
+    });
+    conn.on('data',msg=>handlePeerMsg(msg));
+    conn.on('close',()=>{if(fpState!=='idle'){showFriendDisconnected();}});
+    conn.on('error',()=>{alert('Could not connect. Check the code and try again.');cancelRoom();});
+  });
+  peer.on('error',err=>{
+    alert('Could not connect. Check the code and try again.');
+    cancelRoom();
+  });
+}
+
+function handlePeerMsg(msg){
+  switch(msg.t){
+    case 'hello': // host receives
+      friendName=msg.name||'Friend';
+      document.getElementById('room-status').textContent='✅ '+friendName+' joined!';
+      iAmHost=true;
+      fpState='connected';showFriendPanel();
+      document.getElementById('fp-connected-name').textContent=friendName;
+      if(msg.avatar)document.getElementById('fp-friend-avatar').textContent=msg.avatar;
+      document.getElementById('fp-host-controls').style.display='block';
+      document.getElementById('fp-guest-controls').style.display='none';
+      if(audioEnabled)beep(880,0.12,'sine',0.2);
+      break;
+    case 'welcome': // guest receives
+      friendName=msg.name||'Host';
+      iAmHost=false;
+      fpState='connected';showFriendPanel();
+      document.getElementById('fp-connected-name').textContent=friendName;
+      if(msg.avatar)document.getElementById('fp-friend-avatar').textContent=msg.avatar;
+      document.getElementById('fp-host-controls').style.display='none';
+      document.getElementById('fp-guest-controls').style.display='block';
+      if(audioEnabled)beep(880,0.12,'sine',0.2);
+      break;
+    case 'start':
+      friendDur=msg.dur;
+      beginFriendCountdown(msg.dur);
+      break;
+    case 'rep':
+      friendReps=msg.n;
+      if(friendBattleActive)updateFriendBattleHUD();
+      break;
+    case 'done':
+      friendFinalReps=msg.n;
+      if(myFriendFinalReps>=0)showFriendResult();
+      break;
+  }
+}
+
+function setFriendDur(dur){
+  friendDur=dur;
+  [30,60,90].forEach(d=>{
+    const b=document.getElementById('fp-dur-'+d);
+    if(b)b.className='dur-btn'+(d===dur?' active':'');
+  });
+}
+
+function startFriendBattle(){
+  if(!peerConn||!peerConn.open){alert('Friend disconnected. Please reconnect.');return;}
+  try{peerConn.send({t:'start',dur:friendDur});}catch(e){alert('Send failed. Check connection.');return;}
+  beginFriendCountdown(friendDur);
+}
+
+function beginFriendCountdown(dur){
+  switchTab('train');
+  friendBattleActive=false;
+  myFriendReps=0;friendReps=0;friendFinalReps=-1;myFriendFinalReps=-1;
+  fpState='battling';
+  let n=3;
+  const ov=document.getElementById('countdown-overlay'),num=document.getElementById('countdown-num'),lbl=document.getElementById('countdown-lbl');
+  num.style.color='var(--amber)';ov.style.display='flex';
+  num.textContent=n;lbl.textContent='Get into push-up position…';
+  if(audioEnabled)speak('3');
+  const tick=setInterval(()=>{
+    n--;
+    if(n>0){
+      num.textContent=n;num.style.color=n===2?'var(--red)':'var(--amber)';
+      if(audioEnabled)speak(String(n));
+    }else if(n===0){
+      num.textContent='GO!';num.style.color='var(--green)';lbl.textContent='Beat '+friendName+'!';
+      if(audioEnabled)speak('Go!');
+    }else{clearInterval(tick);ov.style.display='none';actuallyBeginFriendBattle(dur);}
+  },1000);
+}
+
+function actuallyBeginFriendBattle(dur){
+  friendBattleActive=true;
+  repPhase='neutral';smoothAngle=null;sessionReps=0;
+  const start=Date.now();
+  document.getElementById('battle-hud').style.display='block';
+  document.getElementById('rep-lbl').textContent='vs '+friendName;
+  document.getElementById('bh-bot-name').textContent=friendName;
+  document.getElementById('rep-big').textContent='0';
+  document.getElementById('bh-you').textContent='0';
+  document.getElementById('bh-bot').textContent='0';
+  friendBattleTimer=setInterval(()=>{
+    const el=(Date.now()-start)/1000;
+    const rem=Math.max(0,dur-el);
+    document.getElementById('bh-timer').textContent=Math.ceil(rem)+'s';
+    if(el>=dur){clearInterval(friendBattleTimer);endFriendBattle();}
+  },250);
+}
+
+function updateFriendBattleHUD(){
+  const tot=Math.max(myFriendReps+friendReps,2);
+  document.getElementById('bh-you').textContent=myFriendReps;
+  document.getElementById('bh-bot').textContent=friendReps;
+  document.getElementById('bh-fill-you').style.width=(myFriendReps/tot*100)+'%';
+  document.getElementById('bh-fill-bot').style.width=(friendReps/tot*100)+'%';
+  document.getElementById('rep-big').textContent=myFriendReps;
+}
+
+function endFriendBattle(){
+  if(!friendBattleActive)return;
+  friendBattleActive=false;
+  if(friendBattleTimer){clearInterval(friendBattleTimer);friendBattleTimer=null;}
+  document.getElementById('battle-hud').style.display='none';
+  document.getElementById('rep-lbl').textContent='reps today';
+  myFriendFinalReps=myFriendReps;
+  if(peerConn&&peerConn.open)try{peerConn.send({t:'done',n:myFriendFinalReps});}catch(e){}
+  if(friendFinalReps>=0){showFriendResult();}
+  else{friendBattleEndTimeout=setTimeout(()=>{if(friendFinalReps<0)friendFinalReps=0;showFriendResult();},3000);}
+}
+
+function showFriendResult(){
+  if(friendBattleEndTimeout){clearTimeout(friendBattleEndTimeout);friendBattleEndTimeout=null;}
+  const won=myFriendFinalReps>friendFinalReps,tie=myFriendFinalReps===friendFinalReps;
+  data.battles.unshift({
+    date:new Date().toISOString(),botName:friendName,botEmoji:'🤝',
+    you:myFriendFinalReps,bot:friendFinalReps,won,tie,delta:0,newElo:data.elo,friendly:true
+  });
+  if(data.battles.length>60)data.battles.length=60;
+  save();
+  document.getElementById('res-you').textContent=myFriendFinalReps;
+  document.getElementById('res-bot-score').textContent=friendFinalReps;
+  document.getElementById('res-bot-lbl').textContent=friendName;
+  document.getElementById('res-btn-rematch').style.display='none';
+  const ti=document.getElementById('res-title');
+  if(tie){
+    document.getElementById('res-icon').textContent='🤝';ti.textContent='Draw!';ti.style.color='';
+    document.getElementById('res-sub').textContent='Evenly matched!';
+    document.getElementById('res-elo').textContent='Friendly match — no ELO change';
+    document.getElementById('res-elo').style.color='var(--sub)';
+  }else if(won){
+    document.getElementById('res-icon').textContent='🏆';ti.textContent='You Win!';ti.style.color='var(--green)';
+    document.getElementById('res-sub').textContent='You beat '+friendName+'! (Friendly)';
+    document.getElementById('res-elo').textContent='Friendly match — no ELO change';
+    document.getElementById('res-elo').style.color='var(--sub)';
+    boom();if(audioEnabled)speak('You win!');
+  }else{
+    document.getElementById('res-icon').textContent='😤';ti.textContent='Defeated';ti.style.color='var(--red)';
+    document.getElementById('res-sub').textContent=friendName+' pushed harder! (Friendly)';
+    document.getElementById('res-elo').textContent='Friendly match — no ELO change';
+    document.getElementById('res-elo').style.color='var(--sub)';
+    if(audioEnabled)speak('Better luck next time!');
+  }
+  const res=document.getElementById('battle-result');
+  res.style.display='flex';res.style.flexDirection='column';
+  fpState='connected';
+  render();renderHistory();
+}
+
+function showFriendDisconnected(){
+  if(friendBattleActive)endFriendBattle();
+  if(friendBattleTimer){clearInterval(friendBattleTimer);friendBattleTimer=null;}
+  friendBattleActive=false;
+  document.getElementById('battle-hud').style.display='none';
+  document.getElementById('rep-lbl').textContent='reps today';
+  fpState='idle';showFriendPanel();
+  alert(friendName+' disconnected.');
+}
+
+function cancelRoom(){
+  if(peer){peer.destroy();peer=null;}
+  peerConn=null;fpState='idle';showFriendPanel();
+}
+function cancelJoin(){fpState='idle';showFriendPanel();}
+
+function disconnectFriend(){
+  if(friendBattleActive){endFriendBattle();}
+  if(friendBattleTimer){clearInterval(friendBattleTimer);friendBattleTimer=null;}
+  friendBattleActive=false;
+  document.getElementById('battle-hud').style.display='none';
+  document.getElementById('rep-lbl').textContent='reps today';
+  if(peerConn){try{peerConn.close();}catch(e){}peerConn=null;}
+  if(peer){peer.destroy();peer=null;}
+  fpState='idle';showFriendPanel();
+}
+
+function showFriendPanel(){
+  ['fp-idle','fp-hosting','fp-joining','fp-connecting','fp-connected'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.style.display='none';
+  });
+  const map={idle:'fp-idle',hosting:'fp-hosting',joining:'fp-joining',connecting:'fp-connecting',connected:'fp-connected',battling:'fp-connected'};
+  const show=map[fpState]||'fp-idle';
+  const el=document.getElementById(show);if(el)el.style.display='block';
+}
+
+// ─── Profile ─────────────────────────────────────────────────────────
+function renderAvatarGrid(gridId,selectedAvatar){
+  const grid=document.getElementById(gridId);
+  if(!grid)return;
+  grid.innerHTML=AVATARS.map(a=>`<div class="av-opt${a===selectedAvatar?' selected':''}" onclick="selectAvatar('${a}','${gridId}',event)">${a}</div>`).join('');
+}
+
+function selectAvatar(avatar,gridId,e){
+  data.avatar=avatar;save();
+  document.querySelectorAll('#'+gridId+' .av-opt').forEach(el=>el.classList.remove('selected'));
+  if(e&&e.target)e.target.classList.add('selected');
+}
+
+function saveSetup(){
+  const name=document.getElementById('setup-name-input').value.trim();
+  if(!name){alert('Please enter your name!');return;}
+  data.username=name;
+  if(!data.avatar)data.avatar='💪';
+  save();
+  document.getElementById('setup-overlay').style.display='none';
+}
+
+function openEditProfile(){
+  document.getElementById('profile-edit-overlay').style.display='flex';
+  document.getElementById('edit-name-input').value=data.username||'';
+  renderAvatarGrid('edit-av-grid',data.avatar||'💪');
+}
+
+function saveProfileEdit(){
+  const name=document.getElementById('edit-name-input').value.trim();
+  if(!name){alert('Please enter a name.');return;}
+  data.username=name;save();
+  document.getElementById('profile-edit-overlay').style.display='none';
+  renderProfile();
+}
+
+function renderProfile(){
+  const elo=data.elo,rank=getRank(elo);
+  const streak=getStreak();
+  const totalReps=Object.values(data.d).reduce((a,b)=>a+b,0);
+  const allVals=Object.values(data.d);
+  const bestDay=allVals.length?Math.max(...allVals):0;
+  const battleCount=(data.battles||[]).length;
+  document.getElementById('prof-avatar').textContent=data.avatar||'💪';
+  document.getElementById('prof-name').textContent=data.username||'Set your name';
+  document.getElementById('prof-rank-txt').textContent=RANK_EMOJI[rank.name]+' '+rank.name+' · '+elo+' ELO';
+  document.getElementById('prof-streak').textContent=streak;
+  document.getElementById('prof-total').textContent=totalReps;
+  document.getElementById('prof-best').textContent=bestDay;
+  document.getElementById('prof-battles').textContent=battleCount;
+  const atb=document.getElementById('audio-toggle-btn');
+  if(atb){atb.textContent=audioEnabled?'ON':'OFF';atb.className='pill-toggle '+(audioEnabled?'on':'off');}
+}
+
 // ─── Render ──────────────────────────────────────────────────────────
 function render(){
   const t=getT(),g=data.g;
-  if(!battleActive){document.getElementById('rep-big').textContent=t; document.getElementById('rep-lbl').textContent='reps today';}
+  if(!battleActive&&!friendBattleActive){document.getElementById('rep-big').textContent=t;document.getElementById('rep-lbl').textContent='reps today';}
   document.getElementById('s-today').textContent=t;
   document.getElementById('s-session').textContent=sessionReps;
   const all=Object.values(data.d);
   document.getElementById('s-best').textContent=all.length?Math.max(...all):0;
-  document.getElementById('g-p').textContent=t; document.getElementById('g-g').textContent=g; document.getElementById('g-input').value=g;
+  document.getElementById('s-streak').textContent=getStreak();
+  document.getElementById('g-p').textContent=t;document.getElementById('g-g').textContent=g;document.getElementById('g-input').value=g;
   document.getElementById('gfill').style.width=Math.min(t/g,1)*100+'%';
   const now=new Date(),days=[];
   for(let i=6;i>=0;i--){
-    const d=new Date(now); d.setDate(now.getDate()-i);
+    const d=new Date(now);d.setDate(now.getDate()-i);
     const k=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
     days.push({l:i===0?'·':['Su','Mo','Tu','We','Th','Fr','Sa'][d.getDay()],c:data.d[k]||0,today:i===0});
   }
@@ -620,11 +1229,14 @@ function render(){
     const h=Math.max(Math.round((d.c/mx)*52),d.c>0?4:3);
     return`<div class="bw"><div class="br${d.today?' today':''}" style="height:${h}px"></div><div class="bd">${d.l}</div></div>`;
   }).join('');
+  // update audio btn
+  const ab=document.getElementById('audio-btn');
+  if(ab)ab.textContent=audioEnabled?'🔊':'🔇';
 }
 
 function renderElo(){
-  const elo=data.elo, rank=getRank(elo);
-  const ri=RANKS.indexOf(rank), next=RANKS[ri+1]||rank;
+  const elo=data.elo,rank=getRank(elo);
+  const ri=RANKS.indexOf(rank),next=RANKS[ri+1]||rank;
   const pct=next===rank?100:((elo-rank.min)/(next.min-rank.min))*100;
   document.getElementById('elo-display').textContent=elo;
   const b=document.getElementById('rank-badge');
@@ -638,7 +1250,7 @@ function renderElo(){
 
 function renderBots(){
   document.getElementById('bots-list').innerHTML=BOTS.map(bot=>{
-    const locked=data.elo<bot.unlock, rank=getRank(bot.elo), wc=winChance(data.elo,bot.elo);
+    const locked=data.elo<bot.unlock,rank=getRank(bot.elo),wc=winChance(data.elo,bot.elo);
     return`<div class="bot-card${locked?' locked':''}" onclick="${locked?'':("startBattle(BOTS.find(b=>b.id==='"+bot.id+"'))")}">
       <div class="bot-avatar" style="background:${rank.color}22;border:1px solid ${rank.color}44">${bot.emoji}</div>
       <div class="bot-info">
@@ -664,17 +1276,18 @@ function renderHistory(){
     const d=new Date(b.date);
     const ds=d.toLocaleDateString(undefined,{month:'short',day:'numeric'})+' '+d.toLocaleTimeString(undefined,{hour:'2-digit',minute:'2-digit'});
     const icon=b.tie?'🤝':b.won?'🏆':'😤';
-    const eStr=(b.delta>=0?'+':'')+b.delta;
-    const ecol=b.tie?'var(--sub)':b.won?'var(--green)':'var(--red)';
-    return`<div class="hist-item">
+    const eStr=b.friendly?'🤝':(b.delta>=0?'+':'')+b.delta;
+    const ecol=b.friendly?'var(--blue)':b.tie?'var(--sub)':b.won?'var(--green)':'var(--red)';
+    const subLine=b.friendly?`${ds} · ${b.you} vs ${b.bot} (Friendly)`:`${ds} · You ${b.you} vs ${b.bot}`;
+    return`<div class="hist-item${b.friendly?' friendly':''}">
       <div class="hi-icon">${icon}</div>
       <div class="hi-info">
         <div class="hi-title">${b.botEmoji} ${b.botName}</div>
-        <div class="hi-sub">${ds} · You ${b.you} vs ${b.bot}</div>
+        <div class="hi-sub">${subLine}</div>
       </div>
       <div class="hi-score">
         <div class="hi-elo" style="color:${ecol}">${eStr}</div>
-        <div class="hi-elo-total">${b.newElo} ELO</div>
+        <div class="hi-elo-total">${b.friendly?'Friendly':b.newElo+' ELO'}</div>
       </div>
     </div>`;
   }).join('');
@@ -682,12 +1295,13 @@ function renderHistory(){
 
 // ─── UI helpers ──────────────────────────────────────────────────────
 function switchTab(name){
-  ['train','battle','history'].forEach(t=>{
+  ['train','battle','history','profile'].forEach(t=>{
     document.getElementById('tab-'+t).classList.toggle('active',t===name);
     document.getElementById('page-'+t).classList.toggle('active',t===name);
   });
-  if(name==='battle'){renderElo();renderBots();}
+  if(name==='battle'){renderElo();renderBots();showFriendPanel();}
   if(name==='history')renderHistory();
+  if(name==='profile')renderProfile();
 }
 function toggleTracking(){
   tracking=!tracking;
@@ -717,44 +1331,67 @@ function boom(){
 // ─── Init ────────────────────────────────────────────────────────────
 function loadScript(src){
   return new Promise((res,rej)=>{
-    const s=document.createElement('script'); s.src=src; s.crossOrigin='anonymous';
-    s.onload=res; s.onerror=()=>rej(new Error('Failed: '+src));
+    const s=document.createElement('script');s.src=src;s.crossOrigin='anonymous';
+    s.onload=res;s.onerror=()=>rej(new Error('Failed: '+src));
     document.head.appendChild(s);
   });
 }
 
 async function init(){
-  const bar=document.getElementById('load-bar'), status=document.getElementById('load-status');
+  // Init avatar pickers
+  renderAvatarGrid('setup-av-grid',data.avatar||'💪');
+  // Set initial audio btn state
+  const ab=document.getElementById('audio-btn');
+  if(ab)ab.textContent=audioEnabled?'🔊':'🔇';
+
+  const bar=document.getElementById('load-bar'),status=document.getElementById('load-status');
   try{
-    videoEl=document.getElementById('video'); canvasEl=document.getElementById('pose-canvas'); ctx=canvasEl.getContext('2d');
-    status.textContent='Requesting camera…'; bar.style.width='20%';
+    videoEl=document.getElementById('video');canvasEl=document.getElementById('pose-canvas');ctx=canvasEl.getContext('2d');
+    status.textContent='Requesting camera…';bar.style.width='20%';
     await startCamera();
-    bar.style.width='45%'; status.textContent='Loading MediaPipe Pose…';
+    bar.style.width='45%';status.textContent='Loading MediaPipe Pose…';
     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js');
     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js');
     await loadScript('https://cdn.jsdelivr.net/npm/@mediapipe/pose/pose.js');
-    bar.style.width='78%'; status.textContent='Initializing model…';
+    bar.style.width='78%';status.textContent='Initializing model…';
     poseInst=new Pose({locateFile:f=>`https://cdn.jsdelivr.net/npm/@mediapipe/pose/${f}`});
     poseInst.setOptions({modelComplexity:0,smoothLandmarks:true,enableSegmentation:false,minDetectionConfidence:0.5,minTrackingConfidence:0.5});
     poseInst.onResults(onPose);
     await poseInst.initialize();
-    bar.style.width='100%'; status.textContent='Ready!';
+    bar.style.width='100%';status.textContent='Ready!';
     await new Promise(r=>setTimeout(r,500));
     document.getElementById('loading-screen').style.display='none';
     document.getElementById('app').style.display='block';
-    document.getElementById('calib-overlay').style.display='flex';
-    render(); renderElo(); renderBots(); renderHistory();
+
+    // Show setup if first time
+    if(!data.username){
+      document.getElementById('setup-overlay').style.display='flex';
+    }else{
+      document.getElementById('calib-overlay').style.display='flex';
+    }
+
+    // Check URL for room code (friend invite link)
+    const urlRoom=new URLSearchParams(window.location.search).get('room');
+    if(urlRoom&&urlRoom.length===6&&data.username){
+      setTimeout(()=>{
+        switchTab('battle');
+        showJoinUI();
+        document.getElementById('join-code-input').value=urlRoom.toUpperCase();
+      },600);
+    }
+
+    render();renderElo();renderBots();renderHistory();renderProfile();
   }catch(e){
     console.error(e);
     document.getElementById('loading-screen').style.display='none';
-    const err=document.getElementById('error-screen'); err.style.display='flex'; err.style.flexDirection='column';
+    const err=document.getElementById('error-screen');err.style.display='flex';err.style.flexDirection='column';
     const cam=e.name==='NotAllowedError'||e.name==='NotFoundError'||String(e.message).toLowerCase().includes('cam');
     document.getElementById('err-msg').textContent=cam
       ?'Camera access was denied.\nAllow camera permissions in browser settings, then reload.'
       :'Could not load pose model.\nCheck internet connection and reload.\n\n'+e.message;
   }
 }
-function startTracking(){document.getElementById('calib-overlay').style.display='none'; detectLoop();}
+function startTracking(){document.getElementById('calib-overlay').style.display='none';detectLoop();}
 init();
 </script>
 </body>
