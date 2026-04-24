@@ -1,0 +1,1305 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>FORMA — Digital Experiences, Crafted</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,600;1,300;1,400&family=DM+Mono:wght@300;400;500&family=Bebas+Neue&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --black: #0a0905;
+    --dark: #111009;
+    --charcoal: #1c1a14;
+    --gold: #c9a84c;
+    --gold-dim: #8a6f30;
+    --cream: #f0ead6;
+    --cream-dim: #b5ad97;
+    --white: #faf8f2;
+    --red: #d94f38;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--black);
+    color: var(--cream);
+    font-family: 'DM Mono', monospace;
+    font-weight: 300;
+    cursor: none;
+    overflow-x: hidden;
+  }
+
+  /* CUSTOM CURSOR */
+  #cursor {
+    position: fixed;
+    width: 10px; height: 10px;
+    background: var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9999;
+    transform: translate(-50%,-50%);
+    transition: transform 0.05s, width 0.3s, height 0.3s, background 0.3s;
+  }
+  #cursor-ring {
+    position: fixed;
+    width: 40px; height: 40px;
+    border: 1px solid var(--gold);
+    border-radius: 50%;
+    pointer-events: none;
+    z-index: 9998;
+    transform: translate(-50%,-50%);
+    transition: transform 0.15s ease-out, width 0.3s, height 0.3s, opacity 0.3s;
+    opacity: 0.5;
+  }
+  body:hover #cursor { opacity: 1; }
+
+  /* NAV */
+  nav {
+    position: fixed; top: 0; left: 0; right: 0;
+    z-index: 100;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 28px 48px;
+    mix-blend-mode: normal;
+  }
+  nav::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(to bottom, rgba(10,9,5,0.95) 0%, transparent 100%);
+    z-index: -1;
+  }
+  .nav-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 28px;
+    letter-spacing: 6px;
+    color: var(--white);
+    text-decoration: none;
+  }
+  .nav-logo span { color: var(--gold); }
+  .nav-links {
+    display: flex; gap: 40px; list-style: none;
+  }
+  .nav-links a {
+    color: var(--cream-dim);
+    text-decoration: none;
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    transition: color 0.3s;
+  }
+  .nav-links a:hover { color: var(--gold); }
+  .nav-cta {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--black);
+    background: var(--gold);
+    padding: 12px 28px;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
+    display: inline-block;
+  }
+  .nav-cta:hover { background: var(--cream); transform: translateY(-1px); }
+
+  /* HERO */
+  .hero {
+    min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 0 48px 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero-bg {
+    position: absolute; inset: 0;
+    background: radial-gradient(ellipse at 70% 40%, #1e1a0e 0%, var(--black) 60%);
+    z-index: 0;
+  }
+  .hero-grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(201,168,76,0.04) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(201,168,76,0.04) 1px, transparent 1px);
+    background-size: 80px 80px;
+    z-index: 0;
+  }
+  .hero-noise {
+    position: absolute; inset: 0;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 200px 200px;
+    z-index: 0;
+  }
+
+  .hero-tag {
+    position: relative; z-index: 2;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 32px;
+    opacity: 0;
+    animation: fadeUp 0.8s 0.3s forwards;
+  }
+  .hero-tag::before {
+    content: '——';
+    margin-right: 12px;
+    opacity: 0.5;
+  }
+
+  .hero-headline {
+    position: relative; z-index: 2;
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(72px, 10vw, 148px);
+    line-height: 0.9;
+    letter-spacing: -2px;
+    color: var(--white);
+    margin-bottom: 60px;
+    overflow: hidden;
+  }
+  .hero-headline .line {
+    display: block;
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  .hero-headline .line:nth-child(1) { animation: slideUp 0.9s 0.5s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .hero-headline .line:nth-child(2) { animation: slideUp 0.9s 0.65s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .hero-headline .line:nth-child(3) { animation: slideUp 0.9s 0.8s cubic-bezier(0.16,1,0.3,1) forwards; }
+  .hero-headline em {
+    font-style: italic;
+    color: var(--gold);
+  }
+
+  .hero-bottom {
+    position: relative; z-index: 2;
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 40px;
+    opacity: 0;
+    animation: fadeUp 0.8s 1s forwards;
+  }
+  .hero-desc {
+    max-width: 380px;
+    font-size: 13px;
+    line-height: 2;
+    color: var(--cream-dim);
+  }
+  .hero-stats {
+    display: flex; gap: 64px;
+    padding-bottom: 4px;
+  }
+  .stat-num {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 48px;
+    font-weight: 300;
+    color: var(--white);
+    display: block;
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 10px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold-dim);
+    margin-top: 6px;
+  }
+
+  .scroll-hint {
+    position: absolute; bottom: 40px; left: 50%;
+    transform: translateX(-50%);
+    z-index: 2;
+    display: flex; flex-direction: column; align-items: center; gap: 12px;
+    opacity: 0;
+    animation: fadeIn 1s 1.5s forwards;
+  }
+  .scroll-hint span { font-size: 9px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold-dim); }
+  .scroll-line {
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, var(--gold), transparent);
+    animation: scrollPulse 2s 1.5s infinite;
+  }
+
+  /* MARQUEE */
+  .marquee-section {
+    border-top: 1px solid rgba(201,168,76,0.15);
+    border-bottom: 1px solid rgba(201,168,76,0.15);
+    overflow: hidden;
+    padding: 20px 0;
+    background: var(--charcoal);
+  }
+  .marquee-track {
+    display: flex;
+    white-space: nowrap;
+    animation: marquee 25s linear infinite;
+    gap: 0;
+  }
+  .marquee-item {
+    display: inline-flex; align-items: center; gap: 32px;
+    padding: 0 40px;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--cream-dim);
+  }
+  .marquee-dot {
+    width: 5px; height: 5px; background: var(--gold); border-radius: 50; flex-shrink: 0;
+  }
+
+  /* ABOUT / PHILOSOPHY */
+  .section {
+    padding: 140px 48px;
+  }
+  .section-label {
+    font-size: 10px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--gold);
+    margin-bottom: 80px;
+    display: flex; align-items: center; gap: 16px;
+  }
+  .section-label::after {
+    content: '';
+    flex: 1; height: 1px;
+    background: rgba(201,168,76,0.2);
+    max-width: 200px;
+  }
+
+  .philosophy {
+    background: var(--dark);
+  }
+  .philosophy-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 120px;
+    align-items: center;
+  }
+  .philosophy-text h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(42px, 5vw, 72px);
+    line-height: 1.1;
+    margin-bottom: 40px;
+    color: var(--white);
+  }
+  .philosophy-text h2 em { font-style: italic; color: var(--gold); }
+  .philosophy-text p {
+    font-size: 13px;
+    line-height: 2.2;
+    color: var(--cream-dim);
+    margin-bottom: 20px;
+  }
+  .philosophy-visual {
+    position: relative;
+    height: 520px;
+  }
+  .p-box {
+    position: absolute;
+    border: 1px solid rgba(201,168,76,0.25);
+    background: var(--charcoal);
+  }
+  .p-box-1 { inset: 0 60px 60px 0; }
+  .p-box-2 {
+    bottom: 0; right: 0;
+    width: 200px; height: 200px;
+    background: var(--gold);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .p-box-2 span {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: var(--black);
+    line-height: 1;
+  }
+  .p-box-inner {
+    position: absolute; inset: 30px;
+    border: 1px solid rgba(201,168,76,0.1);
+    display: flex; flex-direction: column; justify-content: flex-end; padding: 32px;
+  }
+  .p-box-inner-label {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold-dim); margin-bottom: 12px;
+  }
+  .p-box-inner p {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 28px;
+    font-style: italic;
+    color: var(--cream);
+    line-height: 1.3;
+  }
+
+  /* SERVICES */
+  .services {
+    background: var(--black);
+  }
+  .services-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 80px;
+  }
+  .services-header h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(48px, 6vw, 96px);
+    color: var(--white);
+    line-height: 0.95;
+  }
+  .services-header h2 em { font-style: italic; color: var(--gold); }
+  .services-header p {
+    max-width: 300px;
+    font-size: 12px;
+    line-height: 2;
+    color: var(--cream-dim);
+  }
+  .services-list { list-style: none; }
+  .service-item {
+    display: grid;
+    grid-template-columns: 80px 1fr auto;
+    align-items: center;
+    gap: 48px;
+    padding: 36px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    cursor: pointer;
+    transition: padding-left 0.4s cubic-bezier(0.16,1,0.3,1);
+    position: relative;
+    overflow: hidden;
+  }
+  .service-item::after {
+    content: '';
+    position: absolute; left: 0; top: 0; bottom: 0;
+    width: 0;
+    background: rgba(201,168,76,0.03);
+    transition: width 0.4s cubic-bezier(0.16,1,0.3,1);
+  }
+  .service-item:hover::after { width: 100%; }
+  .service-item:hover { padding-left: 16px; }
+  .service-num {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--gold-dim);
+  }
+  .service-name {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: 36px;
+    color: var(--white);
+    transition: color 0.3s;
+  }
+  .service-item:hover .service-name { color: var(--gold); }
+  .service-tags {
+    display: flex; gap: 12px;
+  }
+  .service-tag {
+    font-size: 9px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 6px 12px;
+    color: var(--cream-dim);
+  }
+  .service-arrow {
+    font-size: 20px;
+    color: var(--gold);
+    transform: translateX(-10px);
+    opacity: 0;
+    transition: transform 0.3s, opacity 0.3s;
+  }
+  .service-item:hover .service-arrow { transform: translateX(0); opacity: 1; }
+
+  /* PROCESS */
+  .process {
+    background: var(--charcoal);
+    padding: 140px 48px;
+  }
+  .process-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 2px;
+    margin-top: 80px;
+  }
+  .process-step {
+    background: var(--dark);
+    padding: 48px 36px;
+    position: relative;
+    transition: background 0.4s;
+  }
+  .process-step:hover { background: #181510; }
+  .process-step-num {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 80px;
+    color: rgba(201,168,76,0.1);
+    line-height: 1;
+    margin-bottom: 32px;
+    transition: color 0.4s;
+  }
+  .process-step:hover .process-step-num { color: rgba(201,168,76,0.2); }
+  .process-step h3 {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 26px;
+    font-weight: 400;
+    color: var(--white);
+    margin-bottom: 16px;
+  }
+  .process-step p {
+    font-size: 12px;
+    line-height: 2;
+    color: var(--cream-dim);
+  }
+  .process-step-line {
+    position: absolute;
+    top: 48px; right: 0;
+    width: 1px; height: 60px;
+    background: linear-gradient(to bottom, rgba(201,168,76,0.4), transparent);
+  }
+  .process-step:last-child .process-step-line { display: none; }
+
+  /* WORK / PORTFOLIO */
+  .work {
+    background: var(--black);
+    padding: 140px 48px;
+  }
+  .work-intro {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 80px;
+  }
+  .work-intro h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(48px, 6vw, 96px);
+    color: var(--white);
+    line-height: 0.95;
+  }
+  .work-intro h2 em { font-style: italic; color: var(--gold); }
+  .work-intro a {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: var(--gold);
+    text-decoration: none;
+    border-bottom: 1px solid var(--gold-dim);
+    padding-bottom: 4px;
+    transition: color 0.3s;
+  }
+  .work-intro a:hover { color: var(--cream); border-color: var(--cream-dim); }
+  .work-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: auto auto;
+    gap: 3px;
+  }
+  .work-item {
+    position: relative;
+    overflow: hidden;
+    cursor: pointer;
+  }
+  .work-item:first-child { grid-row: span 2; }
+  .work-item-bg {
+    width: 100%;
+    height: 100%;
+    min-height: 300px;
+    transition: transform 0.7s cubic-bezier(0.16,1,0.3,1);
+    display: flex; align-items: center; justify-content: center;
+  }
+  .work-item:first-child .work-item-bg { min-height: 640px; }
+  .work-item:hover .work-item-bg { transform: scale(1.04); }
+  .wi-1 { background: linear-gradient(135deg, #0e1a2e 0%, #1a2d1a 100%); }
+  .wi-2 { background: linear-gradient(135deg, #1a0e0e 0%, #2e1a0e 100%); }
+  .wi-3 { background: linear-gradient(135deg, #0e0e1a 0%, #1a0e2e 100%); }
+  .wi-icon {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 120px;
+    color: rgba(255,255,255,0.06);
+    letter-spacing: -4px;
+    user-select: none;
+  }
+  .work-item-overlay {
+    position: absolute; inset: 0;
+    background: linear-gradient(to top, rgba(10,9,5,0.95) 0%, transparent 50%);
+    display: flex; flex-direction: column; justify-content: flex-end;
+    padding: 40px;
+    opacity: 0;
+    transition: opacity 0.4s;
+  }
+  .work-item:hover .work-item-overlay { opacity: 1; }
+  .work-item-label {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase; color: var(--gold); margin-bottom: 10px;
+  }
+  .work-item-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 32px;
+    font-weight: 300;
+    color: var(--white);
+    line-height: 1.1;
+  }
+  .work-item-info {
+    position: absolute; bottom: 0; left: 0; right: 0;
+    padding: 24px 40px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .work-item-num {
+    font-size: 10px; letter-spacing: 3px; color: rgba(201,168,76,0.4);
+  }
+  .work-item-arrow {
+    font-size: 18px; color: var(--gold);
+    opacity: 0;
+    transform: rotate(-45deg) translateX(-8px);
+    transition: opacity 0.3s, transform 0.3s;
+  }
+  .work-item:hover .work-item-arrow { opacity: 1; transform: rotate(-45deg) translateX(0); }
+
+  /* TESTIMONIALS */
+  .testimonials {
+    background: var(--dark);
+    padding: 140px 48px;
+  }
+  .testimonials-inner {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .quote-mark {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 120px;
+    color: var(--gold);
+    line-height: 0.5;
+    margin-bottom: 48px;
+    opacity: 0.4;
+  }
+  .testimonial-text {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: clamp(28px, 3.5vw, 44px);
+    font-weight: 300;
+    font-style: italic;
+    color: var(--white);
+    line-height: 1.4;
+    margin-bottom: 48px;
+  }
+  .testimonial-author {
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+  }
+  .testimonial-role {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: var(--cream-dim);
+    margin-top: 8px;
+  }
+  .testimonial-dots {
+    display: flex; gap: 12px; justify-content: center; margin-top: 60px;
+  }
+  .tdot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: rgba(201,168,76,0.3);
+    cursor: pointer; transition: background 0.3s, transform 0.3s;
+  }
+  .tdot.active { background: var(--gold); transform: scale(1.3); }
+
+  /* PRICING */
+  .pricing {
+    background: var(--black);
+    padding: 140px 48px;
+  }
+  .pricing h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(48px, 6vw, 80px);
+    color: var(--white);
+    line-height: 0.95;
+    margin-bottom: 80px;
+  }
+  .pricing h2 em { font-style: italic; color: var(--gold); }
+  .pricing-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 3px;
+  }
+  .pricing-card {
+    background: var(--charcoal);
+    padding: 56px 48px;
+    position: relative;
+    transition: background 0.3s, transform 0.3s;
+  }
+  .pricing-card:hover { background: #1e1b11; transform: translateY(-4px); }
+  .pricing-card.featured {
+    background: var(--gold);
+    transform: translateY(-12px);
+  }
+  .pricing-card.featured:hover { transform: translateY(-16px); }
+  .pricing-tier {
+    font-size: 10px; letter-spacing: 5px; text-transform: uppercase;
+    color: var(--gold-dim); margin-bottom: 32px;
+  }
+  .pricing-card.featured .pricing-tier { color: rgba(10,9,5,0.6); }
+  .pricing-price {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 72px;
+    font-weight: 300;
+    color: var(--white);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+  .pricing-card.featured .pricing-price { color: var(--black); }
+  .pricing-price span {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    vertical-align: top;
+    margin-top: 16px;
+    display: inline-block;
+  }
+  .pricing-period {
+    font-size: 11px; letter-spacing: 2px; color: var(--cream-dim); margin-bottom: 48px;
+  }
+  .pricing-card.featured .pricing-period { color: rgba(10,9,5,0.5); }
+  .pricing-features { list-style: none; margin-bottom: 48px; }
+  .pricing-features li {
+    font-size: 12px;
+    line-height: 1;
+    padding: 14px 0;
+    border-bottom: 1px solid rgba(201,168,76,0.1);
+    color: var(--cream-dim);
+    display: flex; align-items: center; gap: 12px;
+  }
+  .pricing-card.featured .pricing-features li {
+    border-color: rgba(10,9,5,0.15);
+    color: rgba(10,9,5,0.7);
+  }
+  .pricing-features li::before {
+    content: '✓';
+    color: var(--gold);
+    font-size: 12px;
+    flex-shrink: 0;
+  }
+  .pricing-card.featured .pricing-features li::before { color: var(--black); }
+  .pricing-btn {
+    display: block;
+    text-align: center;
+    padding: 16px;
+    font-size: 10px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: background 0.3s, color 0.3s;
+  }
+  .pricing-btn-outline {
+    border: 1px solid rgba(201,168,76,0.4);
+    color: var(--gold);
+  }
+  .pricing-btn-outline:hover { background: var(--gold); color: var(--black); }
+  .pricing-btn-solid {
+    background: var(--black);
+    color: var(--gold);
+  }
+  .pricing-btn-solid:hover { background: var(--dark); }
+
+  /* CTA SECTION */
+  .cta-section {
+    background: var(--gold);
+    padding: 140px 48px;
+    display: flex; flex-direction: column; align-items: center; text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .cta-section::before {
+    content: 'FORMA';
+    position: absolute;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 400px;
+    color: rgba(10,9,5,0.05);
+    pointer-events: none;
+    line-height: 1;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    white-space: nowrap;
+  }
+  .cta-section h2 {
+    font-family: 'Cormorant Garamond', serif;
+    font-weight: 300;
+    font-size: clamp(52px, 7vw, 110px);
+    color: var(--black);
+    line-height: 0.95;
+    margin-bottom: 40px;
+    position: relative;
+  }
+  .cta-section h2 em { font-style: italic; }
+  .cta-section p {
+    font-size: 13px;
+    line-height: 2;
+    color: rgba(10,9,5,0.6);
+    max-width: 440px;
+    margin-bottom: 56px;
+    position: relative;
+  }
+  .cta-btn {
+    position: relative;
+    font-size: 11px;
+    letter-spacing: 4px;
+    text-transform: uppercase;
+    color: var(--gold);
+    background: var(--black);
+    padding: 20px 56px;
+    text-decoration: none;
+    transition: background 0.3s, transform 0.3s;
+    display: inline-block;
+  }
+  .cta-btn:hover { background: var(--dark); transform: translateY(-2px); }
+
+  /* FOOTER */
+  footer {
+    background: var(--black);
+    border-top: 1px solid rgba(201,168,76,0.1);
+    padding: 80px 48px 48px;
+  }
+  .footer-top {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    margin-bottom: 80px;
+    padding-bottom: 80px;
+    border-bottom: 1px solid rgba(201,168,76,0.08);
+  }
+  .footer-logo {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 8px;
+    color: var(--white);
+    line-height: 1;
+  }
+  .footer-logo span { color: var(--gold); }
+  .footer-logo p {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 3px;
+    color: var(--cream-dim);
+    margin-top: 12px;
+  }
+  .footer-cols {
+    display: flex; gap: 80px;
+  }
+  .footer-col h4 {
+    font-size: 10px; letter-spacing: 4px; text-transform: uppercase;
+    color: var(--gold); margin-bottom: 24px;
+  }
+  .footer-col ul { list-style: none; }
+  .footer-col li {
+    font-size: 13px; margin-bottom: 12px;
+    color: var(--cream-dim);
+    cursor: pointer;
+    transition: color 0.3s;
+  }
+  .footer-col li:hover { color: var(--white); }
+  .footer-bottom {
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .footer-copyright {
+    font-size: 11px; color: rgba(181,173,151,0.4); letter-spacing: 2px;
+  }
+  .footer-social {
+    display: flex; gap: 24px;
+  }
+  .footer-social a {
+    font-size: 11px;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    color: rgba(181,173,151,0.4);
+    text-decoration: none;
+    transition: color 0.3s;
+  }
+  .footer-social a:hover { color: var(--gold); }
+
+  /* KEYFRAMES */
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(24px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slideUp {
+    from { opacity: 0; transform: translateY(100%); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+  @keyframes scrollPulse {
+    0%, 100% { opacity: 0.4; transform: scaleY(1); }
+    50% { opacity: 1; transform: scaleY(1.2); }
+  }
+  @keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-12px); }
+  }
+
+  /* SCROLL REVEAL */
+  .reveal {
+    opacity: 0;
+    transform: translateY(32px);
+    transition: opacity 0.8s cubic-bezier(0.16,1,0.3,1), transform 0.8s cubic-bezier(0.16,1,0.3,1);
+  }
+  .reveal.visible { opacity: 1; transform: translateY(0); }
+  .reveal-delay-1 { transition-delay: 0.1s; }
+  .reveal-delay-2 { transition-delay: 0.2s; }
+  .reveal-delay-3 { transition-delay: 0.3s; }
+  .reveal-delay-4 { transition-delay: 0.4s; }
+</style>
+</head>
+<body>
+
+<!-- CURSOR -->
+<div id="cursor"></div>
+<div id="cursor-ring"></div>
+
+<!-- NAV -->
+<nav>
+  <a href="#" class="nav-logo">FORM<span>A</span></a>
+  <ul class="nav-links">
+    <li><a href="#work">Work</a></li>
+    <li><a href="#services">Services</a></li>
+    <li><a href="#process">Process</a></li>
+    <li><a href="#pricing">Pricing</a></li>
+  </ul>
+  <a href="#contact" class="nav-cta">Start a Project</a>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-bg"></div>
+  <div class="hero-grid"></div>
+  <div class="hero-noise"></div>
+
+  <p class="hero-tag">Web Design & Digital Experience Studio</p>
+
+  <h1 class="hero-headline">
+    <span class="line">We build</span>
+    <span class="line"><em>websites</em> that</span>
+    <span class="line">actually work.</span>
+  </h1>
+
+  <div class="hero-bottom">
+    <p class="hero-desc">
+      FORMA is a boutique studio crafting high-performance digital experiences for ambitious brands. From strategy to launch, we make every pixel count.
+    </p>
+    <div class="hero-stats">
+      <div>
+        <span class="stat-num">147</span>
+        <p class="stat-label">Sites Launched</p>
+      </div>
+      <div>
+        <span class="stat-num">8yr</span>
+        <p class="stat-label">In Practice</p>
+      </div>
+      <div>
+        <span class="stat-num">98%</span>
+        <p class="stat-label">Client Retention</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="scroll-hint">
+    <span>Scroll</span>
+    <div class="scroll-line"></div>
+  </div>
+</section>
+
+<!-- MARQUEE -->
+<div class="marquee-section">
+  <div class="marquee-track">
+    <div class="marquee-item"><span class="marquee-dot"></span> Brand Identity</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Web Design</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Development</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> E-Commerce</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> SEO Strategy</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> UI / UX</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Motion Design</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Copywriting</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Brand Identity</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Web Design</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Development</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> E-Commerce</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> SEO Strategy</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> UI / UX</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Motion Design</div>
+    <div class="marquee-item"><span class="marquee-dot"></span> Copywriting</div>
+  </div>
+</div>
+
+<!-- PHILOSOPHY -->
+<section class="section philosophy" id="about">
+  <p class="section-label reveal">01 — Our Philosophy</p>
+  <div class="philosophy-grid">
+    <div class="philosophy-text">
+      <h2 class="reveal">We don't make <em>pretty</em> websites.<br>We make <em>powerful</em> ones.</h2>
+      <p class="reveal reveal-delay-1">Every project starts with a single question: what do you want people to feel when they land on your site? From that answer, we build everything — the architecture, the visual language, the copy, the code.</p>
+      <p class="reveal reveal-delay-2">Good design is invisible. Great design makes someone pull out their credit card at 2 AM. That's what we're after.</p>
+    </div>
+    <div class="philosophy-visual reveal reveal-delay-2">
+      <div class="p-box p-box-1">
+        <div class="p-box-inner">
+          <p class="p-box-inner-label">Our Belief</p>
+          <p>"Design is the silent ambassador of your brand."</p>
+        </div>
+      </div>
+      <div class="p-box p-box-2">
+        <span>F.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICES -->
+<section class="section services" id="services">
+  <p class="section-label reveal">02 — Services</p>
+  <div class="services-header">
+    <h2 class="reveal">What we<br><em>do best</em></h2>
+    <p class="reveal reveal-delay-1">Six core offerings. One obsessive focus: making your digital presence the most powerful version of itself.</p>
+  </div>
+  <ul class="services-list">
+    <li class="service-item reveal">
+      <span class="service-num">01</span>
+      <span class="service-name">Brand & Strategy</span>
+      <div class="service-tags">
+        <span class="service-tag">Identity</span>
+        <span class="service-tag">Positioning</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+    <li class="service-item reveal reveal-delay-1">
+      <span class="service-num">02</span>
+      <span class="service-name">Web Design</span>
+      <div class="service-tags">
+        <span class="service-tag">UI/UX</span>
+        <span class="service-tag">Figma</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+    <li class="service-item reveal reveal-delay-2">
+      <span class="service-num">03</span>
+      <span class="service-name">Development</span>
+      <div class="service-tags">
+        <span class="service-tag">React</span>
+        <span class="service-tag">Webflow</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+    <li class="service-item reveal reveal-delay-3">
+      <span class="service-num">04</span>
+      <span class="service-name">E-Commerce</span>
+      <div class="service-tags">
+        <span class="service-tag">Shopify</span>
+        <span class="service-tag">Conversion</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+    <li class="service-item reveal reveal-delay-4">
+      <span class="service-num">05</span>
+      <span class="service-name">SEO & Growth</span>
+      <div class="service-tags">
+        <span class="service-tag">Analytics</span>
+        <span class="service-tag">Content</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+    <li class="service-item reveal">
+      <span class="service-num">06</span>
+      <span class="service-name">Ongoing Support</span>
+      <div class="service-tags">
+        <span class="service-tag">Retainer</span>
+        <span class="service-tag">Updates</span>
+      </div>
+      <span class="service-arrow">↗</span>
+    </li>
+  </ul>
+</section>
+
+<!-- PROCESS -->
+<section class="process" id="process">
+  <p class="section-label reveal">03 — Process</p>
+  <div class="process-grid">
+    <div class="process-step reveal">
+      <div class="process-step-num">01</div>
+      <h3>Discover</h3>
+      <p>We dig into your brand, audience, and competitors. No assumptions, only answers.</p>
+      <div class="process-step-line"></div>
+    </div>
+    <div class="process-step reveal reveal-delay-1">
+      <div class="process-step-num">02</div>
+      <h3>Design</h3>
+      <p>Wireframes to high-fidelity mockups. We craft an experience that feels inevitable.</p>
+      <div class="process-step-line"></div>
+    </div>
+    <div class="process-step reveal reveal-delay-2">
+      <div class="process-step-num">03</div>
+      <h3>Build</h3>
+      <p>Pixel-perfect, lightning-fast code. We don't use templates — we engineer.</p>
+      <div class="process-step-line"></div>
+    </div>
+    <div class="process-step reveal reveal-delay-3">
+      <div class="process-step-num">04</div>
+      <h3>Launch</h3>
+      <p>QA, SEO, performance. We launch when it's right, not when it's rushed.</p>
+    </div>
+  </div>
+</section>
+
+<!-- WORK -->
+<section class="work" id="work">
+  <div class="work-intro">
+    <h2 class="reveal">Selected<br><em>Work</em></h2>
+    <a href="#" class="reveal">View All Projects →</a>
+  </div>
+  <div class="work-grid">
+    <div class="work-item reveal">
+      <div class="work-item-bg wi-1">
+        <div class="wi-icon">ARC</div>
+      </div>
+      <div class="work-item-overlay">
+        <p class="work-item-label">Architecture Firm</p>
+        <p class="work-item-title">Arc & Stone<br>Studio</p>
+      </div>
+      <div class="work-item-info">
+        <span class="work-item-num">001</span>
+        <span class="work-item-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-item reveal reveal-delay-1">
+      <div class="work-item-bg wi-2">
+        <div class="wi-icon">NOVA</div>
+      </div>
+      <div class="work-item-overlay">
+        <p class="work-item-label">Tech Startup</p>
+        <p class="work-item-title">Nova AI Platform</p>
+      </div>
+      <div class="work-item-info">
+        <span class="work-item-num">002</span>
+        <span class="work-item-arrow">↗</span>
+      </div>
+    </div>
+    <div class="work-item reveal reveal-delay-2">
+      <div class="work-item-bg wi-3">
+        <div class="wi-icon">LUNE</div>
+      </div>
+      <div class="work-item-overlay">
+        <p class="work-item-label">Luxury Retail</p>
+        <p class="work-item-title">Lune Fragrance</p>
+      </div>
+      <div class="work-item-info">
+        <span class="work-item-num">003</span>
+        <span class="work-item-arrow">↗</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- TESTIMONIALS -->
+<section class="testimonials">
+  <div class="testimonials-inner">
+    <div class="quote-mark">"</div>
+    <p class="testimonial-text" id="tquote">
+      FORMA didn't just build us a website — they built us a brand presence that converts. Our leads tripled in the first month.
+    </p>
+    <p class="testimonial-author" id="tauthor">— Marcus Webb</p>
+    <p class="testimonial-role" id="trole">Founder, Arc & Stone Studio</p>
+    <div class="testimonial-dots">
+      <div class="tdot active" onclick="setTestimonial(0)"></div>
+      <div class="tdot" onclick="setTestimonial(1)"></div>
+      <div class="tdot" onclick="setTestimonial(2)"></div>
+    </div>
+  </div>
+</section>
+
+<!-- PRICING -->
+<section class="section pricing" id="pricing">
+  <p class="section-label reveal">05 — Investment</p>
+  <h2 class="reveal">Simple pricing.<br><em>No surprises.</em></h2>
+  <div class="pricing-grid">
+    <div class="pricing-card reveal">
+      <p class="pricing-tier">Starter</p>
+      <p class="pricing-price"><span>$</span>2,400</p>
+      <p class="pricing-period">one-time</p>
+      <ul class="pricing-features">
+        <li>5-Page Website</li>
+        <li>Mobile Responsive</li>
+        <li>Basic SEO Setup</li>
+        <li>Contact Form</li>
+        <li>2 Revision Rounds</li>
+        <li>30-Day Support</li>
+      </ul>
+      <a href="#contact" class="pricing-btn pricing-btn-outline">Get Started</a>
+    </div>
+    <div class="pricing-card featured reveal reveal-delay-1">
+      <p class="pricing-tier">Studio</p>
+      <p class="pricing-price"><span>$</span>6,800</p>
+      <p class="pricing-period">one-time · most popular</p>
+      <ul class="pricing-features">
+        <li>Up to 15 Pages</li>
+        <li>Custom Animations</li>
+        <li>Full SEO Strategy</li>
+        <li>CMS Integration</li>
+        <li>E-commerce Ready</li>
+        <li>90-Day Support</li>
+      </ul>
+      <a href="#contact" class="pricing-btn pricing-btn-solid">Get Started</a>
+    </div>
+    <div class="pricing-card reveal reveal-delay-2">
+      <p class="pricing-tier">Enterprise</p>
+      <p class="pricing-price" style="font-size:48px">Custom</p>
+      <p class="pricing-period">scoped to project</p>
+      <ul class="pricing-features">
+        <li>Unlimited Pages</li>
+        <li>Custom Functionality</li>
+        <li>Dedicated Designer</li>
+        <li>Priority Builds</li>
+        <li>Monthly Retainer</li>
+        <li>SLA Support</li>
+      </ul>
+      <a href="#contact" class="pricing-btn pricing-btn-outline">Let's Talk</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta-section" id="contact">
+  <h2>Ready to build<br><em>something great?</em></h2>
+  <p>We take on a limited number of new projects each quarter. Let's find out if we're the right fit for each other.</p>
+  <a href="mailto:hello@formastudio.co" class="cta-btn">Start a Conversation</a>
+</section>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-top">
+    <div class="footer-logo">
+      FORM<span>A</span>
+      <p>Digital Experience Studio</p>
+    </div>
+    <div class="footer-cols">
+      <div class="footer-col">
+        <h4>Services</h4>
+        <ul>
+          <li>Brand & Strategy</li>
+          <li>Web Design</li>
+          <li>Development</li>
+          <li>E-Commerce</li>
+          <li>SEO & Growth</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li>About</li>
+          <li>Work</li>
+          <li>Process</li>
+          <li>Careers</li>
+          <li>Contact</li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <ul>
+          <li>hello@formastudio.co</li>
+          <li>+1 (415) 000-0000</li>
+          <li>San Francisco, CA</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <p class="footer-copyright">© 2025 FORMA Studio. All rights reserved.</p>
+    <div class="footer-social">
+      <a href="#">Instagram</a>
+      <a href="#">Dribbble</a>
+      <a href="#">LinkedIn</a>
+      <a href="#">Twitter</a>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // CURSOR
+  const cursor = document.getElementById('cursor');
+  const ring = document.getElementById('cursor-ring');
+  let mx = 0, my = 0, rx = 0, ry = 0;
+
+  document.addEventListener('mousemove', e => {
+    mx = e.clientX; my = e.clientY;
+    cursor.style.left = mx + 'px';
+    cursor.style.top = my + 'px';
+  });
+
+  function animRing() {
+    rx += (mx - rx) * 0.12;
+    ry += (my - ry) * 0.12;
+    ring.style.left = rx + 'px';
+    ring.style.top = ry + 'px';
+    requestAnimationFrame(animRing);
+  }
+  animRing();
+
+  document.querySelectorAll('a, button, .service-item, .work-item, .tdot, .pricing-card').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '20px';
+      cursor.style.height = '20px';
+      cursor.style.background = 'transparent';
+      ring.style.width = '60px';
+      ring.style.height = '60px';
+      ring.style.opacity = '1';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '10px';
+      cursor.style.height = '10px';
+      cursor.style.background = 'var(--gold)';
+      ring.style.width = '40px';
+      ring.style.height = '40px';
+      ring.style.opacity = '0.5';
+    });
+  });
+
+  // SCROLL REVEAL
+  const reveals = document.querySelectorAll('.reveal');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) { e.target.classList.add('visible'); }
+    });
+  }, { threshold: 0.15 });
+  reveals.forEach(el => observer.observe(el));
+
+  // TESTIMONIALS
+  const testimonials = [
+    {
+      quote: "FORMA didn't just build us a website — they built us a brand presence that converts. Our leads tripled in the first month.",
+      author: "— Marcus Webb",
+      role: "Founder, Arc & Stone Studio"
+    },
+    {
+      quote: "We've worked with agencies that cost three times as much and delivered half as much. FORMA is the rare exception: brilliant, fast, and a genuine pleasure.",
+      author: "— Serena Cho",
+      role: "CEO, Nova AI"
+    },
+    {
+      quote: "The site FORMA built for us feels like a luxury brand should: effortless, confident, and impossible to look away from.",
+      author: "— Isabelle Marchand",
+      role: "Creative Director, Lune"
+    }
+  ];
+  let activeT = 0;
+
+  function setTestimonial(i) {
+    activeT = i;
+    const q = document.getElementById('tquote');
+    const a = document.getElementById('tauthor');
+    const r = document.getElementById('trole');
+    q.style.opacity = 0; a.style.opacity = 0; r.style.opacity = 0;
+    setTimeout(() => {
+      q.textContent = testimonials[i].quote;
+      a.textContent = testimonials[i].author;
+      r.textContent = testimonials[i].role;
+      q.style.transition = 'opacity 0.5s'; a.style.transition = 'opacity 0.5s'; r.style.transition = 'opacity 0.5s';
+      q.style.opacity = 1; a.style.opacity = 1; r.style.opacity = 1;
+    }, 300);
+    document.querySelectorAll('.tdot').forEach((d, idx) => d.classList.toggle('active', idx === i));
+  }
+
+  setInterval(() => setTestimonial((activeT + 1) % 3), 6000);
+</script>
+</body>
+</html>
